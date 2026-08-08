@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { ChatContext } from '../../context/ChatContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import pragnaLogo from '../../assets/pragna-logo-full.png'
 
 const MainLayout = ({
   children,
@@ -100,14 +101,7 @@ const MainLayout = ({
             >
               <Menu size={20} className="text-[var(--pragna-text-muted)]" />
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-[26px] h-[26px] rounded-[8px] bg-gradient-to-br from-accent-400 to-accent-700 flex items-center justify-center text-[var(--pragna-bg)] font-extrabold text-xs shadow-[0_2px_8px_rgba(0,0,0,0.28),0_0_14px_rgba(212,175,55,0.25)]">
-                P
-              </div>
-              <span className="text-[13px] font-bold tracking-[1.5px] text-accent-500 whitespace-nowrap">
-                PRAGNA I-A
-              </span>
-            </div>
+            <img src={pragnaLogo} alt="Pragna-1 A" className="h-11 w-auto object-contain" />
             <div className="w-8" />
           </div>
         )}

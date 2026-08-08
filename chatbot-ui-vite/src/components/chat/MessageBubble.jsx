@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import CodeBlock from "./CodeBlock";
 import { API_BASE } from "../../api/api";
+import pragnaShield from "../../assets/pragna-shield-icon.png";
 
 const CopyIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -599,12 +600,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
             <ErrorIcon />
           </div>
         ) : (
-          <div
-            className="w-8 h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center font-extrabold text-[13px] shadow-premium-sm"
-            style={{ background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))", color: "var(--pragna-bg)" }}
-          >
-            P
-          </div>
+          <img src={pragnaShield} alt="Pragna" className="w-9 h-9 shrink-0 mt-0.5 object-contain" />
         )}
 
         <div className="flex flex-col gap-2.5 min-w-0 flex-1">

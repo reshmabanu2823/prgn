@@ -4,6 +4,7 @@ import { generateAIImage, generateDocument, sendOrchestratedMessageStream, summa
 import MessageBubble from "./MessageBubble";
 import { normalizeLanguageCode } from "../../utils/language";
 import { useMediaQuery } from "../../pragna/hooks/useMediaQuery";
+import pragnaShield from "../../assets/pragna-shield-icon.png";
 
 const IMAGE_REQUEST_RE = /(create|generate|make|design)\s+(an?\s+)?(ai\s+)?image|image\s+of|illustration\s+of|poster\s+of|logo\s+of/i;
 
@@ -431,6 +432,7 @@ export default function ChatWindow() {
                 Explore, create, or ask anything — Pragna adapts to how you work.
               </p>
             </div>
+            <img src={pragnaShield} alt="Pragna Logo" style={{ width: '72px', height: '72px', objectFit: 'contain', flexShrink: 0 }} />
           </div>
 
           {/* Mode Rail */}

@@ -45,7 +45,7 @@ const extractDocumentRequest = (text) => {
 }
 
 function App({ onLogout, userProfile }) {
-  const [activeView, setActiveView] = useState(() => localStorage.getItem('pragna_nav_view') || 'explore')
+  const [activeView, setActiveView] = useState(() => localStorage.getItem('pragna_nav_view') || 'chats')
   const [imagePrompt, setImagePrompt] = useState('')
   const [imageStyle, setImageStyle] = useState('cinematic')
   const [imageQuality, setImageQuality] = useState('hd')
