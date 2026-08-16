@@ -125,89 +125,96 @@ def _ensure_blip_loaded() -> None:
 
 # ─── PNG / JPG analysis ───────────────────────────────────────────────────────
 
+def _extract_ocr_text(img) -> str:
+    """Extract text from image using pytesseract if available."""
+    try:
+        import pytesseract
+        text = pytesseract.image_to_string(img).strip()
+        if text:
+            return text
+    except Exception as exc:
+        logger.debug("OCR extraction attempt skipped/failed: %s", exc)
+    return ""
+
+
+def _analyze_image_with_ollama(file_bytes: bytes) -> Optional[str]:
+    """Analyze image using Ollama multimodal vision API if available."""
+    try:
+        import base64
+        import requests
+        from config import OLLAMA_BASE_URL, OLLAMA_MODEL
+
+        b64_img = base64.b64encode(file_bytes).decode("utf-8")
+        payload = {
+            "model": OLLAMA_MODEL,
+            "prompt": "Analyze this image in full detail. Read all text, chat messages, labels, and visual content inside it.",
+            "images": [b64_img],
+            "stream": False
+        }
+        res = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=20)
+        if res.ok:
+            data = res.json()
+            resp = data.get("response", "").strip()
+            if resp:
+                return resp
+    except Exception as exc:
+        logger.debug("Ollama vision call skipped/failed: %s", exc)
+    return None
+
+
 def _analyze_raster_image(file_bytes: bytes, filename: str) -> str:
     """
-    Generate a natural-language description of a PNG or JPG image.
-
-    Strategy
-    --------
-    1. Use BLIP to produce a conditional caption (prompted with the filename stem)
-       AND an unconditional caption, then combine them.
-    2. Extract Pillow metadata: dimensions, colour mode, format.
-    3. Return a single structured text block ready for the LLM prompt.
+    Generate a comprehensive analysis & OCR text extraction of an uploaded image.
     """
-    _ensure_blip_loaded()
-
     lines: list[str] = []
     stem = Path(filename).stem.replace("_", " ").replace("-", " ")
 
-    # ── Pillow metadata ───────────────────────────────────────────────────────
+    # 1. Pillow metadata & image decoding
     try:
         from PIL import Image as PILImage
         img = PILImage.open(io.BytesIO(file_bytes)).convert("RGB")
         w, h = img.size
         lines.append(f"Image file  : {filename}")
         lines.append(f"Dimensions  : {w} × {h} pixels")
-        lines.append(f"Colour mode : RGB")
     except Exception as exc:
         logger.warning("Pillow metadata extraction failed for %s: %s", filename, exc)
         lines.append(f"Image file  : {filename}")
         img = None
 
-    # ── BLIP captioning ───────────────────────────────────────────────────────
-    if not _blip_loaded:
-        if _blip_load_error:
-            lines.append(f"Visual analysis: unavailable ({_blip_load_error})")
-        else:
-            lines.append("Visual analysis: BLIP model not loaded yet")
-        return "\n".join(lines)
-
     if img is None:
         lines.append("Visual analysis: could not decode image bytes")
         return "\n".join(lines)
 
-    try:
-        import torch
+    # 2. OCR Text Extraction (Reads text inside screenshots, chats, documents)
+    ocr_text = _extract_ocr_text(img)
+    if ocr_text:
+        lines.append("\nEXTRACTED TEXT FROM ATTACHED IMAGE (OCR):")
+        lines.append("--------------------------------------------------")
+        lines.append(ocr_text)
+        lines.append("--------------------------------------------------\n")
 
-        # Unconditional caption — let the model freely describe the image
-        inputs_uncond = _blip_processor(img, return_tensors="pt").to(_blip_device)
-        with torch.no_grad():
-            out_uncond = _blip_model.generate(
-                **inputs_uncond,
-                max_new_tokens=80,
-                num_beams=4,
-            )
-        caption_uncond = _blip_processor.decode(out_uncond[0], skip_special_tokens=True)
-
-        # Conditional caption — seed with filename hint for richer context
-        if stem.strip():
-            inputs_cond = _blip_processor(
-                img, text=f"a photo of {stem}", return_tensors="pt"
-            ).to(_blip_device)
-            with torch.no_grad():
-                out_cond = _blip_model.generate(
-                    **inputs_cond,
-                    max_new_tokens=80,
-                    num_beams=4,
-                )
-            caption_cond = _blip_processor.decode(out_cond[0], skip_special_tokens=True)
-        else:
-            caption_cond = caption_uncond
-
-        # Deduplicate if both captions are near-identical
-        if caption_uncond.strip().lower() == caption_cond.strip().lower():
-            lines.append(f"Visual content: {caption_uncond.strip()}")
-        else:
-            lines.append(f"Visual description: {caption_uncond.strip()}")
-            lines.append(f"Contextual caption : {caption_cond.strip()}")
-
-        logger.info("BLIP captioned '%s': %s", filename, caption_uncond[:80])
-
-    except Exception as exc:
-        logger.error("BLIP inference failed for %s: %s", filename, exc, exc_info=True)
-        lines.append(f"Visual analysis: inference error — {exc}")
+    # 3. Ollama Vision Analysis
+    ollama_desc = _analyze_image_with_ollama(file_bytes)
+    if ollama_desc:
+        lines.append(f"Visual Analysis: {ollama_desc}")
+    else:
+        # 4. BLIP Fallback (if torch & transformers available)
+        _ensure_blip_loaded()
+        if _blip_loaded:
+            try:
+                import torch
+                inputs_uncond = _blip_processor(img, return_tensors="pt").to(_blip_device)
+                with torch.no_grad():
+                    out_uncond = _blip_model.generate(**inputs_uncond, max_new_tokens=80, num_beams=4)
+                caption_uncond = _blip_processor.decode(out_uncond[0], skip_special_tokens=True)
+                lines.append(f"Visual Description: {caption_uncond.strip()}")
+            except Exception as exc:
+                logger.warning("BLIP inference error for %s: %s", filename, exc)
+        elif not ocr_text:
+            lines.append("Visual analysis: Image loaded (OCR and visual model pending).")
 
     return "\n".join(lines)
+
 
 
 # ─── SVG analysis ─────────────────────────────────────────────────────────────

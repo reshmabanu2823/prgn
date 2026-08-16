@@ -52,16 +52,19 @@ def run_tests():
     svg_result = analyze_image(MOCK_SVG_BYTES, "test_logo.svg")
     print(svg_result)
 
-    print("\n=== Testing PNG BLIP captioning ===")
-    print("Running BLIP analysis on generated red PNG...")
-    png_result = analyze_image(get_mock_png_bytes(), "solid_red_square.png")
-    print(png_result)
+    print("\n=== Testing Image Text Extraction ===")
+    from PIL import Image as PILImage, ImageDraw
+    import io
 
-    print("\n=== Testing JPG BLIP captioning ===")
-    print("Running BLIP analysis on generated green JPG...")
-    jpg_result = analyze_image(get_mock_jpg_bytes(), "solid_green_square.jpg")
-    print(jpg_result)
+    text_img = PILImage.new("RGB", (400, 100), color=(255, 255, 255))
+    draw = ImageDraw.Draw(text_img)
+    draw.text((20, 30), "Hello Pragna AI Screenshot Text", fill=(0, 0, 0))
+    buf = io.BytesIO()
+    text_img.save(buf, format="PNG")
+    text_result = analyze_image(buf.getvalue(), "chat_screenshot.png")
+    print(text_result)
 
 
 if __name__ == "__main__":
     run_tests()
+
