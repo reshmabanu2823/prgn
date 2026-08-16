@@ -146,6 +146,9 @@ export default function SplashScreen({ visible = true }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          maxWidth: "92vw",
+          padding: "0 16px",
+          boxSizing: "border-box",
           animation: "splashFrameIn 0.35s ease",
         }}
       >
@@ -154,8 +157,8 @@ export default function SplashScreen({ visible = true }) {
             src={etherxLogo}
             alt="EtherX Innovations"
             style={{
-              width: "clamp(110px, 11.25vw, 162px)",
-              height: "clamp(110px, 11.25vw, 162px)",
+              width: "clamp(90px, 12vw, 162px)",
+              height: "clamp(90px, 12vw, 162px)",
               objectFit: "contain",
               filter: "drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))",
             }}
@@ -163,26 +166,27 @@ export default function SplashScreen({ visible = true }) {
         )}
 
         {frame.kind === "lang" && (
-          <div style={{ display: "flex", alignItems: "center", gap: "clamp(16px, 2vw, 28px)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "clamp(12px, 2vw, 28px)", flexWrap: "wrap" }}>
             <img
               src={etherxLogo}
               alt=""
               style={{
-                width: "clamp(96px, 11.25vw, 162px)",
-                height: "clamp(96px, 11.25vw, 162px)",
+                width: "clamp(72px, 10vw, 150px)",
+                height: "clamp(72px, 10vw, 150px)",
                 objectFit: "contain",
                 filter: "drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))",
+                flexShrink: 0,
               }}
             />
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0, textAlign: "left" }}>
               <span
                 style={{
                   fontFamily: frame.font,
                   fontWeight: 700,
-                  fontSize: "clamp(34px, 4.4vw, 64px)",
+                  fontSize: "clamp(24px, 4.5vw, 60px)",
                   lineHeight: 1.15,
                   color: GOLD_TITLE,
-                  whiteSpace: "nowrap",
+                  wordBreak: "break-word",
                 }}
               >
                 {frame.title}
@@ -191,9 +195,9 @@ export default function SplashScreen({ visible = true }) {
                 style={{
                   fontFamily: frame.font,
                   fontWeight: 400,
-                  fontSize: "clamp(15px, 1.7vw, 24px)",
+                  fontSize: "clamp(13px, 1.8vw, 24px)",
                   color: "#fff",
-                  whiteSpace: "nowrap",
+                  wordBreak: "break-word",
                 }}
               >
                 {frame.subtitle}
@@ -203,12 +207,13 @@ export default function SplashScreen({ visible = true }) {
         )}
 
         {frame.kind === "pragna" && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "100%", maxWidth: "586px" }}>
             <img
               src={pragnaLogoFull}
               alt="Pragna-1 A"
               style={{
-                width: "clamp(300px, 40.7vw, 586px)",
+                width: "100%",
+                maxWidth: "clamp(240px, 85vw, 586px)",
                 objectFit: "contain",
                 filter: "drop-shadow(0 0 24px rgba(212, 175, 55, 0.3))",
               }}
@@ -217,9 +222,9 @@ export default function SplashScreen({ visible = true }) {
               style={{
                 fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
                 fontWeight: 700,
-                fontSize: "clamp(15px, 1.7vw, 24px)",
+                fontSize: "clamp(13px, 1.8vw, 24px)",
                 color: "#fff",
-                marginTop: "-24px",
+                marginTop: "-16px",
               }}
             >
               A regional chatbot
@@ -228,25 +233,27 @@ export default function SplashScreen({ visible = true }) {
         )}
 
         {frame.kind === "tagline" && (
-          <div style={{ display: "flex", alignItems: "center", gap: "clamp(16px, 2vw, 24px)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "clamp(12px, 2vw, 24px)", flexWrap: "wrap", textAlign: "center" }}>
             <img
               src={etherxLogo}
               alt=""
               style={{
-                width: "clamp(110px, 11.25vw, 162px)",
-                height: "clamp(110px, 11.25vw, 162px)",
+                width: "clamp(72px, 10vw, 150px)",
+                height: "clamp(72px, 10vw, 150px)",
                 objectFit: "contain",
                 filter: "drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))",
+                flexShrink: 0,
               }}
             />
             <span
               style={{
                 fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
                 fontWeight: 700,
-                fontSize: "clamp(16px, 2.2vw, 32px)",
-                letterSpacing: "1px",
+                fontSize: "clamp(14px, 2.5vw, 32px)",
+                letterSpacing: "0.5px",
                 color: GOLD_BAND,
-                whiteSpace: "nowrap",
+                wordBreak: "break-word",
+                maxWidth: "85vw",
               }}
             >
               A PRODUCT OF ETHERX INNOVATIONS
@@ -259,16 +266,19 @@ export default function SplashScreen({ visible = true }) {
       <div
         style={{
           position: "absolute",
-          right: "2.5vw",
-          bottom: "3.5vh",
+          right: "clamp(12px, 2.5vw, 36px)",
+          bottom: "clamp(12px, 3.5vh, 40px)",
           fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
           fontWeight: 700,
-          fontSize: "clamp(16px, 2.2vw, 32px)",
+          fontSize: "clamp(11px, 1.8vw, 26px)",
           letterSpacing: "0.5px",
           color: GOLD_BAND,
           opacity: isTagline ? 0 : 1,
           transition: "opacity 0.4s ease",
           zIndex: 2,
+          maxWidth: "80vw",
+          textAlign: "right",
+          pointerEvents: "none",
         }}
       >
         ETHERX INNOVATIONS
@@ -276,3 +286,4 @@ export default function SplashScreen({ visible = true }) {
     </div>
   );
 }
+
