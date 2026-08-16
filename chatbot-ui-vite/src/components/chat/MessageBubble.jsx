@@ -1,7 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import CodeBlock from "./CodeBlock";
 import { API_BASE } from "../../api/api";
 import pragnaShield from "../../assets/pragna-shield-icon.png";
+import { ChatContext } from "../../context/ChatContext";
+
+const CodeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </svg>
+);
+
 
 const CopyIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -351,7 +360,9 @@ const renderAttachments = (attachments) => (
 );
 
 export default function MessageBubble({ message, language = "en", onRetry, onEdit, isLoading, onToggleBookmark }) {
+  const { openArtifact } = useContext(ChatContext);
   const [liked, setLiked] = useState(false);
+
   const [disliked, setDisliked] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -663,8 +674,73 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
               )}
             </div>
           ) : (
-            renderContentBlocks(message.text, isStreaming)
+            <>
+              {renderContentBlocks(message.text, isStreaming)}
+              {message.artifact && (
+                <div
+                  onClick={() => openArtifact?.(message.artifact)}
+                  style={{
+                    marginTop: "12px",
+                    padding: "12px 16px",
+                    borderRadius: "12px",
+                    background: "linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.06))",
+                    border: "1px solid rgba(212,175,55,0.35)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                    cursor: "pointer",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
+                    transition: "all 0.15s ease",
+                  }}
+                  className="hover:scale-[1.01] hover:border-[var(--pragna-gold-soft)]"
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "8px",
+                        background: "rgba(212,175,55,0.2)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--pragna-gold-soft)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <CodeIcon />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "13.5px", fontWeight: 650, color: "var(--pragna-text)" }}>
+                        {message.artifact.title || "HTML Web Artifact"}
+                      </div>
+                      <div style={{ fontSize: "11.5px", color: "var(--pragna-text-muted)" }}>
+                        Click to open live preview & code
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    style={{
+                      padding: "5px 11px",
+                      borderRadius: "7px",
+                      border: "none",
+                      background: "var(--pragna-gold-soft)",
+                      color: "var(--pragna-on-gold)",
+                      fontSize: "12px",
+                      fontWeight: 650,
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    View Artifact
+                  </button>
+                </div>
+              )}
+            </>
           )}
+
 
           {isBot && !isStreaming && !isError && message.sources?.length > 0 && (
             <div className="text-[13px]">

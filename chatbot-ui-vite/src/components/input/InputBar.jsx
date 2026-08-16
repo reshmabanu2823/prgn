@@ -103,8 +103,9 @@ export default function InputBar() {
     chats, setChats, activeChatId, setActiveChatId,
     language, isLoading, setIsLoading, chatMode, setChatMode, inputRef,
     personas, activePersonaId, setActivePersonaId,
-    newChat, setLanguage, abortControllerRef, stopGeneration,
+    newChat, setLanguage, abortControllerRef, stopGeneration, openArtifact,
   } = useContext(ChatContext);
+
 
 
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -603,6 +604,22 @@ export default function InputBar() {
                 )
               );
             },
+            onArtifact: (artifact) => {
+              openArtifact?.(artifact);
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === targetChatId
+                    ? {
+                        ...c,
+                        messages: c.messages.map((m, idx) =>
+                          idx === c.messages.length - 1 ? { ...m, artifact } : m
+                        ),
+                      }
+                    : c
+                )
+              );
+            },
+
             onDone: () => {
               setIsLoading(false);
               setChats((prev) =>

@@ -66,7 +66,22 @@ export function ChatProvider({ children }) {
     return saved || null;
   });
 
+  const [activeArtifact, setActiveArtifact] = useState(null);
+  const [isArtifactOpen, setIsArtifactOpen] = useState(false);
+
+  const openArtifact = (artifact) => {
+    if (artifact) {
+      setActiveArtifact(artifact);
+      setIsArtifactOpen(true);
+    }
+  };
+
+  const closeArtifact = () => {
+    setIsArtifactOpen(false);
+  };
+
   const [language, setLanguage] = useState(() => {
+
     return normalizeLanguageCode(localStorage.getItem("pragna_language") || "en");
   });
 
@@ -374,8 +389,16 @@ export function ChatProvider({ children }) {
         sidebarSearchInputRef,
         desktopNotifications,
         setDesktopNotifications,
+
+        activeArtifact,
+        setActiveArtifact,
+        isArtifactOpen,
+        setIsArtifactOpen,
+        openArtifact,
+        closeArtifact,
       }}
     >
+
       {children}
     </ChatContext.Provider>
   );

@@ -15,6 +15,8 @@ import AgentPanel from '../components/agent/AgentPanel'
 import SettingsModal from './components/SettingsModal'
 import ShortcutsHelpModal from './components/ShortcutsHelpModal'
 import CommandPalette from './components/CommandPalette'
+import ArtifactPanel from '../components/artifact/ArtifactPanel'
+
 
 const IMAGE_REQUEST_RE = /(create|generate|make|design)\s+(an?\s+)?(ai\s+)?image|image\s+of|illustration\s+of|poster\s+of|logo\s+of/i
 
@@ -73,7 +75,11 @@ function App({ onLogout, userProfile }) {
     setChatMode,
     personas,
     activePersonaId,
+    activeArtifact,
+    isArtifactOpen,
+    closeArtifact,
   } = useContext(ChatContext)
+
 
   useEffect(() => {
     localStorage.setItem('pragna_nav_view', activeView)
@@ -425,7 +431,14 @@ function App({ onLogout, userProfile }) {
         onNavigate={setActiveView}
         onOpenSettings={() => setSettingsOpen(true)}
       />
+
+      <ArtifactPanel
+        artifact={activeArtifact}
+        isOpen={isArtifactOpen}
+        onClose={closeArtifact}
+      />
     </>
+
   )
 }
 

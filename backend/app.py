@@ -1829,16 +1829,21 @@ def chat_stream():
             if sources:
                 yield f"data: {json.dumps({'sources': sources})}\n\n"
 
-            from services.prompt_builder import clean_llm_response_text
+            from services.prompt_builder import clean_llm_response_text, extract_artifact_from_response
             raw_text = result.get('response', '')
-            response_text = clean_llm_response_text(raw_text)
+            cleaned_text = clean_llm_response_text(raw_text)
+            chat_text, artifact_data = extract_artifact_from_response(cleaned_text)
+
+            if artifact_data:
+                yield f"data: {json.dumps(artifact_data)}\n\n"
 
             chunk_size = 200
-            for i in range(0, len(response_text), chunk_size):
-                chunk = response_text[i:i + chunk_size]
+            for i in range(0, len(chat_text), chunk_size):
+                chunk = chat_text[i:i + chunk_size]
                 yield f"data: {json.dumps({'content': chunk})}\n\n"
 
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
 
         return Response(stream_orchestrated_chunks(), mimetype='text/event-stream')
         

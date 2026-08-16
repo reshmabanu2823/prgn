@@ -115,6 +115,7 @@ export const sendOrchestratedMessageStream = async ({
   signal,
   onChunk,
   onSources,
+  onArtifact,
   onDone,
 }) => {
   const normalizedLanguage = normalizeLanguageCode(language);
@@ -138,7 +139,6 @@ export const sendOrchestratedMessageStream = async ({
     }),
   });
 
-
   if (!response.ok) {
     if (response.status === 401) {
       localStorage.removeItem("authToken");
@@ -147,9 +147,10 @@ export const sendOrchestratedMessageStream = async ({
     throw new Error("Server error. Please try again.");
   }
 
-
   await _consumeSSE(response, (event) => {
-    if (event.content) {
+    if (event.type === "artifact") {
+      onArtifact?.(event);
+    } else if (event.content) {
       onChunk?.(event.content);
     } else if (event.sources) {
       onSources?.(event.sources);
@@ -158,6 +159,11 @@ export const sendOrchestratedMessageStream = async ({
     } else if (event.type === "done") {
       onDone?.();
     } else if (event.type === "error") {
+      throw new Error(event.message || "Streaming failed");
+    }
+  });
+};
+
       throw new Error(event.content || "Stream error");
     }
   });

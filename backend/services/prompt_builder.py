@@ -85,7 +85,22 @@ def build_prompt(
             "If asked about model updates, training data windows, or internal version history, "
             "state you do not have direct visibility and avoid specific dates unless verified context is provided."
         ),
+        (
+            "STANDALONE HTML ARTIFACT RULE:\n"
+            "When the user asks to build or create a full, standalone web page or web app (with complete <html>, <head>, <body> structure), "
+            "wrap the ENTIRE standalone HTML file in a fenced code block tagged specifically as an artifact:\n"
+            "```artifact:html title=\"Title of Page\"\n"
+            "<!DOCTYPE html>\n"
+            "<html>\n"
+            "...\n"
+            "</html>\n"
+            "```\n"
+            "Alongside the artifact block, emit only a short one-line chat message (e.g., 'Built your landing page 🚀 — see the preview panel'). "
+            "Do NOT dump or describe the full HTML code in your chat body text.\n"
+            "CRITICAL: Apply ```artifact:html ONLY to complete, standalone web pages. Small HTML snippets used to explain a concept or answer a question MUST remain as regular ```html code fences and NOT use the artifact marker."
+        ),
     ]
+
 
     if user_profile_memory:
         system_parts.append(
@@ -168,16 +183,43 @@ def clean_llm_response_text(text: str) -> str:
         return ""
 
     import re
-    # Remove 'Sources:' section and any list of URLs following it
     cleaned = re.sub(
-        r"(?i)\n*\s*Sources:\s*\n*(\s*[-*•]?\s*https?://[^\s]+\s*\n*)+",
+        r"(?:\n|^)\s*(?:Sources|References|Web Search Results):\s*(?:\n\s*•?\s*https?://\S+)+",
         "",
-        text
-    )
-    # Remove standalone 'Sources:' header at the end of response
-    cleaned = re.sub(r"(?i)\n*\s*Sources:\s*$", "", cleaned)
-    # Remove trailing bullet lists of raw URLs
-    cleaned = re.sub(r"(?i)\n+(\s*[-*•]?\s*https?://[^\s]+\s*)+$", "", cleaned)
+        text,
+        flags=re.IGNORECASE
+    ).strip()
 
-    return cleaned.strip()
+    return cleaned
+
+
+def extract_artifact_from_response(text: str):
+    """
+    Parses ```artifact:html title="..." ... ``` from response text.
+    Returns (cleaned_chat_text, artifact_dict or None).
+    """
+    if not text:
+        return text, None
+
+    import re
+    pattern = r"```artifact:html(?:\s+title=[\"']?([^\"'\n]+)[\"']?)?\s*\n(.*?)\n```"
+    match = re.search(pattern, text, re.DOTALL)
+    if not match:
+        return text, None
+
+    title = (match.group(1) or "HTML Web Artifact").strip()
+    content = match.group(2).strip()
+
+    cleaned_text = re.sub(pattern, "", text, flags=re.DOTALL).strip()
+    if not cleaned_text:
+        cleaned_text = f"Built your HTML artifact: **{title}** — see the preview panel."
+
+    artifact_dict = {
+        "type": "artifact",
+        "artifact_type": "html",
+        "title": title,
+        "content": content
+    }
+    return cleaned_text, artifact_dict
+
 
