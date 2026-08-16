@@ -10,7 +10,8 @@ const HomePage = ({ onUsePrompt, userProfile }) => {
   const [newTemplateTitle, setNewTemplateTitle] = useState('')
   const [newTemplatePrompt, setNewTemplatePrompt] = useState('')
 
-  const userName = userProfile?.username || localStorage.getItem('authUsername') || 'vianan'
+  const userName = userProfile?.username || localStorage.getItem('authUsername') || 'User'
+
 
   // Icon path helper
   const icon = (paths, extra) => (

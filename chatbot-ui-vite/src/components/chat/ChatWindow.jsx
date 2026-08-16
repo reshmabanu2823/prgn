@@ -414,7 +414,8 @@ export default function ChatWindow() {
     setGreeting(greet);
   }, []);
 
-  const userName = localStorage.getItem('authUsername') || 'vianan';
+  const userName = localStorage.getItem('authUsername') || 'User';
+
 
   const modes = [
     { label: 'General', key: 'general', iconName: 'sun' },

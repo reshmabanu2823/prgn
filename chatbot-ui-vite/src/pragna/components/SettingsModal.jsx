@@ -16,8 +16,8 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
 
   const isMobile = useMediaQuery('(max-width: 640px)')
 
-  // Settings States matching mockup
-  const [userName, setUserName] = useState(() => userProfile?.username || localStorage.getItem('authUsername') || 'vianan')
+  const [userName, setUserName] = useState(() => userProfile?.username || localStorage.getItem('authUsername') || 'User')
+
   const [nickname, setNickname] = useState(() => localStorage.getItem(`pragna_nickname_${userId}`) || '')
   const [instructions, setInstructions] = useState(() => localStorage.getItem(`pragna_instructions_${userId}`) || '')
   const [generalSaved, setGeneralSaved] = useState(false)

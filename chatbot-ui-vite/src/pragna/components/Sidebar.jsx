@@ -268,14 +268,13 @@ ${turns}
     }
   }
 
-  const displayName = (userProfile?.username || localStorage.getItem('authUsername') || 'vianan').trim()
-  const displayEmail = (userProfile?.email || localStorage.getItem('authEmail') || 'ajnakna@gmail.com').trim()
-  const initials = displayName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('') || 'V'
+  const rawUsername = userProfile?.username || localStorage.getItem('authUsername') || ''
+  const rawEmail = userProfile?.email || localStorage.getItem('authEmail') || ''
+
+  const displayName = rawUsername.trim() || (rawEmail ? rawEmail.split('@')[0] : 'User')
+  const displayEmail = rawEmail.trim() || (rawUsername ? `${rawUsername.toLowerCase().replace(/\s+/g, '')}@gmail.com` : '')
+  const initials = (displayName.slice(0, 1) || 'U').toUpperCase()
+
 
   // Icon Helper (identical to mockup)
   const icon = (paths, extra) => {
