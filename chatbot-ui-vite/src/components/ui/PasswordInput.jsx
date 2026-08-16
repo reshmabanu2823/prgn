@@ -29,7 +29,7 @@ export default function PasswordInput({
         tabIndex={-1}
         style={{
           position: "absolute",
-          right: "4px",
+          right: "6px",
           top: "50%",
           transform: "translateY(-50%)",
           width: "32px",
@@ -39,13 +39,14 @@ export default function PasswordInput({
           justifyContent: "center",
           border: "none",
           background: "transparent",
-          color: "var(--pragna-text-muted, rgba(255,255,255,0.5))",
+          color: "var(--pragna-gold-soft, #d4af37)",
           cursor: "pointer",
           borderRadius: "6px",
         }}
-        className="hover:text-[var(--pragna-gold-soft)]"
+        className="hover:text-[var(--pragna-gold)] opacity-90 hover:opacity-100"
       >
         {visible ? <EyeOff size={17} /> : <Eye size={17} />}
+
       </button>
     </div>
   );

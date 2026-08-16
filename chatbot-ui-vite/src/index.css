@@ -1,4 +1,20 @@
+/* Suppress native browser password reveal eye icons (Edge, Chrome, WebKit, IE) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="text"]::-ms-reveal,
+input[type="text"]::-ms-clear,
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button,
+::-ms-reveal {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 :root {
+
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;

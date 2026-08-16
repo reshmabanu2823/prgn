@@ -1,6 +1,22 @@
 /* Authentication Styles - Claude-like Clean Design */
 
+/* Hide native browser password reveal eye icons (Edge, Chrome, WebKit, IE) so only custom gold eye is rendered */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="text"]::-ms-reveal,
+input[type="text"]::-ms-clear,
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button,
+::-ms-reveal {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 .auth-container {
+
   display: flex;
   flex-direction: column;
   justify-content: center;
