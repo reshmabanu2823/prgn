@@ -1702,27 +1702,64 @@ def generate_speech():
         cleaned_text = cleaned_text.replace('\n', ' ')
         cleaned_text = ' '.join(cleaned_text.split())
         
-        # Call Google Translate TTS API
+        # Call Google Translate TTS API with chunking (max ~170 chars per chunk to avoid 400 error)
         google_tts_url = 'https://translate.google.com/translate_tts'
-        params = {
-            'ie': 'UTF-8',
-            'client': 'tw-ob',
-            'q': cleaned_text,
-            'tl': google_lang
-        }
         
-        logger.info(f"🔊 Generating speech: text={cleaned_text[:50]}... | lang={language} | google_lang={google_lang}")
-        logger.debug(f"📡 Google TTS URL params: {params}")
+        import re
+        sentences = re.split(r'(?<=[.!?,\n])\s+', cleaned_text)
+        text_chunks = []
+        curr_chunk = ""
+        for s in sentences:
+            if len(curr_chunk) + len(s) + 1 <= 160:
+                curr_chunk = f"{curr_chunk} {s}".strip()
+            else:
+                if curr_chunk:
+                    text_chunks.append(curr_chunk)
+                if len(s) > 160:
+                    words = s.split(' ')
+                    curr_w = ""
+                    for w in words:
+                        if len(curr_w) + len(w) + 1 <= 160:
+                            curr_w = f"{curr_w} {w}".strip()
+                        else:
+                            if curr_w:
+                                text_chunks.append(curr_w)
+                            curr_w = w[:160]
+                    if curr_w:
+                        text_chunks.append(curr_w)
+                    curr_chunk = ""
+                else:
+                    curr_chunk = s
+        if curr_chunk:
+            text_chunks.append(curr_chunk)
+
+        if not text_chunks:
+            text_chunks = [cleaned_text[:160]]
+
+        logger.info(f"🔊 Generating speech for {len(text_chunks)} chunks: text={cleaned_text[:50]}... | lang={language} | google_lang={google_lang}")
         
+        audio_buffers = []
         try:
-            # Make request to Google Translate TTS API
-            response = requests.get(google_tts_url, params=params, timeout=10)
-            logger.info(f"✅ Google TTS response status: {response.status_code}")
-            response.raise_for_status()
+            for idx, chunk in enumerate(text_chunks[:12]): # Cap at top 12 chunks
+                params = {
+                    'ie': 'UTF-8',
+                    'client': 'tw-ob',
+                    'q': chunk,
+                    'tl': google_lang
+                }
+                response = requests.get(google_tts_url, params=params, timeout=6)
+                if response.ok and response.content:
+                    audio_buffers.append(response.content)
             
+            if not audio_buffers:
+                return jsonify({'error': 'Failed to generate speech audio'}), 500
+            
+            combined_audio = b"".join(audio_buffers)
+            logger.info(f"✅ Generated combined speech audio ({len(combined_audio)} bytes)")
+
             # Return audio as binary stream with proper headers
             return Response(
-                response.content,
+                combined_audio,
                 mimetype='audio/mpeg',
                 headers={
                     'Content-Disposition': 'inline',
@@ -1731,8 +1768,9 @@ def generate_speech():
             )
             
         except requests.exceptions.RequestException as e:
-            logger.error(f"❌ Error calling Google TTS API: {e} | Status: {getattr(e.response, 'status_code', 'N/A')}")
+            logger.error(f"❌ Error calling Google TTS API: {e}")
             return jsonify({'error': 'Failed to generate speech', 'details': str(e)}), 500
+
         
     except Exception as e:
         logger.error(f"Error in speech endpoint: {e}", exc_info=True)

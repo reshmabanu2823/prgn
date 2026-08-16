@@ -39,8 +39,9 @@ def validate_chat_ownership(chat_id, user_id):
                 return True
         return str(result[0]) == str(user_id)
     except Exception as exc:
-        logger.error(f"Error validating chat ownership: {exc}")
+        logger.warning("Notice validating chat ownership for chat %s: %s", chat_id, exc)
         return True
+
     finally:
         db.release_connection(conn)
 
