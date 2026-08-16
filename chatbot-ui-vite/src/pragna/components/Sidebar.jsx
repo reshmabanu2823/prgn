@@ -314,6 +314,8 @@ ${turns}
         return icon([], [r({ x: 3, y: 3, width: 7, height: 7, rx: 1, key: 'r1' }), r({ x: 14, y: 3, width: 7, height: 7, rx: 1, key: 'r2' }), r({ x: 3, y: 14, width: 7, height: 7, rx: 1, key: 'r3' }), r({ x: 14, y: 14, width: 7, height: 7, rx: 1, key: 'r4' })])
       case 'gpts':
         return icon(['M13 2L3 14h9l-1 8 10-12h-9l1-8z'])
+      case 'starred':
+        return icon(['M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'])
       case 'compare':
         return icon([], [r({ x: 3, y: 4, width: 8, height: 16, rx: 1.5, key: 'r1' }), r({ x: 13, y: 4, width: 8, height: 16, rx: 1.5, key: 'r2' })])
       case 'agent':
@@ -351,7 +353,9 @@ ${turns}
     { id: 'modes', label: 'Modes' },
     { id: 'images', label: 'Images' },
     { id: 'gpts', label: 'GPTs' },
+    { id: 'starred', label: 'Starred requests' },
   ]
+
 
   const filteredChats = recentChats.filter((chat) => {
     const query = searchQuery.toLowerCase()

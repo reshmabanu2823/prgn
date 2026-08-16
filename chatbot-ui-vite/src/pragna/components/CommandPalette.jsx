@@ -18,7 +18,9 @@ const NAV_VIEWS = [
   { id: 'modes', label: 'Modes' },
   { id: 'images', label: 'Images' },
   { id: 'gpts', label: 'GPTs' },
+  { id: 'starred', label: 'Starred requests' },
 ]
+
 
 // Global Ctrl/Cmd+K quick switcher: jump to any chat, or run an action
 // (new chat, switch mode/persona/language, navigate, open settings, share).

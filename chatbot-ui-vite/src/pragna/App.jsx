@@ -7,7 +7,9 @@ import HomePage from './pages/HomePage'
 import ImageStudioPage from './pages/ImageStudioPage'
 import GptModesPage from './pages/GptModesPage'
 import ComparePage from './pages/ComparePage'
+import StarredRequestsPage from './pages/StarredRequestsPage'
 import ChatWindow from '../components/chat/ChatWindow'
+
 import InputBar from '../components/input/InputBar'
 import AgentPanel from '../components/agent/AgentPanel'
 import SettingsModal from './components/SettingsModal'
@@ -359,7 +361,21 @@ function App({ onLogout, userProfile }) {
       )
     }
 
+    if (activeView === 'starred') {
+      return (
+        <StarredRequestsPage
+          chats={chats}
+          setChats={setChats}
+          onOpenChat={(targetChatId) => {
+            setActiveChatId(targetChatId)
+            setActiveView('chats')
+          }}
+        />
+      )
+    }
+
     if (activeView === 'compare') {
+
       return <ComparePage />
     }
 
