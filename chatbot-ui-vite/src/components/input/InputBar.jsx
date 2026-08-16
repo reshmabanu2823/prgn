@@ -170,6 +170,44 @@ export default function InputBar() {
     });
   };
 
+  // Handle pasting images or videos directly into the request bar
+  const handlePaste = (e) => {
+    const clipboardItems = e.clipboardData?.items || [];
+    const mediaFiles = [];
+
+    for (let i = 0; i < clipboardItems.length; i++) {
+      const item = clipboardItems[i];
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          mediaFiles.push({
+            file,
+            type: "image",
+            name: file.name || `pasted_image_${Date.now()}.png`,
+            relativePath: file.name || `pasted_image_${Date.now()}.png`,
+            previewUrl: URL.createObjectURL(file),
+          });
+        }
+      } else if (item.type.startsWith("video/")) {
+        const file = item.getAsFile();
+        if (file) {
+          mediaFiles.push({
+            file,
+            type: "video",
+            name: file.name || `pasted_video_${Date.now()}.mp4`,
+            relativePath: file.name || `pasted_video_${Date.now()}.mp4`,
+            previewUrl: URL.createObjectURL(file),
+          });
+        }
+      }
+    }
+
+    if (mediaFiles.length > 0) {
+      setAttachments((prev) => [...prev, ...mediaFiles]);
+    }
+  };
+
+
   const handleSlashCommand = useCallback(async (rawText) => {
     const withoutSlash = rawText.slice(1);
     const spaceIdx = withoutSlash.indexOf(" ");
@@ -879,12 +917,14 @@ export default function InputBar() {
             onChange={(e) => setText(e.target.value)}
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
+            onPaste={handlePaste}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 send();
               }
             }}
+
             style={{
               flex: 1,
               resize: 'none',
