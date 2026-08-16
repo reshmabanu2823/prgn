@@ -839,9 +839,10 @@ export default function InputBar() {
         <div
           style={{
             display: 'flex',
-            alignItems: 'flex-end',
-            gap: '10px',
-            padding: '10px 12px',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'flex-end',
+            gap: isMobile ? '8px' : '10px',
+            padding: isMobile ? '10px 12px 8px 12px' : '10px 12px',
             borderRadius: '20px',
             background: 'var(--pragna-surface)',
             border: `1px solid ${inputBorder}`,
@@ -850,81 +851,6 @@ export default function InputBar() {
             transition: 'border-color 0.2s ease',
           }}
         >
-          {/* Attach Button */}
-          <div style={{ position: 'relative' }} ref={attachMenuRef}>
-            <button
-              title="Attach"
-              onClick={() => setAttachMenuOpen(!attachMenuOpen)}
-              style={{
-                width: '40px',
-                height: '40px',
-                flexShrink: 0,
-                borderRadius: '12px',
-                border: 'none',
-                background: '#222222',
-                color: 'var(--pragna-text-muted)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                <path d="M12 5v14M5 12h14"></path>
-              </svg>
-            </button>
-
-            {attachMenuOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '50px',
-                  left: 0,
-                  zIndex: 50,
-                  width: '160px',
-                  background: 'var(--pragna-surface)',
-                  border: '1px solid rgba(212,175,55,0.22)',
-                  borderRadius: '10px',
-                  boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
-                  padding: '4px',
-                }}
-              >
-                {[
-                  { label: 'Image', type: 'image', accept: 'image/*', ref: imageInputRef },
-                  { label: 'Video', type: 'video', accept: 'video/*', ref: videoInputRef },
-                  { label: 'File', type: 'file', accept: '*/*', ref: fileInputRef },
-                  { label: 'Folder', type: 'folder', accept: undefined, ref: folderInputRef },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => item.ref.current?.click()}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      border: 'none',
-                      background: 'transparent',
-                      color: '#d8cbb0',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      borderRadius: '7px',
-                    }}
-                    className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <input ref={imageInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'image')} />
-          <input ref={videoInputRef} type="file" accept="video/*" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'video')} />
-          <input ref={fileInputRef} type="file" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'file')} />
-          <input ref={folderInputRef} type="file" webkitdirectory="" directory="" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'folder')} />
-
           {/* Text Area */}
           <textarea
             ref={inputRef}
@@ -941,9 +867,9 @@ export default function InputBar() {
                 send();
               }
             }}
-
             style={{
               flex: 1,
+              width: '100%',
               resize: 'none',
               border: 'none',
               background: 'transparent',
@@ -951,96 +877,186 @@ export default function InputBar() {
               fontFamily: 'var(--pragna-chat-font)',
               fontSize: '15px',
               lineHeight: 1.5,
-              padding: '10px 4px',
+              padding: isMobile ? '4px 2px' : '10px 4px',
               maxHeight: '140px',
+              minHeight: isMobile ? '40px' : 'auto',
             }}
           />
 
-          {/* Language Selector */}
-          <LanguageSelector />
-
-          {/* Voice microphone button */}
-          <button
-            title="Voice input"
-            onClick={toggleMic}
+          {/* Action Row */}
+          <div
             style={{
-              width: '40px',
-              height: '40px',
-              flexShrink: 0,
-              borderRadius: '12px',
-              border: 'none',
-              background: recording ? 'rgba(220,100,100,0.2)' : 'transparent',
-              color: recording ? '#ff6b6b' : 'var(--pragna-text-muted)',
-              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease',
+              justifyContent: 'space-between',
+              width: isMobile ? '100%' : 'auto',
+              gap: '8px',
             }}
-            className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"></path>
-            </svg>
-          </button>
+            {/* Left Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              {/* Attach Button */}
+              <div style={{ position: 'relative' }} ref={attachMenuRef}>
+                <button
+                  title="Attach"
+                  onClick={() => setAttachMenuOpen(!attachMenuOpen)}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    flexShrink: 0,
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: '#222222',
+                    color: 'var(--pragna-text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                  className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                    <path d="M12 5v14M5 12h14"></path>
+                  </svg>
+                </button>
 
-          {/* Send / Stop button */}
-          {isLoading ? (
-            <button
-              onClick={stopGeneration}
-              title="Stop generating"
-              style={{
-                width: '40px',
-                height: '40px',
-                flexShrink: 0,
-                borderRadius: '12px',
-                border: '1px solid rgba(220, 100, 100, 0.4)',
-                background: 'rgba(220, 60, 60, 0.25)',
-                color: '#ff7b7b',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 14px rgba(220, 60, 60, 0.3)',
-                transition: 'all 0.15s ease',
-              }}
-              className="hover:bg-[rgba(220,60,60,0.4)] hover:scale-105 active:scale-95"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="5" y="5" width="14" height="14" rx="2.5" />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={send}
-              disabled={!hasContent}
-              title="Send"
-              style={{
-                width: '40px',
-                height: '40px',
-                flexShrink: 0,
-                borderRadius: '12px',
-                border: 'none',
-                background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
-                color: 'var(--pragna-bg)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 6px 18px rgba(0,0,0,0.34), 0 0 16px rgba(212,175,55,0.25)',
-                transition: 'all 0.15s ease',
-                opacity: hasContent ? 1 : 0.5,
-              }}
-              className="hover:shadow-[0_6px_18px_rgba(0,_0,_0,_0.34),_0_0_26px_rgba(212,_175,_55,_0.45)] active:scale-[0.94]"
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
-              </svg>
-            </button>
-          )}
+                {attachMenuOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '46px',
+                      left: 0,
+                      zIndex: 50,
+                      width: '150px',
+                      background: 'var(--pragna-surface)',
+                      border: '1px solid rgba(212,175,55,0.22)',
+                      borderRadius: '10px',
+                      boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
+                      padding: '4px',
+                    }}
+                  >
+                    {[
+                      { label: 'Image', type: 'image', accept: 'image/*', ref: imageInputRef },
+                      { label: 'Video', type: 'video', accept: 'video/*', ref: videoInputRef },
+                      { label: 'File', type: 'file', accept: '*/*', ref: fileInputRef },
+                      { label: 'Folder', type: 'folder', accept: undefined, ref: folderInputRef },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={() => item.ref.current?.click()}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'transparent',
+                          color: '#d8cbb0',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          borderRadius: '7px',
+                        }}
+                        className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
+              <input ref={imageInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'image')} />
+              <input ref={videoInputRef} type="file" accept="video/*" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'video')} />
+              <input ref={fileInputRef} type="file" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'file')} />
+              <input ref={folderInputRef} type="file" webkitdirectory="" directory="" multiple style={{ display: 'none' }} onChange={(e) => handleFilePick(e, 'folder')} />
+
+              {/* Language Selector */}
+              <LanguageSelector />
+
+              {/* Voice microphone button */}
+              <button
+                title="Voice input"
+                onClick={toggleMic}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  flexShrink: 0,
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: recording ? 'rgba(220,100,100,0.2)' : 'transparent',
+                  color: recording ? '#ff6b6b' : 'var(--pragna-text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.15s ease',
+                }}
+                className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"></path>
+                </svg>
+              </button>
+            </div>
+
+            {/* Right Controls: Send / Stop button */}
+            {isLoading ? (
+              <button
+                onClick={stopGeneration}
+                title="Stop generating"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  flexShrink: 0,
+                  borderRadius: '10px',
+                  border: '1px solid rgba(220, 100, 100, 0.4)',
+                  background: 'rgba(220, 60, 60, 0.25)',
+                  color: '#ff7b7b',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 0 14px rgba(220, 60, 60, 0.3)',
+                  transition: 'all 0.15s ease',
+                }}
+                className="hover:bg-[rgba(220,60,60,0.4)] hover:scale-105 active:scale-95"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="5" y="5" width="14" height="14" rx="2.5" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={send}
+                disabled={!hasContent}
+                title="Send"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  flexShrink: 0,
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
+                  color: 'var(--pragna-bg)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 6px 18px rgba(0,0,0,0.34), 0 0 16px rgba(212,175,55,0.25)',
+                  transition: 'all 0.15s ease',
+                  opacity: hasContent ? 1 : 0.5,
+                }}
+                className="hover:shadow-[0_6px_18px_rgba(0,_0,_0,_0.34),_0_0_26px_rgba(212,_175,_55,_0.45)] active:scale-[0.94]"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
+
         <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: 'var(--pragna-text-muted)', opacity: 0.6 }}>
           Pragna can make mistakes. Verify important information.
         </div>

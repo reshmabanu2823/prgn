@@ -371,8 +371,9 @@ ${turns}
     <aside style={{ width: onClose ? '100%' : '340px', maxWidth: '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pragna-surface)', borderRight: '1px solid var(--pragna-border)', backdropFilter: 'blur(8px)', height: '100%' }}>
       
       {/* Wordmark logo */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: onClose ? '12px 14px' : '20px 20px 16px 20px', flexShrink: 0 }}>
-        <img src={pragnaLogo} alt="Pragna I-A" style={{ height: onClose ? '70px' : '150px', width: onClose ? 'auto' : '300px', maxWidth: '100%', objectFit: 'contain' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px 12px 18px', flexShrink: 0, gap: '12px' }}>
+        <img src={pragnaLogo} alt="Pragna-1 A" style={{ height: 'auto', maxHeight: '38px', width: 'auto', maxWidth: '170px', objectFit: 'contain' }} />
+
         {onClose ? (
           <button
             type="button"

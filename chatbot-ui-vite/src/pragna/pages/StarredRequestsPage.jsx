@@ -294,15 +294,16 @@ export default function StarredRequestsPage({ chats, setChats, onOpenChat }) {
                   <div
                     style={{
                       display: 'flex',
+                      flexWrap: 'wrap',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: '12px',
+                      gap: '10px',
                       marginBottom: '12px',
                       paddingBottom: '10px',
                       borderBottom: '1px solid rgba(212,175,55,0.12)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', minWidth: 0, flex: '1 1 auto' }}>
                       {/* Sender Tag */}
                       {item.isUser ? (
                         <span
@@ -315,6 +316,7 @@ export default function StarredRequestsPage({ chats, setChats, onOpenChat }) {
                             background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))',
                             color: 'var(--pragna-on-gold)',
                             textTransform: 'uppercase',
+                            flexShrink: 0,
                           }}
                         >
                           User Request
@@ -334,6 +336,7 @@ export default function StarredRequestsPage({ chats, setChats, onOpenChat }) {
                             alignItems: 'center',
                             gap: '5px',
                             textTransform: 'uppercase',
+                            flexShrink: 0,
                           }}
                         >
                           <img src={pragnaShield} alt="" style={{ width: '12px', height: '12px' }} />
@@ -347,6 +350,7 @@ export default function StarredRequestsPage({ chats, setChats, onOpenChat }) {
                           fontSize: '12.5px',
                           color: 'var(--pragna-text-muted)',
                           fontWeight: 500,
+                          wordBreak: 'break-word',
                         }}
                       >
                         From: <strong style={{ color: 'var(--pragna-text)' }}>{item.chatTitle}</strong>
@@ -354,7 +358,8 @@ export default function StarredRequestsPage({ chats, setChats, onOpenChat }) {
                     </div>
 
                     {/* Card Actions */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+
                       {/* Open Chat */}
                       <button
                         type="button"

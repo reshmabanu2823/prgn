@@ -245,16 +245,15 @@ body {
   gap: 10px;
 }
 
-.header-logo {
-  height: 150px;
-  width: 300px;
-  object-fit: cover;
+.header-logo,
+.header-logo-full {
+  height: auto;
+  max-height: 38px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
 }
 
-.header-logo-full {
-  max-height: 150px;
-  max-width: 300px;
-}
 
 /* RIGHT SIDE */
 .header-right {
@@ -580,17 +579,19 @@ body {
 /* ===== MOBILE HEADER LOGO ===== */
 @media (max-width: 768px) {
   .header {
-    height: 80px;
+    height: 56px;
     padding: 0 12px;
   }
 
   .header-logo,
   .header-logo-full {
-    height: 72px;
-    max-height: 72px;
+    height: auto;
+    max-height: 30px;
     width: auto;
+    max-width: 130px;
     object-fit: contain;
   }
+
 
   .header-left {
     gap: 6px;
