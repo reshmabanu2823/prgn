@@ -142,24 +142,28 @@ def _analyze_image_with_ollama(file_bytes: bytes) -> Optional[str]:
     try:
         import base64
         import requests
-        from config import OLLAMA_BASE_URL, OLLAMA_MODEL
+        from config import OLLAMA_API_URL, OLLAMA_MODEL
 
         b64_img = base64.b64encode(file_bytes).decode("utf-8")
         payload = {
             "model": OLLAMA_MODEL,
-            "prompt": "Analyze this image in full detail. Read all text, chat messages, labels, and visual content inside it.",
+            "prompt": (
+                "Transcribe every single detail, message, word of text, and visual content visible in this screenshot/image. "
+                "List all chat messages, sender/receiver text, UI labels, timestamps, and overall conversation context in complete detail:"
+            ),
             "images": [b64_img],
             "stream": False
         }
-        res = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=20)
+        res = requests.post(f"{OLLAMA_API_URL}/api/generate", json=payload, timeout=25)
         if res.ok:
             data = res.json()
             resp = data.get("response", "").strip()
             if resp:
                 return resp
     except Exception as exc:
-        logger.debug("Ollama vision call skipped/failed: %s", exc)
+        logger.warning("Ollama vision call failed: %s", exc)
     return None
+
 
 
 def _analyze_raster_image(file_bytes: bytes, filename: str) -> str:
