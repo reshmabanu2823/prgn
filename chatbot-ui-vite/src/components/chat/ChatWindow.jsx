@@ -1,4 +1,5 @@
-import { useContext, useCallback, useState, useEffect } from "react";
+import { useContext, useCallback, useState, useEffect, useRef } from "react";
+
 import { ChatContext } from "../../context/ChatContext";
 import { generateAIImage, generateDocument, sendOrchestratedMessageStream, summarizeChat } from "../../api/api";
 import MessageBubble from "./MessageBubble";
@@ -61,6 +62,31 @@ export default function ChatWindow() {
   const isMobile = useMediaQuery("(max-width: 640px)");
 
   const chat = chats.find((c) => c.id === activeChatId);
+
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const messagesContainerRef = useRef(null);
+  const messagesBottomRef = useRef(null);
+
+  const handleScroll = () => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    setShowScrollBottom(distanceFromBottom > 120);
+  };
+
+  const scrollToBottom = useCallback((smooth = true) => {
+    messagesBottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
+  useEffect(() => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
+    if (isNearBottom || isLoading) {
+      scrollToBottom(false);
+    }
+  }, [chat?.messages, isLoading, scrollToBottom]);
+
 
   // Map display names for modes
   const modeMapping = {
@@ -560,7 +586,7 @@ export default function ChatWindow() {
   const modeLabel = getModeLabel(chatMode)
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', position: 'relative' }}>
       {/* Chat header (matches mockup) */}
       <div
         style={{
@@ -607,7 +633,12 @@ export default function ChatWindow() {
       </div>
 
       {/* Messages Scroll Area */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 0', minHeight: 0 }} className="custom-scrollbar">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        style={{ flex: 1, overflowY: 'auto', padding: '32px 0', minHeight: 0 }}
+        className="custom-scrollbar"
+      >
         <div style={{ maxWidth: '780px', margin: '0 auto', padding: isMobile ? '0 12px' : '0 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
           {chat.messages.map((m, idx) => (
             <MessageBubble
@@ -620,8 +651,44 @@ export default function ChatWindow() {
               onToggleBookmark={() => toggleBookmark(idx)}
             />
           ))}
+          <div ref={messagesBottomRef} style={{ height: '1px' }} />
         </div>
       </div>
+
+      {/* Floating Scroll to Bottom Button (ChatGPT style) */}
+      {showScrollBottom && (
+        <button
+          type="button"
+          onClick={() => scrollToBottom(true)}
+          title="Scroll to bottom"
+          style={{
+            position: 'absolute',
+            bottom: '16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 30,
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            background: 'var(--pragna-surface)',
+            border: '1px solid rgba(212,175,55,0.45)',
+            color: 'var(--pragna-gold-soft)',
+            boxShadow: '0 6px 18px rgba(0,0,0,0.45), 0 0 12px rgba(212,175,55,0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+          className="hover:scale-110 hover:border-[var(--pragna-gold-soft)] animate-[fadeUp_0.2s_ease]"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <polyline points="19 12 12 19 5 12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
+
