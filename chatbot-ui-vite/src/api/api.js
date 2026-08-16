@@ -164,12 +164,9 @@ export const sendOrchestratedMessageStream = async ({
   });
 };
 
-      throw new Error(event.content || "Stream error");
-    }
-  });
-};
 
 export const sendOrchestratedUploadMessage = async (
+
   text,
   language,
   user_id,
