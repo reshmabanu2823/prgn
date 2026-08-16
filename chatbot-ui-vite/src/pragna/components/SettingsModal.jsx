@@ -492,10 +492,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
             <div style={{ animation: 'fadeUp 0.15s ease' }}>
               <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: 'var(--pragna-text)' }}>Account</h2>
 
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '4px' : '20px', marginBottom: '26px' }}>
-                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: isMobile ? 'auto' : '110px', flexShrink: 0 }}>Email</div>
-                <div style={{ fontSize: '14px', color: 'var(--pragna-text)', wordBreak: 'break-all' }}>{userProfile?.email || localStorage.getItem('authEmail') || '—'}</div>
-              </div>
+
 
               <div style={{ marginBottom: '10px' }}>
                 <SectionToggle id="change-password" title="Change password" />

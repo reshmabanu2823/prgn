@@ -271,9 +271,10 @@ ${turns}
   const rawUsername = userProfile?.username || localStorage.getItem('authUsername') || ''
   const rawEmail = userProfile?.email || localStorage.getItem('authEmail') || ''
 
-  const displayName = rawUsername.trim() || (rawEmail ? rawEmail.split('@')[0] : 'User')
-  const displayEmail = rawEmail.trim()
+  const displayName = rawUsername.trim() || (rawEmail && !rawEmail.includes('@dev.local') ? rawEmail.split('@')[0] : 'User')
+  const displayEmail = rawEmail.includes('@dev.local') ? '' : rawEmail.trim()
   const initials = (displayName.slice(0, 1) || 'U').toUpperCase()
+
 
 
 
@@ -933,10 +934,13 @@ ${turns}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>{displayName}</div>
-            <div style={{ fontSize: '12px', color: 'var(--pragna-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {displayEmail}
-            </div>
+            {displayEmail && (
+              <div style={{ fontSize: '12px', color: 'var(--pragna-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {displayEmail}
+              </div>
+            )}
           </div>
+
           <button
             style={{
               width: '32px',
