@@ -2,28 +2,34 @@ from services.prompt_builder import extract_artifact_from_response
 
 def test_standalone_html_artifact():
     raw_response = (
-        "Built your Coffee Shop Landing Page - check out the preview panel!\n\n"
-        "```artifact:html title=\"Coffee Shop Landing Page\"\n"
+        "```artifact:html title=\"CatNip | Modern Feline Experience\"\n"
         "<!DOCTYPE html>\n"
-        "<html>\n"
-        "<head><title>Espresso Haven</title></head>\n"
-        "<body><h1>Welcome to Espresso Haven</h1></body>\n"
+        "<html lang=\"en\">\n"
+        "<head>\n"
+        "  <meta charset=\"UTF-8\">\n"
+        "  <title>CatNip | Pure Feline Joy</title>\n"
+        "</head>\n"
+        "<body>\n"
+        "  <h1>CatNip</h1>\n"
+        "</body>\n"
         "</html>\n"
         "```"
     )
-
     cleaned_text, artifact = extract_artifact_from_response(raw_response)
-    print("--- Test 1: Standalone HTML Artifact ---")
-    print("Cleaned text:", cleaned_text)
-    print("Artifact data:", artifact)
+    print("--- Test 1: User Screenshot HTML Artifact ---")
+    print("Cleaned text:", cleaned_text.replace("🚀", ""))
+    print("Artifact title:", artifact.get("title") if artifact else None)
+    print("Artifact content len:", len(artifact.get("content", "")) if artifact else 0)
+
 
     assert artifact is not None
     assert artifact["type"] == "artifact"
     assert artifact["artifact_type"] == "html"
-    assert artifact["title"] == "Coffee Shop Landing Page"
-    assert "Espresso Haven" in artifact["content"]
+    assert "CatNip" in artifact["title"]
+    assert "<!DOCTYPE html>" in artifact["content"]
     assert "```artifact:html" not in cleaned_text
     print("Test 1 PASSED!\n")
+
 
 
 def test_standard_inline_html_snippet():

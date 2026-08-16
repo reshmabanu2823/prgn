@@ -195,24 +195,73 @@ def clean_llm_response_text(text: str) -> str:
 
 def extract_artifact_from_response(text: str):
     """
-    Parses ```artifact:html title="..." ... ``` from response text.
+    Parses HTML artifacts from LLM responses.
+    Supports:
+    1. ```artifact:html title="..." ... ```
+    2. <artifact title="..."> ... </artifact>
+    3. Any standalone <!DOCTYPE html> or <html> document inside code blocks or raw output.
     Returns (cleaned_chat_text, artifact_dict or None).
     """
     if not text:
         return text, None
 
     import re
-    pattern = r"```artifact:html(?:\s+title=[\"']?([^\"'\n]+)[\"']?)?\s*\n(.*?)\n```"
-    match = re.search(pattern, text, re.DOTALL)
-    if not match:
+
+    title = None
+    content = None
+    matched_pattern = None
+
+    # Pattern 1: ```artifact:html title="..." ... ```
+    p1 = r"`{3,}artifact:html(?:\s+title=[\"']?([^\"'\n]+)[\"']?)?\s*\n?([\s\S]*?)\n?`{3,}"
+    m1 = re.search(p1, text, re.IGNORECASE)
+    if m1:
+        matched_pattern = p1
+        title = m1.group(1)
+        content = m1.group(2).strip()
+
+    # Pattern 2: <artifact type="html" title="..."> ... </artifact>
+    if not content:
+        p2 = r"<artifact(?:\s+type=[\"']?html[\"']?)?(?:\s+title=[\"']?([^\"'>]+)[\"']?)?>([\s\S]*?)</artifact>"
+        m2 = re.search(p2, text, re.IGNORECASE)
+        if m2:
+            matched_pattern = p2
+            title = m2.group(1)
+            content = m2.group(2).strip()
+
+    # Pattern 3: Any standalone <!DOCTYPE html> or <html...</html> block inside ```html or raw text
+    if not content:
+        p3 = r"(?:`{3,}(?:html)?\s*\n?)?(<!DOCTYPE html[\s\S]*?</html>|<html[\s\S]*?</html>)(?:\n?`{3,})?"
+        m3 = re.search(p3, text, re.IGNORECASE)
+        if m3:
+            full_html = m3.group(1).strip()
+            # Only treat as artifact if it's a genuine standalone page (> 150 chars or has body tag)
+            if len(full_html) > 150 or "<body" in full_html.lower():
+                matched_pattern = p3
+                content = full_html
+
+    if not content:
         return text, None
 
-    title = (match.group(1) or "HTML Web Artifact").strip()
-    content = match.group(2).strip()
+    # Auto-extract title from <title> tag inside HTML content if title not explicitly set
+    if not title:
+        title_match = re.search(r"<title>(.*?)</title>", content, re.IGNORECASE | re.DOTALL)
+        if title_match:
+            title = title_match.group(1).strip()
 
-    cleaned_text = re.sub(pattern, "", text, flags=re.DOTALL).strip()
-    if not cleaned_text:
-        cleaned_text = f"Built your HTML artifact: **{title}** — see the preview panel."
+    if not title:
+        title = "HTML Web Artifact"
+
+    # Clean up chat text by removing the artifact code block
+    cleaned_text = text
+    if matched_pattern:
+        cleaned_text = re.sub(matched_pattern, "", text, flags=re.IGNORECASE).strip()
+
+    # Clean up any leftover empty code fences or artifact header tags
+    cleaned_text = re.sub(r"`{3,}\s*`{3,}", "", cleaned_text).strip()
+    cleaned_text = re.sub(r"```artifact:html[^\n]*\n?", "", cleaned_text, flags=re.IGNORECASE).strip()
+
+    if not cleaned_text or len(cleaned_text) < 5:
+        cleaned_text = f"Built your web app: **{title}** 🚀 — view the live preview panel."
 
     artifact_dict = {
         "type": "artifact",
@@ -220,6 +269,8 @@ def extract_artifact_from_response(text: str):
         "title": title,
         "content": content
     }
+
     return cleaned_text, artifact_dict
+
 
 
