@@ -192,13 +192,12 @@
 }
 
 .auth-logo-centered {
-  width: clamp(230px, 70vw, 300px);
-  max-width: 90%;
+  width: 210px;
+  max-width: 85%;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 18px rgba(212, 175, 55, 0.5));
+  filter: drop-shadow(0 0 16px rgba(212, 175, 55, 0.45));
 }
-
 
 .auth-box h1 {
   color: #ffffff;
