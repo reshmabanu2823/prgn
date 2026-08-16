@@ -2173,11 +2173,18 @@ def login():
         if error:
             return jsonify({'error': error}), 401
         
+        user_row = db.get_user_by_id(user_id) or db.get_user(username)
+        actual_username = user_row.get('username', username) if user_row else username
+        actual_email = user_row.get('email', '') if user_row else ''
+
         return jsonify({
             'user_id': user_id,
             'token': token,
+            'username': actual_username,
+            'email': actual_email,
             'message': 'Login successful'
         }), 200
+
         
     except Exception as e:
         import traceback

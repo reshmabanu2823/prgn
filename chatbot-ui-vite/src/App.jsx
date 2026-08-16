@@ -117,8 +117,13 @@ export default function App() {
     setLoading(false);
   }, []);
 
-  const handleLoginSuccess = (_userId, _token, profile) => {
+  const handleLoginSuccess = (userId, token, profile) => {
     setIsAuthenticated(true);
+    if (token) localStorage.setItem('authToken', token);
+    if (userId) localStorage.setItem('userId', userId);
+    if (profile?.username) localStorage.setItem('authUsername', profile.username);
+    if (profile?.email) localStorage.setItem('authEmail', profile.email);
+
     if (profile) {
       setUserProfile({
         username: profile.username || '',
@@ -126,6 +131,7 @@ export default function App() {
       });
     }
   };
+
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');

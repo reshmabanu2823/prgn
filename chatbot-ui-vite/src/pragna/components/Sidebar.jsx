@@ -272,8 +272,9 @@ ${turns}
   const rawEmail = userProfile?.email || localStorage.getItem('authEmail') || ''
 
   const displayName = rawUsername.trim() || (rawEmail ? rawEmail.split('@')[0] : 'User')
-  const displayEmail = rawEmail.trim() || (rawUsername ? `${rawUsername.toLowerCase().replace(/\s+/g, '')}@gmail.com` : '')
+  const displayEmail = rawEmail.trim()
   const initials = (displayName.slice(0, 1) || 'U').toUpperCase()
+
 
 
   // Icon Helper (identical to mockup)
