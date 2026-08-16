@@ -188,7 +188,25 @@ def get_user_profile_facts(user_id: str) -> Dict[str, str]:
             (user_id,),
         )
         rows = cur.fetchall()
-    return {r[0]: r[1] for r in rows}
+    res = {}
+    for r in rows:
+        try:
+            if isinstance(r, dict):
+                k, v = r.get("fact_key"), r.get("fact_value")
+            elif hasattr(r, "keys"):
+                d = dict(r)
+                k, v = d.get("fact_key"), d.get("fact_value")
+            elif isinstance(r, (tuple, list)):
+                k, v = r[0], r[1]
+            else:
+                continue
+            if k and v:
+                res[str(k)] = str(v)
+        except Exception:
+            continue
+    return res
+
+
 
 
 def get_user_profile_summary(user_id: str) -> str:
@@ -243,7 +261,12 @@ def get_history(user_id: str, max_messages: int = None, use_smart_pruning: bool 
         cur.execute(query, params)
         rows = cur.fetchall()
     
-    messages = [{"role": r[0], "content": r[1]} for r in rows]
+    messages = []
+    for r in rows:
+        if isinstance(r, dict):
+            messages.append({"role": r.get("role", ""), "content": r.get("content", "")})
+        else:
+            messages.append({"role": r[0], "content": r[1]})
     
     if use_smart_pruning and messages:
         pruned_messages, stats = smart_prune_history(
@@ -268,7 +291,13 @@ def get_history(user_id: str, max_messages: int = None, use_smart_pruning: bool 
 def add_message(user_id: str, role: str, content: str, max_messages: int = None) -> Tuple[bool, Dict]:
     """Add a message and intelligently prune old history beyond limits."""
     init_db()
-
+    
+    if max_messages is None:
+        max_messages = config.MAX_HISTORY_MESSAGES
+        
+    param = '?' if db.is_sqlite else '%s'
+    stats = {}
+    
     if role == "user" and content:
         try:
             extracted = update_user_profile_from_message(user_id, content)
@@ -277,10 +306,6 @@ def add_message(user_id: str, role: str, content: str, max_messages: int = None)
         except Exception as exc:
             logger.warning(f"Failed to update user profile memory for {user_id}: {exc}")
     
-    if max_messages is None:
-        max_messages = config.CONVERSATION_HISTORY_SIZE
-    
-    param = '?' if db.is_sqlite else '%s'
     with _get_conn() as conn:
         cur = conn.cursor()
         
@@ -295,7 +320,12 @@ def add_message(user_id: str, role: str, content: str, max_messages: int = None)
         )
         all_rows = cur.fetchall()
         
-        messages_list = [{"role": r[1], "content": r[2]} for r in all_rows]
+        messages_list = []
+        for r in all_rows:
+            if isinstance(r, dict):
+                messages_list.append({"role": r.get("role", ""), "content": r.get("content", "")})
+            else:
+                messages_list.append({"role": r[1], "content": r[2]})
         
         if len(messages_list) > config.MAX_HISTORY_MESSAGES:
             pruned_messages, stats = smart_prune_history(
@@ -308,7 +338,11 @@ def add_message(user_id: str, role: str, content: str, max_messages: int = None)
             ids_to_keep = set()
             msg_content_to_keep = {msg['content'] for msg in pruned_messages}
             
-            for row_id, r_role, r_content in all_rows:
+            for r in all_rows:
+                if isinstance(r, dict):
+                    row_id, r_content = r.get('id'), r.get('content')
+                else:
+                    row_id, r_content = r[0], r[2]
                 if r_content in msg_content_to_keep:
                     ids_to_keep.add(row_id)
             

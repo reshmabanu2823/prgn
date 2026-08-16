@@ -103,8 +103,9 @@ export default function InputBar() {
     chats, setChats, activeChatId, setActiveChatId,
     language, isLoading, setIsLoading, chatMode, setChatMode, inputRef,
     personas, activePersonaId, setActivePersonaId,
-    newChat, setLanguage,
+    newChat, setLanguage, abortControllerRef, stopGeneration,
   } = useContext(ChatContext);
+
 
   const isMobile = useMediaQuery("(max-width: 640px)");
   const activeChat = chats.find((c) => c.id === activeChatId);
@@ -522,65 +523,95 @@ export default function InputBar() {
         const activePersona = personas.find((p) => p.id === activePersonaId);
 
         let sawResponse = false;
-        await sendOrchestratedMessageStream({
-          text: fullText,
-          language: normalizedLanguage,
-          user_id: targetChatId,
-          chatMode,
-          personaSystemPrompt: activePersona?.system_prompt,
-          onChunk: (chunk) => {
-            sawResponse = true;
-            setChats((prev) =>
-              prev.map((c) =>
-                c.id === targetChatId
-                  ? {
-                      ...c,
-                      messages: c.messages.map((m, idx) =>
-                        idx === c.messages.length - 1 ? { ...m, text: (m.text || "") + chunk } : m
-                      ),
-                    }
-                  : c
-              )
-            );
-          },
-          onSources: (sources) => {
-            setChats((prev) =>
-              prev.map((c) =>
-                c.id === targetChatId
-                  ? {
-                      ...c,
-                      messages: c.messages.map((m, idx) =>
-                        idx === c.messages.length - 1 ? { ...m, sources } : m
-                      ),
-                    }
-                  : c
-              )
-            );
-          },
-          onDone: () => {
-            setIsLoading(false);
-            setChats((prev) =>
-              prev.map((c) =>
-                c.id === targetChatId
-                  ? {
-                      ...c,
-                      messages: c.messages.map((m, idx) =>
-                        idx === c.messages.length - 1 ? { ...m, isStreaming: false } : m
-                      ),
-                    }
-                  : c
-              )
-            );
-          },
-        });
+        const controller = new AbortController();
+        if (abortControllerRef) {
+          abortControllerRef.current = controller;
+        }
 
-        if (!sawResponse) {
+        try {
+          await sendOrchestratedMessageStream({
+            text: fullText,
+            language: normalizedLanguage,
+            user_id: targetChatId,
+            chatMode,
+            personaSystemPrompt: activePersona?.system_prompt,
+            signal: controller.signal,
+            onChunk: (chunk) => {
+              sawResponse = true;
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === targetChatId
+                    ? {
+                        ...c,
+                        messages: c.messages.map((m, idx) =>
+                          idx === c.messages.length - 1 ? { ...m, text: (m.text || "") + chunk } : m
+                        ),
+                      }
+                    : c
+                )
+              );
+            },
+            onSources: (sources) => {
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === targetChatId
+                    ? {
+                        ...c,
+                        messages: c.messages.map((m, idx) =>
+                          idx === c.messages.length - 1 ? { ...m, sources } : m
+                        ),
+                      }
+                    : c
+                )
+              );
+            },
+            onDone: () => {
+              setIsLoading(false);
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === targetChatId
+                    ? {
+                        ...c,
+                        messages: c.messages.map((m, idx) =>
+                          idx === c.messages.length - 1 ? { ...m, isStreaming: false } : m
+                        ),
+                      }
+                    : c
+                )
+              );
+            },
+          });
+        } finally {
+          if (abortControllerRef && abortControllerRef.current === controller) {
+            abortControllerRef.current = null;
+          }
+        }
+
+        if (!sawResponse && !controller.signal.aborted) {
           throw new Error("Invalid response from server");
         }
       }
     } catch (err) {
+      if (err.name === "AbortError" || err.message?.includes("aborted")) {
+        console.log("Stream generation stopped by user.");
+        setIsLoading(false);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === targetChatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m, idx) =>
+                    idx === c.messages.length - 1 ? { ...m, isStreaming: false } : m
+                  ),
+                }
+              : c
+          )
+        );
+        return;
+      }
       console.error("API error:", err);
       setIsLoading(false);
+
 
       const errorMessage = "Server error. Please try again.";
       setChats((prev) =>
@@ -897,33 +928,61 @@ export default function InputBar() {
             </svg>
           </button>
 
-          {/* Send button */}
-          <button
-            onClick={send}
-            disabled={!hasContent || isLoading}
-            title="Send"
-            style={{
-              width: '40px',
-              height: '40px',
-              flexShrink: 0,
-              borderRadius: '12px',
-              border: 'none',
-              background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
-              color: 'var(--pragna-bg)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 6px 18px rgba(0,0,0,0.34), 0 0 16px rgba(212,175,55,0.25)',
-              transition: 'all 0.15s ease',
-              opacity: (hasContent && !isLoading) ? 1 : 0.5,
-            }}
-            className="hover:shadow-[0_6px_18px_rgba(0,_0,_0,_0.34),_0_0_26px_rgba(212,_175,_55,_0.45)] active:scale-[0.94]"
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
-            </svg>
-          </button>
+          {/* Send / Stop button */}
+          {isLoading ? (
+            <button
+              onClick={stopGeneration}
+              title="Stop generating"
+              style={{
+                width: '40px',
+                height: '40px',
+                flexShrink: 0,
+                borderRadius: '12px',
+                border: '1px solid rgba(220, 100, 100, 0.4)',
+                background: 'rgba(220, 60, 60, 0.25)',
+                color: '#ff7b7b',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 14px rgba(220, 60, 60, 0.3)',
+                transition: 'all 0.15s ease',
+              }}
+              className="hover:bg-[rgba(220,60,60,0.4)] hover:scale-105 active:scale-95"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="5" y="5" width="14" height="14" rx="2.5" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={send}
+              disabled={!hasContent}
+              title="Send"
+              style={{
+                width: '40px',
+                height: '40px',
+                flexShrink: 0,
+                borderRadius: '12px',
+                border: 'none',
+                background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
+                color: 'var(--pragna-bg)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 18px rgba(0,0,0,0.34), 0 0 16px rgba(212,175,55,0.25)',
+                transition: 'all 0.15s ease',
+                opacity: hasContent ? 1 : 0.5,
+              }}
+              className="hover:shadow-[0_6px_18px_rgba(0,_0,_0,_0.34),_0_0_26px_rgba(212,_175,_55,_0.45)] active:scale-[0.94]"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+              </svg>
+            </button>
+          )}
+
         </div>
         <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11.5px', color: 'var(--pragna-text-muted)', opacity: 0.6 }}>
           Pragna can make mistakes. Verify important information.

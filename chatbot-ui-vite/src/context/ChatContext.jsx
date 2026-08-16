@@ -97,6 +97,15 @@ export function ChatProvider({ children }) {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const abortControllerRef = useRef(null);
+
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+  }, []);
 
   // Sidebar: open by default, persisted across reloads (desktop only — mobile uses its own drawer state)
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -337,6 +346,9 @@ export function ChatProvider({ children }) {
         setChatFont,
         isLoading,
         setIsLoading,
+        abortControllerRef,
+        stopGeneration,
+
         sidebarOpen,
         toggleSidebar,
         user,

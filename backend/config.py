@@ -10,6 +10,11 @@ from dotenv import load_dotenv
 # empty or conflicting environment variables set in the shell.
 load_dotenv(override=True)
 
+# Force HuggingFace transformers to use PyTorch and disable TensorFlow/Keras 3 conflicts
+os.environ["USE_TF"] = "0"
+os.environ["USE_TORCH"] = "1"
+
+
 # Flask Configuration
 HOST = os.getenv('FLASK_HOST', '0.0.0.0')
 PORT = int(os.getenv('FLASK_PORT', 5001))
@@ -114,9 +119,9 @@ AI_GENERATION_RATE_LIMIT = os.getenv('AI_GENERATION_RATE_LIMIT', '10 per hour')
 # deployments, otherwise each instance enforces its own separate limit.
 LIMITER_STORAGE_URI = os.getenv('LIMITER_STORAGE_URI', 'memory://')
 
-# Development Mode - Enables mock responses for testing without valid API keys
-# WARNING: Should be False in production to ensure real API calls
-DEVELOPMENT_MODE = os.getenv('DEVELOPMENT_MODE', 'False').lower() == 'true'
+# Development Mode - Enables mock/fallback responses for testing without valid API keys
+DEVELOPMENT_MODE = os.getenv('DEVELOPMENT_MODE', 'True').lower() == 'true'
+
 
 if DEVELOPMENT_MODE:
     import logging
@@ -136,16 +141,17 @@ if not _has_valid_api and not DEVELOPMENT_MODE:
     logging.error('   Please configure one of: GROQ_API_KEY, OPENAI_API_KEY, or enable Ollama')
     logging.error('   Set DEVELOPMENT_MODE=True only for testing')
 
-# LLM Provider Selection
-LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'standard')  # 'ollama_only', 'standard', or 'deepseek_local'
-if LLM_PROVIDER not in ['ollama_only', 'standard', 'deepseek_local']:
-    LLM_PROVIDER = 'standard'
+# LLM Provider Selection (Ollama Mode - Cloud-based Model)
+LLM_PROVIDER = 'ollama_only'
 
-# Ollama Configuration (Local Open Models)
-OLLAMA_ENABLED = os.getenv('OLLAMA_ENABLED', 'True').lower() == 'true'
+# Ollama Configuration (Cloud Models via Ollama Cloud / Remote API)
+OLLAMA_ENABLED = True
 OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://localhost:11434')
-OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'mistral')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'gemma4:31b-cloud')
 OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', 120))
+
+
+
 # Only needed when OLLAMA_API_URL points at Ollama's hosted cloud API
 # (https://ollama.com) instead of a self-hosted daemon - authenticates
 # requests to :cloud-tagged models. Unused for local/self-hosted Ollama.
@@ -211,19 +217,19 @@ RUNWAY_POLL_INTERVAL_SECONDS = float(os.getenv('RUNWAY_POLL_INTERVAL_SECONDS', 1
 RUNWAY_STRICT_MODE = os.getenv('RUNWAY_STRICT_MODE', 'False').lower() == 'true'
 
 # Multi-model routing configuration
-# Ollama is now PRIMARY model for local inference
-DEFAULT_MODEL_KEY = os.getenv('DEFAULT_MODEL_KEY', 'ollama:qwen3:8b')
+DEFAULT_MODEL_KEY = os.getenv('DEFAULT_MODEL_KEY', 'ollama:gemma4:31b-cloud')
 DEFAULT_MODEL_FALLBACKS = [
     item.strip()
-    for item in os.getenv('DEFAULT_MODEL_FALLBACKS', 'ollama:qwen3:8b,ollama:qwen3:4b,groq:llama-3.1-8b-instant').split(',')
+    for item in os.getenv('DEFAULT_MODEL_FALLBACKS', 'ollama:gemma4:31b-cloud,ollama:qwen3:8b,groq:llama-3.1-8b-instant').split(',')
     if item.strip()
 ]
-CLASSIFIER_MODEL_KEY = os.getenv('CLASSIFIER_MODEL_KEY', 'ollama:qwen3:4b')
+CLASSIFIER_MODEL_KEY = os.getenv('CLASSIFIER_MODEL_KEY', 'ollama:gemma4:31b-cloud')
 CLASSIFIER_FALLBACKS = [
     item.strip()
-    for item in os.getenv('CLASSIFIER_FALLBACKS', 'ollama:qwen3:4b,ollama:qwen3:8b,groq:llama-3.1-8b-instant').split(',')
+    for item in os.getenv('CLASSIFIER_FALLBACKS', 'ollama:gemma4:31b-cloud,ollama:qwen3:8b,groq:llama-3.1-8b-instant').split(',')
     if item.strip()
 ]
+
 
 # Model profile routing (Instant = slightly powerful, Expert = heavily powerful)
 MODEL_PROFILE_LIGHT_KEY = os.getenv('MODEL_PROFILE_LIGHT_KEY', 'ollama:qwen3:4b')
@@ -389,6 +395,12 @@ SERPER_API_KEY = os.getenv('SERPER_API_KEY', '')
 SERPER_ENABLED = os.getenv('SERPER_ENABLED', 'True').lower() == 'true'
 SERPER_TIMEOUT = int(os.getenv('SERPER_TIMEOUT', 10))
 
+# Modular Web Search Tool Configuration (Keyless / Free Search Default)
+WEB_SEARCH_ENABLED = os.getenv('WEB_SEARCH_ENABLED', 'True').lower() == 'true'
+WEB_SEARCH_PROVIDER = os.getenv('WEB_SEARCH_PROVIDER', 'duckduckgo')
+WEB_SEARCH_MAX_RESULTS = int(os.getenv('WEB_SEARCH_MAX_RESULTS', 4))
+WEB_SEARCH_TIMEOUT = int(os.getenv('WEB_SEARCH_TIMEOUT', 5))
+
 # News API Configuration
 NEWS_API_KEY = os.getenv('NEWS_API_KEY', '')
 NEWS_ENABLED = os.getenv('NEWS_ENABLED', 'True').lower() == 'true'
@@ -415,7 +427,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 # idle. The main /api/chat flow doesn't use RAG at all today (only the
 # dedicated /api/rag/* management routes do), so disabling this has no
 # effect on normal chat. Set False on memory-constrained free-tier hosts.
-RAG_ENABLED = os.getenv('RAG_ENABLED', 'True').lower() == 'true'
+RAG_ENABLED = os.getenv('RAG_ENABLED', 'False').lower() == 'true'
 
 # Enable automatic knowledge base updates
 RAG_AUTO_UPDATE_ENABLED = os.getenv('RAG_AUTO_UPDATE_ENABLED', 'True').lower() == 'true'

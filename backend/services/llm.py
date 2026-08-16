@@ -14,94 +14,43 @@ logger = logging.getLogger(__name__)
 def _call_ollama_direct(messages: List[Dict[str, str]]) -> str:
     """
     Call Ollama API directly - OLLAMA-ONLY MODE.
-    No fallbacks, no demo responses.
-    
-    Args:
-        messages: List of message dicts (role, content)
-        
-    Returns:
-        Response text from Ollama
-        
-    Raises:
-        RuntimeError: If Ollama is not reachable or returns error
+    Uses OpenAI-compatible /v1/chat/completions endpoint for local models.
     """
     if not config.OLLAMA_ENABLED:
-        raise RuntimeError(
-            "❌ OLLAMA NOT ENABLED\n"
-            "Set OLLAMA_ENABLED=True in backend/.env\n"
-            "And ensure Ollama is running: ollama run mistral"
-        )
+        raise RuntimeError("Ollama provider is disabled in config")
     
-    ollama_url = config.OLLAMA_API_URL.rstrip('/')
-    endpoint = f"{ollama_url}/api/generate"
-    
-    # Convert messages to prompt format for Ollama
-    prompt = ""
-    for msg in messages:
-        role = msg.get('role', 'user')
-        content = msg.get('content', '')
-        if role == 'system':
-            prompt += f"System: {content}\n"
-        elif role == 'assistant':
-            prompt += f"Assistant: {content}\n"
-        else:
-            prompt += f"User: {content}\n"
-    
-    payload = {
-        "model": config.OLLAMA_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "temperature": 0.7,
-    }
-    
-    headers = {"Content-Type": "application/json"}
-    if config.OLLAMA_API_KEY:
-        headers["Authorization"] = f"Bearer {config.OLLAMA_API_KEY}"
+    primary_model = config.OLLAMA_MODEL or "gemma4:31b-cloud"
 
-    logger.info(f"🚀 Calling Ollama at {endpoint}")
-    logger.info(f"   Model: {config.OLLAMA_MODEL}")
-    logger.info(f"   Prompt length: {len(prompt)} chars")
-
+    
     try:
-        response = requests.post(
-            endpoint,
-            headers=headers,
-            json=payload,
-            timeout=config.OLLAMA_TIMEOUT
-        )
-        response.raise_for_status()
-        data = response.json()
-        result = data.get("response", "").strip()
-        
-        logger.info(f"✅ Ollama response received: {len(result)} chars")
-        return result
-        
-    except requests.exceptions.Timeout:
-        raise RuntimeError(
-            f"❌ OLLAMA TIMEOUT\n"
-            f"Ollama at {ollama_url} did not respond within {config.OLLAMA_TIMEOUT}s\n"
-            f"Ensure Ollama is running: ollama run mistral"
-        )
-    except requests.exceptions.ConnectionError:
-        raise RuntimeError(
-            f"❌ OLLAMA NOT REACHABLE\n"
-            f"Cannot connect to Ollama at {ollama_url}\n"
-            f"1. Start Ollama: ollama run mistral\n"
-            f"2. Verify URL in backend/.env: OLLAMA_API_URL={config.OLLAMA_API_URL}\n"
-            f"3. Check firewall/network"
-        )
-    except requests.exceptions.RequestException as e:
-        raise RuntimeError(
-            f"❌ OLLAMA REQUEST FAILED\n"
-            f"Error: {str(e)}\n"
-            f"URL: {endpoint}\n"
-            f"Model: {config.OLLAMA_MODEL}"
-        )
-    except Exception as e:
-        raise RuntimeError(
-            f"❌ OLLAMA ERROR\n"
-            f"Unexpected error: {str(e)}"
-        )
+        return _request_completion(messages, f"ollama:{primary_model}")
+    except Exception as err:
+        logger.warning(f"Primary model '{primary_model}' error: {err}. Fetching available local Ollama models...")
+        installed_models = []
+        try:
+            res = requests.get(f"{config.OLLAMA_API_URL.rstrip('/')}/api/tags", timeout=5)
+            if res.status_code == 200:
+                tags = res.json().get("models", [])
+                installed_models = [m.get("name") for m in tags if m.get("name")]
+        except Exception:
+            pass
+
+        if not installed_models:
+            installed_models = ["phi:latest", "gemma4:31b-cloud"]
+
+        for fb in installed_models:
+            if fb != primary_model:
+                try:
+                    logger.info(f"🔄 Using available local model: {fb}")
+                    return _request_completion(messages, f"ollama:{fb}")
+                except Exception as fb_err:
+                    logger.warning(f"Fallback model '{fb}' failed: {fb_err}")
+                    continue
+        raise err
+
+
+
+
 
 
 def _call_deepseek_local(messages: List[Dict[str, str]]) -> str:

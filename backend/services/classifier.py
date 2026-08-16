@@ -23,9 +23,18 @@ _CLASSIFIER_PROMPT = (
 
 _FALLBACK_KEYWORDS = {
     "tool": ["calculate", "times", "multiply", "divided", "sum", "product"],
-    "news": ["news", "headlines", "latest", "update", "breaking", "press release"],
-    "realtime": ["current", "today", "now", "right now", "cm of", "price", "score", "live", "won"],
+    "news": [
+        "news", "headlines", "breaking", "press release", "recent events",
+        "today's news", "latest news", "world news"
+    ],
+    "realtime": [
+        "current", "today", "now", "right now", "cm of", "price", "score", "live", "won",
+        "latest", "latest version", "current version", "latest development", "latest developments",
+        "recent research", "current technology", "current technologies", "latest ai",
+        "newest version", "recent update", "recent updates", "what is the latest", "what are the latest"
+    ],
 }
+
 
 _MATH_SYMBOL_PATTERN = re.compile(r"[+\-*/=]")
 _MATH_EXPRESSION_PATTERN = re.compile(r"\d+\s*([+\-*/]\s*\d+)+")

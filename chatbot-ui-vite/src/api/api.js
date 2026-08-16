@@ -112,6 +112,7 @@ export const sendOrchestratedMessageStream = async ({
   user_id,
   chatMode = "general",
   personaSystemPrompt,
+  signal,
   onChunk,
   onSources,
   onDone,
@@ -121,6 +122,7 @@ export const sendOrchestratedMessageStream = async ({
 
   const response = await fetch(`${API_BASE}/api/chat_stream`, {
     method: "POST",
+    signal,
     headers: {
       "Content-Type": "application/json",
       ..._authHeaders(),
@@ -136,9 +138,15 @@ export const sendOrchestratedMessageStream = async ({
     }),
   });
 
+
   if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userId");
+    }
     throw new Error("Server error. Please try again.");
   }
+
 
   await _consumeSSE(response, (event) => {
     if (event.content) {

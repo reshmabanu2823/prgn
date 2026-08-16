@@ -570,7 +570,8 @@ def chat():
     Returns JSON: {"response": "ai response"}
     """
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
+
 
         # Validate input
         if not data or 'message' not in data:
@@ -1789,7 +1790,8 @@ def chat_stream():
     Returns: SSE stream of JSON chunks
     """
     try:
-        data = request.json
+        data = request.get_json(silent=True) or {}
+
         if not data or 'message' not in data:
             return jsonify({'error': 'Message is required'}), 400
 
@@ -1827,7 +1829,10 @@ def chat_stream():
             if sources:
                 yield f"data: {json.dumps({'sources': sources})}\n\n"
 
-            response_text = result.get('response', '')
+            from services.prompt_builder import clean_llm_response_text
+            raw_text = result.get('response', '')
+            response_text = clean_llm_response_text(raw_text)
+
             chunk_size = 200
             for i in range(0, len(response_text), chunk_size):
                 chunk = response_text[i:i + chunk_size]

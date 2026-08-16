@@ -35,8 +35,12 @@ def create_plan(query: str, route: Dict[str, object]) -> Dict[str, object]:
 
     if target == "news":
         payload = fetch_news_context(query)
-        plan["context"] = payload["context"]
-        plan["sources"] = payload["sources"]
+        if not payload.get("context"):
+            logger.info("News context unavailable; falling back to web search")
+            payload = fetch_search_context(query)
+        plan["context"] = payload.get("context")
+        plan["sources"] = payload.get("sources", [])
         return plan
+
 
     return plan

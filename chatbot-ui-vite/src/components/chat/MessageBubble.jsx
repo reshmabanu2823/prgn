@@ -41,7 +41,13 @@ const VoiceIcon = () => (
     <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" />
   </svg>
 );
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
 const ErrorIcon = () => (
+
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d98b7f" strokeWidth="2.2" strokeLinecap="round">
     <path d="M12 8v5M12 16.5v.5" />
     <circle cx="12" cy="12" r="9.2" />
@@ -348,13 +354,18 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState(message.text || "");
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
 
   const copyToClipboard = () => {
+    if (!message.text) return;
     navigator.clipboard?.writeText(message.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
+
 
   const handleThumbsUp = () => {
     setLiked((prev) => !prev);
@@ -581,7 +592,16 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
                   <PencilIcon />
                 </button>
               )}
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                title={copied ? "Copied!" : "Copy request"}
+                className={`${actionBtnBase} ${copied ? "opacity-100 text-accent-400" : "opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]"}`}
+              >
+                {copied ? <CheckIcon /> : <CopyIcon />}
+              </button>
             </div>
+
           </>
         )}
       </div>

@@ -28,9 +28,10 @@ def fetch_search_context(query: str) -> Dict[str, object]:
     """
     Return formatted context and sources for realtime queries.
     
-    Results are cached for 5 minutes to avoid repeated API calls.
+    Uses WebSearchService (DuckDuckGo keyless search default, Serper fallback if configured)
+    and caches results for 5 minutes to avoid repeated external network requests.
     """
-    if not (config.SERPER_ENABLED and config.SERPER_API_KEY):
+    if not getattr(config, "WEB_SEARCH_ENABLED", True):
         return {"context": None, "sources": []}
 
     # ==================== CACHING LOGIC ====================
@@ -46,109 +47,32 @@ def fetch_search_context(query: str) -> Dict[str, object]:
         return cached_result
     # =====================================================
 
-    headers = {
-        "X-API-KEY": config.SERPER_API_KEY,
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "q": prepared_query,
-        "num": _MAX_RESULTS,
-        # Encourage fresher results for live queries.
-        **({"tbs": "qdr:h"} if live_mode else {}),
-    }
+    from services.web_search_service import get_web_search_service
 
-    try:
-        response = requests.post(
-            _SEARCH_URL,
-            headers=headers,
-            json=payload,
-            timeout=config.SERPER_TIMEOUT,
-        )
-        response.raise_for_status()
-        data = response.json()
-    except requests.exceptions.RequestException as exc:
-        logger.error("Serper search failed: %s", exc)
+    search_service = get_web_search_service()
+    search_res = search_service.search(prepared_query)
+
+    context = search_res.get("context")
+    sources = search_res.get("sources", [])
+
+    if not context or not sources:
         return {"context": None, "sources": []}
 
-    cleaned: List[Dict[str, str]] = []
-    organic = data.get("organic", [])
-    answer_box = data.get("answerBox")
-    sports_box = data.get("sportsResults") or data.get("sports") or {}
-    kg = data.get("knowledgeGraph") or {}
-
-    # Prefer explicit sports result payloads when available.
-    if isinstance(sports_box, dict):
-        title = (sports_box.get("title") or sports_box.get("match") or "Live Sports Update").strip()
-        summary_bits = []
-        for key in ("gameSpotlight", "score", "summary", "status", "date"):
-            value = sports_box.get(key)
-            if value:
-                summary_bits.append(str(value).strip())
-        if summary_bits:
-            cleaned.append(
-                {
-                    "title": title,
-                    "snippet": _clean_snippet(" | ".join(summary_bits)),
-                    "link": sports_box.get("link", ""),
-                }
-            )
-
-    # Add knowledge graph top-line for better factual grounding.
-    if isinstance(kg, dict):
-        kg_title = (kg.get("title") or kg.get("type") or "").strip()
-        kg_desc = _clean_snippet(kg.get("description") or "")
-        if kg_title and len(kg_desc) >= _MIN_SNIPPET_LEN:
-            cleaned.append(
-                {
-                    "title": kg_title,
-                    "snippet": kg_desc,
-                    "link": kg.get("website", ""),
-                }
-            )
-
-    if answer_box:
-        cleaned.append(
-            {
-                "title": answer_box.get("title", "Answer"),
-                "snippet": _clean_snippet(answer_box.get("answer") or answer_box.get("snippet", "")),
-                "link": answer_box.get("link", ""),
-            }
-        )
-
-    for item in organic:
-        if len(cleaned) >= _MAX_RESULTS:
-            break
-        snippet = _clean_snippet(item.get("snippet", ""))
-        title = (item.get("title", "") or "Untitled").strip()
-        if len(snippet) < _MIN_SNIPPET_LEN:
-            continue
-        cleaned.append({
-            "title": title,
-            "snippet": snippet,
-            "link": item.get("link", ""),
-        })
-
-    cleaned = cleaned[:_MAX_RESULTS]
-    if not cleaned:
-        return {"context": None, "sources": []}
-
-    bullet_lines = [f"- {entry['title']}: {entry['snippet']}" for entry in cleaned]
-    context = "Current trusted findings:\n" + "\n".join(bullet_lines)
     result = {
         "context": context,
-        "sources": cleaned,
+        "sources": sources,
         "live_mode": live_mode,
         "resolved_query": prepared_query,
     }
     
     # ==================== CACHE STORAGE ====================
-    # Store result in cache
     ttl = _LIVE_SEARCH_CACHE_TTL if live_mode else _SEARCH_CACHE_TTL
     cache.set_cache(cache_key, result, ttl)
     logger.info(f"💾 Search result cached (ttl: {ttl}s)")
     # =====================================================
     
     return result
+
 
 
 def _clean_snippet(text: str) -> str:
