@@ -57,9 +57,26 @@ GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
 
 
+def _get_google_client_id():
+    import os
+    return (os.getenv('GOOGLE_CLIENT_ID') or getattr(config, 'GOOGLE_CLIENT_ID', '')).strip().strip('"').strip("'")
+
+def _get_google_client_secret():
+    import os
+    return (os.getenv('GOOGLE_CLIENT_SECRET') or getattr(config, 'GOOGLE_CLIENT_SECRET', '')).strip().strip('"').strip("'")
+
+def _get_github_client_id():
+    import os
+    return (os.getenv('GITHUB_CLIENT_ID') or getattr(config, 'GITHUB_CLIENT_ID', '')).strip().strip('"').strip("'")
+
+def _get_github_client_secret():
+    import os
+    return (os.getenv('GITHUB_CLIENT_SECRET') or getattr(config, 'GITHUB_CLIENT_SECRET', '')).strip().strip('"').strip("'")
+
+
 def google_authorize_url(redirect_uri, state):
     params = {
-        'client_id': config.GOOGLE_CLIENT_ID,
+        'client_id': _get_google_client_id(),
         'redirect_uri': redirect_uri,
         'response_type': 'code',
         'scope': 'openid email profile',
@@ -76,11 +93,12 @@ def google_fetch_profile(code, redirect_uri):
     message safe to log (callers decide what, if anything, reaches the user)."""
     token_res = requests.post(GOOGLE_TOKEN_URL, data={
         'code': code,
-        'client_id': config.GOOGLE_CLIENT_ID,
-        'client_secret': config.GOOGLE_CLIENT_SECRET,
+        'client_id': _get_google_client_id(),
+        'client_secret': _get_google_client_secret(),
         'redirect_uri': redirect_uri,
         'grant_type': 'authorization_code',
     }, timeout=10)
+
     if token_res.status_code >= 400:
         raise RuntimeError(f"Google token exchange failed ({token_res.status_code}): {token_res.text[:300]}")
 
@@ -124,7 +142,7 @@ GITHUB_EMAILS_URL = 'https://api.github.com/user/emails'
 
 def github_authorize_url(redirect_uri, state):
     params = {
-        'client_id': config.GITHUB_CLIENT_ID,
+        'client_id': _get_github_client_id(),
         'redirect_uri': redirect_uri,
         'scope': 'read:user user:email',
         'state': state,
@@ -138,14 +156,15 @@ def github_fetch_profile(code, redirect_uri):
     token_res = requests.post(
         GITHUB_TOKEN_URL,
         data={
-            'client_id': config.GITHUB_CLIENT_ID,
-            'client_secret': config.GITHUB_CLIENT_SECRET,
+            'client_id': _get_github_client_id(),
+            'client_secret': _get_github_client_secret(),
             'code': code,
             'redirect_uri': redirect_uri,
         },
         headers={'Accept': 'application/json'},
         timeout=10,
     )
+
     if token_res.status_code >= 400:
         raise RuntimeError(f"GitHub token exchange failed ({token_res.status_code}): {token_res.text[:300]}")
 

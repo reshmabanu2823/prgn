@@ -6,9 +6,10 @@ import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-# Use override=True so backend/.env values take precedence over any
-# empty or conflicting environment variables set in the shell.
-load_dotenv(override=True)
+# Use explicit path to backend/.env and override=True so backend/.env values take precedence
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(env_path, override=True)
+
 
 # Force HuggingFace transformers to use PyTorch and disable TensorFlow/Keras 3 conflicts
 os.environ["USE_TF"] = "0"
@@ -42,13 +43,19 @@ BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5001').rstrip('/')
 
 # Google OAuth (console.cloud.google.com -> APIs & Services -> Credentials).
 # Authorized redirect URI to register: {BACKEND_URL}/api/auth/google/callback
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '').strip().strip('"').strip("'")
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '').strip().strip('"').strip("'")
 
 # GitHub OAuth (github.com/settings/developers -> OAuth Apps).
 # Authorization callback URL to register: {BACKEND_URL}/api/auth/github/callback
-GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '')
-GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '')
+GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip().strip('"').strip("'")
+GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip().strip('"').strip("'")
+
+print(f"[CONFIG DEBUG] GOOGLE_CLIENT_ID present: {bool(GOOGLE_CLIENT_ID)}, length: {len(GOOGLE_CLIENT_ID)}")
+print(f"[CONFIG DEBUG] GOOGLE_CLIENT_SECRET present: {bool(GOOGLE_CLIENT_SECRET)}, length: {len(GOOGLE_CLIENT_SECRET)}")
+print(f"[CONFIG DEBUG] GITHUB_CLIENT_ID present: {bool(GITHUB_CLIENT_ID)}, length: {len(GITHUB_CLIENT_ID)}")
+
+
 
 # SMTP for transactional email (password reset, etc). Provider-agnostic:
 # any SMTP host works, so switching providers is an env change, not a code

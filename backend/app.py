@@ -14,8 +14,14 @@ from flask import Flask, request, jsonify, send_from_directory, Response, redire
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(env_path, override=True)
+
 from llm_service import LLMService
 import config
+
+
 from services import memory_db
 from services.cache_service import get_cache_service
 from services.rag_service import get_rag_service, initialize_rag_with_defaults
@@ -2244,10 +2250,14 @@ def _oauth_success_redirect(user_id, token):
 
 @app.route('/api/auth/google/login', methods=['GET'])
 def google_oauth_login():
-    if not config.GOOGLE_CLIENT_ID or not config.GOOGLE_CLIENT_SECRET:
+    client_id = (getattr(config, 'GOOGLE_CLIENT_ID', '') or os.getenv('GOOGLE_CLIENT_ID', '')).strip().strip('"').strip("'")
+    client_secret = (getattr(config, 'GOOGLE_CLIENT_SECRET', '') or os.getenv('GOOGLE_CLIENT_SECRET', '')).strip().strip('"').strip("'")
+    logger.info(f"Google login attempt: client_id_len={len(client_id)}, client_secret_len={len(client_secret)}")
+    if not client_id or not client_secret:
         return jsonify({'error': 'Google login is not configured on this server'}), 503
     state = oauth_service.make_state()
     return redirect(oauth_service.google_authorize_url(_oauth_redirect_uri('google'), state))
+
 
 
 @app.route('/api/auth/google/callback', methods=['GET'])
@@ -2272,10 +2282,14 @@ def google_oauth_callback():
 
 @app.route('/api/auth/github/login', methods=['GET'])
 def github_oauth_login():
-    if not config.GITHUB_CLIENT_ID or not config.GITHUB_CLIENT_SECRET:
+    client_id = (getattr(config, 'GITHUB_CLIENT_ID', '') or os.getenv('GITHUB_CLIENT_ID', '')).strip().strip('"').strip("'")
+    client_secret = (getattr(config, 'GITHUB_CLIENT_SECRET', '') or os.getenv('GITHUB_CLIENT_SECRET', '')).strip().strip('"').strip("'")
+    if not client_id or not client_secret:
         return jsonify({'error': 'GitHub login is not configured on this server'}), 503
     state = oauth_service.make_state()
     return redirect(oauth_service.github_authorize_url(_oauth_redirect_uri('github'), state))
+
+
 
 
 @app.route('/api/auth/github/callback', methods=['GET'])
