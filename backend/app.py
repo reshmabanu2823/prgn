@@ -2230,7 +2230,9 @@ def _resolve_oauth_user(provider, profile):
 
 
 def _oauth_redirect_uri(provider):
-    return f"{config.BACKEND_URL}/api/auth/{provider}/callback"
+    backend_url = (os.getenv('BACKEND_URL') or getattr(config, 'BACKEND_URL', 'http://localhost:5001')).strip().rstrip('/')
+    return f"{backend_url}/api/auth/{provider}/callback"
+
 
 
 def _oauth_error_redirect(reason):
