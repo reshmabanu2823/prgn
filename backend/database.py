@@ -1,5 +1,6 @@
 """Postgres (Supabase) persistence layer with SQLite local fallback support.
 """
+import logging
 import hashlib
 import os
 import secrets
@@ -9,6 +10,9 @@ import bcrypt
 from datetime import datetime, timedelta, timezone
 
 import config
+
+logger = logging.getLogger(__name__)
+
 
 def _row_to_dict(cursor, row):
     if not row:
@@ -99,6 +103,11 @@ class Database:
             self._pool = None
             self._pool_pid = None
             self._pool_lock = threading.Lock()
+            try:
+                self.init_db()
+            except Exception as exc:
+                logger.warning(f"PostgreSQL automatic table initialization deferred or failed: {exc}")
+
 
     def _get_pool(self):
         if self.is_sqlite:
@@ -168,11 +177,18 @@ class Database:
                         id TEXT PRIMARY KEY,
                         username TEXT UNIQUE NOT NULL,
                         email TEXT UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL,
+                        password_hash TEXT,
+                        oauth_provider TEXT,
+                        oauth_id TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
+                for col in ['oauth_provider TEXT', 'oauth_id TEXT']:
+                    try:
+                        c.execute(f'ALTER TABLE users ADD COLUMN {col}')
+                    except Exception:
+                        pass
                 c.execute('''
                     CREATE TABLE IF NOT EXISTS conversations (
                         id TEXT PRIMARY KEY,
@@ -228,7 +244,7 @@ class Database:
                     CREATE TABLE IF NOT EXISTS pending_registrations (
                         email TEXT PRIMARY KEY,
                         username TEXT NOT NULL,
-                        password_hash TEXT NOT NULL,
+                        password_hash TEXT,
                         otp_code TEXT NOT NULL,
                         attempts INTEGER DEFAULT 0,
                         expires_at TIMESTAMP NOT NULL,
@@ -242,11 +258,18 @@ class Database:
                         id VARCHAR(255) PRIMARY KEY,
                         username VARCHAR(255) UNIQUE NOT NULL,
                         email VARCHAR(255) UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL,
+                        password_hash TEXT,
+                        oauth_provider VARCHAR(50),
+                        oauth_id VARCHAR(255),
                         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
                     );
+                    ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+                    ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider VARCHAR(50);
+                    ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id VARCHAR(255);
                     CREATE TABLE IF NOT EXISTS conversations (
+
+
                         id VARCHAR(255) PRIMARY KEY,
                         user_id VARCHAR(255) NOT NULL,
                         title TEXT NOT NULL,
@@ -439,9 +462,10 @@ class Database:
             c = conn.cursor()
             param = '?' if self.is_sqlite else '%s'
             c.execute(f'SELECT * FROM pending_registrations WHERE email = {param}', (email,))
-            row = c.fetchone()
+            row = _row_to_dict(c, c.fetchone())
         finally:
             self.release_connection(conn)
+
         if not row:
             return None
         exp = row.get('expires_at') if isinstance(row, dict) else None
@@ -477,9 +501,10 @@ class Database:
         """Get user by (oauth_provider, oauth_id) pair"""
         conn = self.get_connection()
         try:
-            c = conn.cursor(row_factory=dict_row)
+            c = conn.cursor()
+            param = '?' if self.is_sqlite else '%s'
             c.execute(
-                'SELECT * FROM users WHERE oauth_provider = %s AND oauth_id = %s',
+                f'SELECT * FROM users WHERE oauth_provider = {param} AND oauth_id = {param}',
                 (provider, oauth_id),
             )
             user = c.fetchone()
@@ -494,8 +519,9 @@ class Database:
         TOCTOU gap between checking and reserving the name."""
         candidate = base or 'user'
         suffix = 0
+        param = '?' if self.is_sqlite else '%s'
         while True:
-            cursor.execute('SELECT 1 FROM users WHERE username = %s', (candidate,))
+            cursor.execute(f'SELECT 1 FROM users WHERE username = {param}', (candidate,))
             if not cursor.fetchone():
                 return candidate
             suffix += 1
@@ -511,14 +537,19 @@ class Database:
         try:
             c = conn.cursor()
             final_username = self._unique_username(c, username)
-            c.execute('''
+            param = '?' if self.is_sqlite else '%s'
+            c.execute(f'''
                 INSERT INTO users (id, username, email, password_hash, oauth_provider, oauth_id)
-                VALUES (%s, %s, %s, NULL, %s, %s)
-            ''', (user_id, final_username, email, oauth_provider, oauth_id))
+                VALUES ({param}, {param}, {param}, {param}, {param}, {param})
+            ''', (user_id, final_username, email, '!oauth_no_password', oauth_provider, oauth_id))
             conn.commit()
             return user_id
-        except psycopg.errors.IntegrityError:
-            conn.rollback()
+        except Exception as exc:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            logger.warning(f"create_oauth_user error: {exc}")
             return None
         finally:
             self.release_connection(conn)
@@ -529,14 +560,17 @@ class Database:
         conn = self.get_connection()
         try:
             c = conn.cursor()
+            param = '?' if self.is_sqlite else '%s'
+            updated_at_expr = 'CURRENT_TIMESTAMP' if self.is_sqlite else 'NOW()'
             c.execute(
-                'UPDATE users SET oauth_provider = %s, oauth_id = %s, updated_at = NOW() WHERE id = %s',
+                f'UPDATE users SET oauth_provider = {param}, oauth_id = {param}, updated_at = {updated_at_expr} WHERE id = {param}',
                 (oauth_provider, oauth_id, user_id),
             )
             conn.commit()
             return c.rowcount > 0
         finally:
             self.release_connection(conn)
+
 
     # PASSWORD RESET
     def create_password_reset_token(self, user_id, ttl_minutes=60):
