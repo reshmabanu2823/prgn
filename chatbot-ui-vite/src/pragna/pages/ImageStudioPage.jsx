@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react'
 import { useMediaQuery } from '../hooks/useMediaQuery'
+import { getImageStudioConfig } from '../../api/api'
 
 const ImageStudioPage = ({
   imagePrompt,
@@ -16,11 +18,32 @@ const ImageStudioPage = ({
   onSendToChat,
 }) => {
   const isMobile = useMediaQuery('(max-width: 640px)')
+  const [rateLimit, setRateLimit] = useState(null)
+
+  useEffect(() => {
+    let isMounted = true
+    getImageStudioConfig()
+      .then((data) => {
+        if (isMounted && data?.rate_limit) {
+          setRateLimit(data.rate_limit)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 16px' : '40px', animation: 'fadeUp 0.4s ease', height: '100%' }}>
       <h1 style={{ margin: '0 0 6px 0', fontSize: '28px', fontWeight: 700, color: 'var(--pragna-text)' }}>Image Studio</h1>
-      <p style={{ margin: '0 0 26px 0', fontSize: '14.5px', color: 'var(--pragna-text-muted)' }}>Generate production-quality AI images with style and quality controls.</p>
+      <p style={{ margin: rateLimit ? '0 0 4px 0' : '0 0 26px 0', fontSize: '14.5px', color: 'var(--pragna-text-muted)' }}>Generate production-quality AI images with style and quality controls.</p>
+      {rateLimit && (
+        <p style={{ margin: '0 0 24px 0', fontSize: '13px', color: 'var(--pragna-text-muted)', opacity: 0.85 }}>
+          Limit: {rateLimit} per account.
+        </p>
+      )}
+
 
       <div style={{ maxWidth: '760px', padding: '24px', borderRadius: '20px', background: 'var(--pragna-surface)', border: '1px solid rgba(212,175,55,0.18)', backdropFilter: 'blur(8px)', boxShadow: '0 12px 28px rgba(0,0,0,0.42)' }}>
         
@@ -148,6 +171,19 @@ const ImageStudioPage = ({
                 Model: {generatedImage.model || 'DALL-E'} | Style: {imageStyle}
               </span>
             </div>
+
+            {generatedImage?.effective_prompt && (
+              <div style={{ marginTop: '4px', padding: '12px 14px', borderRadius: '10px', background: 'var(--pragna-surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--pragna-border)', fontSize: '13px' }}>
+                <details style={{ cursor: 'pointer' }}>
+                  <summary style={{ fontWeight: 600, color: 'var(--pragna-gold-soft)', userSelect: 'none', outline: 'none' }}>
+                    Prompt used {generatedImage.effective_prompt !== imagePrompt ? '(LLM Enhanced)' : ''}
+                  </summary>
+                  <p style={{ marginTop: '8px', marginBottom: 0, lineHeight: 1.55, color: 'var(--pragna-text)', whiteSpace: 'pre-wrap', fontSize: '12.5px', opacity: 0.9 }}>
+                    {generatedImage.effective_prompt}
+                  </p>
+                </details>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -350,7 +350,18 @@ export const summarizeChat = async (messages, language) => {
   return data;
 };
 
+export const getImageStudioConfig = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/images/config`);
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+};
+
 export const generateAIImage = async ({ prompt, style = "cinematic", quality = "hd", size = "1024x1024" }) => {
+
   let response;
   try {
     response = await fetch(`${API_BASE}/api/images/generate`, {

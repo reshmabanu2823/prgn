@@ -339,7 +339,7 @@ def _build_image_generation_prompt(user_prompt: str, style: str, quality: str) -
             rewritten = _clean_rewritten_image_prompt(raw_rewritten)
             if rewritten and len(rewritten) >= 10:
                 logger.info(
-                    "[Image Prompt Rewriter] Original: '%s' -> Effective: '%s' (style=%s, quality=%s)",
+                    "IMAGE PROMPT REWRITE: original='%s' effective='%s' (style=%s, quality=%s)",
                     user_clean, rewritten, style, quality
                 )
                 return rewritten
@@ -358,7 +358,7 @@ def _build_image_generation_prompt(user_prompt: str, style: str, quality: str) -
             rewritten = _clean_rewritten_image_prompt(resp)
             if rewritten and len(rewritten) >= 10:
                 logger.info(
-                    "[Image Prompt Rewriter] Original: '%s' -> Effective: '%s' (style=%s, quality=%s)",
+                    "IMAGE PROMPT REWRITE: original='%s' effective='%s' (style=%s, quality=%s)",
                     user_clean, rewritten, style, quality
                 )
                 return rewritten
@@ -370,10 +370,11 @@ def _build_image_generation_prompt(user_prompt: str, style: str, quality: str) -
 
     fallback_prompt = _build_image_generation_prompt_fallback(user_clean, style_hint, detail_hint)
     logger.info(
-        "[Image Prompt Template Fallback] Original: '%s' -> Effective: '%s' (style=%s, quality=%s)",
+        "IMAGE PROMPT FALLBACK (TEMPLATE): original='%s' effective='%s' (style=%s, quality=%s)",
         user_clean, fallback_prompt, style, quality
     )
     return fallback_prompt
+
 
 
 
@@ -614,6 +615,7 @@ PUBLIC_ENDPOINTS = [
     '/api/auth/register',
     '/api/auth/register/request-otp',
     '/api/auth/register/verify-otp',
+    '/api/images/config',
 ]
 
 @app.before_request
@@ -1217,9 +1219,21 @@ def world_monitor_config():
     })
 
 
+@app.route('/api/images/config', methods=['GET'])
+def image_studio_config():
+    """Expose Image Studio configuration and rate limit metadata to the frontend."""
+    return jsonify({
+        'status': 'success',
+        'rate_limit': config.AI_GENERATION_RATE_LIMIT,
+        'enabled': config.IMAGE_GENERATION_ENABLED,
+        'provider': config.IMAGE_PROVIDER,
+    })
+
+
 @app.route('/api/images/generate', methods=['POST'])
 @limiter.limit(config.AI_GENERATION_RATE_LIMIT)
 def generate_image():
+
     """Generate an AI image using configured provider (Runway/OpenAI/fallback)."""
     try:
         data = request.json or {}
