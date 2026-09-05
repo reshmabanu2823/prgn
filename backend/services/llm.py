@@ -25,28 +25,27 @@ def _call_ollama_direct(messages: List[Dict[str, str]]) -> str:
     try:
         return _request_completion(messages, f"ollama:{primary_model}")
     except Exception as err:
-        logger.warning(f"Primary model '{primary_model}' error: {err}. Fetching available local Ollama models...")
+        logger.warning(f"Primary model '{primary_model}' error: {err}. Checking if Ollama is running...")
         installed_models = []
         try:
-            res = requests.get(f"{config.OLLAMA_API_URL.rstrip('/')}/api/tags", timeout=5)
+            res = requests.get(f"{config.OLLAMA_API_URL.rstrip('/')}/api/tags", timeout=2)
             if res.status_code == 200:
                 tags = res.json().get("models", [])
                 installed_models = [m.get("name") for m in tags if m.get("name")]
         except Exception:
-            pass
-
-        if not installed_models:
-            installed_models = ["phi:latest", "gemma4:31b-cloud"]
+            # Ollama server is completely offline / unreachable - fail fast
+            raise err
 
         for fb in installed_models:
             if fb != primary_model:
                 try:
-                    logger.info(f"🔄 Using available local model: {fb}")
+                    logger.info(f"Using available local model: {fb}")
                     return _request_completion(messages, f"ollama:{fb}")
                 except Exception as fb_err:
                     logger.warning(f"Fallback model '{fb}' failed: {fb_err}")
                     continue
         raise err
+
 
 
 
