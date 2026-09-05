@@ -297,6 +297,29 @@ def _build_upload_analysis_prompt(user_message, payload):
     )
 
 
+def _clean_rewritten_image_prompt(raw_text: str) -> str:
+    if not raw_text:
+        return ""
+    cleaned = raw_text.strip().strip('"').strip("'")
+    import re
+    cleaned = re.sub(
+        r'^(here is (the|your|a) (rewritten )?(image )?prompt:?|rewritten prompt:?|prompt:)\s*',
+        '',
+        cleaned,
+        flags=re.IGNORECASE,
+    ).strip()
+    return cleaned.strip('"').strip("'")
+
+
+def _build_image_generation_prompt_fallback(user_prompt: str, style_hint: str, detail_hint: str) -> str:
+    return (
+        f"{user_prompt.strip()}. "
+        f"Render style guidance: {style_hint}. "
+        f"Quality target: {detail_hint}. "
+        "Requirements: keep subject accurate to prompt, avoid unwanted text artifacts, maintain coherent anatomy and perspective."
+    )
+
+
 def _build_image_generation_prompt(user_prompt: str, style: str, quality: str) -> str:
     style_map = {
         'photo': 'photorealistic, natural lighting, realistic textures, high-detail camera-like output',
@@ -307,12 +330,52 @@ def _build_image_generation_prompt(user_prompt: str, style: str, quality: str) -
     }
     style_hint = style_map.get(style, style_map['cinematic'])
     detail_hint = 'ultra detailed' if quality == 'hd' else 'high quality'
-    return (
-        f"{user_prompt.strip()}. "
-        f"Render style guidance: {style_hint}. "
-        f"Quality target: {detail_hint}. "
-        "Requirements: keep subject accurate to prompt, avoid unwanted text artifacts, maintain coherent anatomy and perspective."
+    user_clean = user_prompt.strip()
+
+    # Attempt LLM-based prompt rewrite
+    try:
+        if 'llm' in globals() and hasattr(llm, 'rewrite_image_prompt'):
+            raw_rewritten = llm.rewrite_image_prompt(user_clean, style_hint, detail_hint)
+            rewritten = _clean_rewritten_image_prompt(raw_rewritten)
+            if rewritten and len(rewritten) >= 10:
+                logger.info(
+                    "[Image Prompt Rewriter] Original: '%s' -> Effective: '%s' (style=%s, quality=%s)",
+                    user_clean, rewritten, style, quality
+                )
+                return rewritten
+            else:
+                logger.warning("[Image Prompt Rewriter] LLM returned empty/short result; using fallback")
+        elif 'llm' in globals() and hasattr(llm, 'get_response'):
+            instruction = (
+                "Rewrite this into a detailed prompt for an image generation model. "
+                "Keep the core subject and intent exactly as given. "
+                "Add specific visual detail: lighting, composition, mood, texture, color. "
+                f"Style: {style_hint}. Quality target: {detail_hint}. "
+                "Do not add commentary, output only the rewritten prompt. "
+                f"Original: {user_clean}"
+            )
+            resp, _ = llm.get_response(instruction, user_id='__image_prompt_rewriter__', chat_mode='general')
+            rewritten = _clean_rewritten_image_prompt(resp)
+            if rewritten and len(rewritten) >= 10:
+                logger.info(
+                    "[Image Prompt Rewriter] Original: '%s' -> Effective: '%s' (style=%s, quality=%s)",
+                    user_clean, rewritten, style, quality
+                )
+                return rewritten
+    except Exception as exc:
+        logger.warning(
+            "[Image Prompt Rewriter] LLM rewrite failed (%s); using template fallback for prompt '%s'",
+            exc, user_clean
+        )
+
+    fallback_prompt = _build_image_generation_prompt_fallback(user_clean, style_hint, detail_hint)
+    logger.info(
+        "[Image Prompt Template Fallback] Original: '%s' -> Effective: '%s' (style=%s, quality=%s)",
+        user_clean, fallback_prompt, style, quality
     )
+    return fallback_prompt
+
+
 
 
 def _extract_first_image_url(payload):

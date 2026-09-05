@@ -403,6 +403,58 @@ class LLMService:
             return []
         return [text[i:i + size] for i in range(0, len(text), size)]
 
+    def rewrite_image_prompt(
+        self,
+        user_prompt: str,
+        style_hint: str,
+        detail_hint: str = "high quality",
+    ) -> str:
+        """
+        Rewrite a user's prompt into a vivid, detailed image-generation prompt.
+        Uses a lightweight/fast LLM completion for minimal latency (<1-2s).
+        """
+        prompt_clean = user_prompt.strip()
+        system_instruction = (
+            "You are an expert AI image prompt engineer. "
+            "Your task is to rewrite the user's input into a detailed, vivid prompt for an image generation model. "
+            "Keep the core subject, concept, and intent exactly as given. "
+            "Add specific visual details: lighting, composition, mood, texture, color palette, and perspective. "
+            f"Incorporate the required visual style: {style_hint}. "
+            f"Target quality: {detail_hint}. "
+            "Do NOT add any conversational filler, preamble, explanation, or quotes. "
+            "Output ONLY the final rewritten image generation prompt."
+        )
+        user_message = f"Original prompt: {prompt_clean}"
+
+        messages = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": user_message},
+        ]
+
+        model_override = getattr(config, 'MODEL_PROFILE_LIGHT_KEY', None)
+        fallbacks = getattr(config, 'MODEL_PROFILE_LIGHT_FALLBACKS', None)
+        response = generate_completion(
+            messages,
+            model_override=model_override,
+            fallback_models=fallbacks,
+            chat_mode="creative_writing",
+        )
+        response_clean = (response or "").strip()
+        if not response_clean or any(
+            err_marker in response_clean
+            for err_marker in [
+                "OLLAMA ERROR",
+                "OLLAMA FAILED",
+                "API KEY NOT CONFIGURED",
+                "401 UNAUTHORIZED",
+                "Sorry, the AI service",
+                "inference failed",
+            ]
+        ):
+            raise RuntimeError(f"LLM rewrite returned error response: {response_clean[:100]}")
+        return response_clean
+
+
     @staticmethod
     def _can_run_without_groq(model_override: Optional[str]) -> bool:
         """Allow local-only operation when Ollama or DeepSeek local is selected."""
@@ -416,3 +468,4 @@ class LLMService:
         if not model_override:
             return False
         return model_override.strip().lower().startswith("ollama:") and config.OLLAMA_ENABLED
+
