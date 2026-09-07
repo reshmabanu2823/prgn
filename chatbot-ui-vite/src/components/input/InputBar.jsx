@@ -4,6 +4,16 @@ import { generateAIImage, generateDocument, sendOrchestratedMessage, sendOrchest
 import { normalizeLanguageCode, SUPPORTED_LANGUAGE_OPTIONS } from "../../utils/language";
 import LanguageSelector from "./LanguageSelector";
 import { useMediaQuery } from "../../pragna/hooks/useMediaQuery";
+import {
+  PlusIcon,
+  MicIcon,
+  MicOffIcon,
+  SendIcon,
+  StopIcon,
+  ThinkIcon,
+  FileTextIcon,
+  CloseIcon,
+} from "../icons/PragnaIcon";
 
 // BCP-47 tags for SpeechRecognition
 const LANG_TAG = {
@@ -863,10 +873,12 @@ export default function InputBar() {
                 {att.type === "image" && att.previewUrl ? (
                   <img src={att.previewUrl} alt={att.name} style={{ width: '20px', height: '20px', objectFit: 'cover', borderRadius: '4px' }} />
                 ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pragna-text-muted)" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <FileTextIcon size={13} color="var(--pragna-text-muted)" />
                 )}
                 <span style={{ color: '#d8cbb0', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.name}</span>
-                <button onClick={() => removeAttachment(i)} style={{ border: 'none', background: 'transparent', color: '#ff6b6b', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                <button onClick={() => removeAttachment(i)} style={{ border: 'none', background: 'transparent', color: '#ff6b6b', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }} title="Remove">
+                  <CloseIcon size={12} />
+                </button>
               </div>
             ))}
           </div>
@@ -956,9 +968,7 @@ export default function InputBar() {
                   }}
                   className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
                 >
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                    <path d="M12 5v14M5 12h14"></path>
-                  </svg>
+                  <PlusIcon size={17} strokeWidth={2.2} />
                 </button>
 
                 {attachMenuOpen && (
@@ -1033,10 +1043,7 @@ export default function InputBar() {
                 }}
                 className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"></path>
-                </svg>
+                {recording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
               </button>
 
               {/* Extended Thinking Toggle */}
@@ -1062,10 +1069,7 @@ export default function InputBar() {
                 }}
                 className="hover:text-[var(--pragna-gold-soft)] hover:border-[rgba(212,175,55,0.3)] hover:bg-[rgba(212,175,55,0.08)]"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
-                  <path d="M9 21h6" />
-                </svg>
+                <ThinkIcon size={13} />
                 <span>Think</span>
               </button>
             </div>
@@ -1092,9 +1096,7 @@ export default function InputBar() {
                 }}
                 className="hover:bg-[rgba(220,60,60,0.4)] hover:scale-105 active:scale-95"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="5" y="5" width="14" height="14" rx="2.5" />
-                </svg>
+                <StopIcon size={15} />
               </button>
             ) : (
               <button
@@ -1119,9 +1121,7 @@ export default function InputBar() {
                 }}
                 className="hover:shadow-[0_6px_18px_rgba(0,_0,_0,_0.34),_0_0_26px_rgba(212,_175,_55,_0.45)] active:scale-[0.94]"
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
-                </svg>
+                <SendIcon size={17} strokeWidth={2.2} />
               </button>
             )}
           </div>

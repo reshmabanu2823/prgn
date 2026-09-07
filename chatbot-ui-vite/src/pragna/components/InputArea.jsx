@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, Hash, Search, Sparkles } from 'lucide-react'
+import { SendIcon, ThinkIcon, SearchIcon, SparklesIcon } from './PragnaIcon'
 import { motion } from 'framer-motion'
 
 const InputArea = () => {
@@ -29,7 +29,7 @@ const InputArea = () => {
               }
             `}
           >
-            <Hash size={16} />
+            <ThinkIcon size={16} />
           </button>
           <button
             onClick={() => setSearchEnabled(!searchEnabled)}
@@ -41,24 +41,24 @@ const InputArea = () => {
               }
             `}
           >
-            <Search size={16} />
+            <SearchIcon size={16} />
           </button>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="p-1.5 bg-accent-600 text-white rounded-lg shadow-sm hover:bg-accent-700 transition-colors"
           >
-            <Send size={16} />
+            <SendIcon size={16} />
           </motion.button>
         </div>
       </div>
       
       <div className="flex items-center justify-between mt-2 text-xs text-gray-400 px-1">
         <div className="flex gap-3">
-          {deepThink && <span className="flex items-center gap-1"><Hash size={10} /> DeepThink active</span>}
-          {searchEnabled && <span className="flex items-center gap-1"><Search size={10} /> Web search</span>}
+          {deepThink && <span className="flex items-center gap-1"><ThinkIcon size={10} /> DeepThink active</span>}
+          {searchEnabled && <span className="flex items-center gap-1"><SearchIcon size={10} /> Web search</span>}
         </div>
-        <span className="flex items-center gap-1"><Sparkles size={10} /> 0 credits</span>
+        <span className="flex items-center gap-1"><SparklesIcon size={10} /> 0 credits</span>
       </div>
     </div>
   )

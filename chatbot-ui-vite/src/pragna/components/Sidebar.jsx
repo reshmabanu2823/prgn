@@ -1,5 +1,22 @@
 import { useState, useRef, useEffect, useContext } from 'react'
-import { Folder, FolderPlus, MoreVertical, Edit2, Trash2, PanelLeftClose, ChevronDown } from 'lucide-react'
+import {
+  PlusIcon,
+  ChatsIcon,
+  ModesIcon,
+  ImagesIcon,
+  GptsIcon,
+  StarredIcon,
+  SearchIcon,
+  SettingsIcon,
+  LogoutIcon,
+  PanelCollapseIcon,
+  ChevronDownIcon,
+  FolderIcon,
+  FolderPlusIcon,
+  MoreVerticalIcon,
+  EditIcon,
+  TrashIcon,
+} from './PragnaIcon'
 import pragnaLogo from '../../assets/pragna-logo-full.png'
 import ChatManagementAPI from '../../api/chatManagement'
 import RecentItem from './RecentItem'
@@ -332,72 +349,29 @@ ${turns}
 
 
 
-  // Icon Helper (identical to mockup)
-  const icon = (paths, extra) => {
-    return (
-      <svg
-        width="17"
-        height="17"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {paths.map((d, i) => (
-          <path d={d} key={i} />
-        ))}
-        {extra || null}
-      </svg>
-    )
-  }
-
   const navIcon = (name) => {
-    const c = ({ key, ...props }) => <circle key={key || 'c'} {...props} />
-    const r = ({ key, ...props }) => <rect key={key || ('r' + (props.x || '') + (props.y || ''))} {...props} />
     switch (name) {
       case 'chats':
-        return icon(['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'])
-      case 'explore':
-        return icon(['M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z'], c({ cx: 12, cy: 12, r: 10 }))
+        return <ChatsIcon size={18} />
       case 'modes':
-        return icon(['M4 6h16', 'M4 12h16', 'M4 18h16'], [c({ cx: 8, cy: 6, r: 2, key: 'c1' }), c({ cx: 16, cy: 12, r: 2, key: 'c2' }), c({ cx: 10, cy: 18, r: 2, key: 'c3' })])
+        return <ModesIcon size={18} />
       case 'images':
-        return icon(['M21 15l-5-5L5 21'], [r({ x: 3, y: 3, width: 18, height: 18, rx: 2, key: 'r' }), c({ cx: 8.5, cy: 8.5, r: 1.5, key: 'c' })])
-      case 'projects':
-        return icon([], [r({ x: 3, y: 3, width: 7, height: 7, rx: 1, key: 'r1' }), r({ x: 14, y: 3, width: 7, height: 7, rx: 1, key: 'r2' }), r({ x: 3, y: 14, width: 7, height: 7, rx: 1, key: 'r3' }), r({ x: 14, y: 14, width: 7, height: 7, rx: 1, key: 'r4' })])
+        return <ImagesIcon size={18} />
       case 'gpts':
-        return icon(['M13 2L3 14h9l-1 8 10-12h-9l1-8z'])
+        return <GptsIcon size={18} />
       case 'starred':
-        return icon(['M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'])
-      case 'compare':
-        return icon([], [r({ x: 3, y: 4, width: 8, height: 16, rx: 1.5, key: 'r1' }), r({ x: 13, y: 4, width: 8, height: 16, rx: 1.5, key: 'r2' })])
-      case 'agent':
-        return icon(['M4 17l6-5-6-5', 'M12 19h8'])
+        return <StarredIcon size={18} />
       default:
         return null
     }
   }
 
   const gearIcon = (name) => {
-    const c = (props) => <circle key="c" {...props} />
-    const r = (props) => <rect key="r" {...props} />
     switch (name) {
       case 'gear':
-        return icon(['M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'], c({ cx: 12, cy: 12, r: 3 }))
-      case 'globe':
-        return icon(['M2 12h20', 'M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'], c({ cx: 12, cy: 12, r: 10 }))
-      case 'help':
-        return icon(['M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4', 'M12 17.5v.1'], c({ cx: 12, cy: 12, r: 9.2 }))
-      case 'list':
-        return icon(['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'])
-      case 'download':
-        return icon(['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'])
-      case 'info':
-        return icon(['M12 16v-4M12 8h.01'], c({ cx: 12, cy: 12, r: 9.2 }))
+        return <SettingsIcon size={17} />
       case 'logout':
-        return icon(['M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4', 'M16 17l5-5-5-5', 'M21 12H9'])
+        return <LogoutIcon size={17} />
       default:
         return null
     }
@@ -450,7 +424,7 @@ ${turns}
             style={{ padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
-            <PanelLeftClose size={18} />
+            <PanelCollapseIcon size={18} />
           </button>
         ) : (
           <button
@@ -460,7 +434,7 @@ ${turns}
             style={{ padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
-            <PanelLeftClose size={18} />
+            <PanelCollapseIcon size={18} />
           </button>
         )}
       </div>
@@ -491,9 +465,7 @@ ${turns}
           }}
           className="hover:border-accent-500/55 hover:shadow-premium-md hover:from-accent-500/[.26] hover:to-accent-700/[.16] active:scale-[0.98]"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14"></path>
-          </svg>
+          <PlusIcon size={15} strokeWidth={2.4} />
           New chat
         </button>
       </div>
@@ -756,7 +728,7 @@ ${turns}
                     }}
                     className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
                   >
-                    <FolderPlus size={14} />
+                    <FolderPlusIcon size={14} />
                     <span>New Folder</span>
                   </button>
                 )}
@@ -814,7 +786,7 @@ ${turns}
                         className="hover:bg-[var(--pragna-surface-2)]"
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '1px', color: 'var(--pragna-text-muted)' }}>
-                          <ChevronDown
+                          <ChevronDownIcon
                             size={12}
                             style={{
                               transform: collapsedSections.has(folder.id) ? 'rotate(-90deg)' : 'rotate(0deg)',
@@ -822,7 +794,7 @@ ${turns}
                               flexShrink: 0,
                             }}
                           />
-                          <Folder size={13} />
+                          <FolderIcon size={13} />
                           <span>{folder.name.toUpperCase()}</span>
                           <span style={{ color: '#6b6152' }}>({folderChats.length})</span>
                         </div>
@@ -835,7 +807,7 @@ ${turns}
                           style={{ padding: '2px', borderRadius: '4px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex' }}
                           aria-label={`Menu for ${folder.name}`}
                         >
-                          <MoreVertical size={13} />
+                          <MoreVerticalIcon size={13} />
                         </button>
                         {folderMenuOpenId === folder.id && (
                           <>
@@ -864,7 +836,7 @@ ${turns}
                                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '7px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13px', cursor: 'pointer', textAlign: 'left' }}
                                 className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
                               >
-                                <Edit2 size={14} />
+                                <EditIcon size={14} />
                                 <span>Rename</span>
                               </button>
                               <button
@@ -877,7 +849,7 @@ ${turns}
                                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: '7px', border: 'none', background: 'transparent', color: '#d98b7f', fontSize: '13px', cursor: 'pointer', textAlign: 'left' }}
                                 className="hover:bg-[#301614]"
                               >
-                                <Trash2 size={14} />
+                                <TrashIcon size={14} />
                                 <span>Delete</span>
                               </button>
                             </div>
@@ -934,7 +906,7 @@ ${turns}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', color: 'var(--pragna-text-muted)', padding: '4px 14px', margin: '0 0 6px 0', cursor: 'pointer', borderRadius: '6px' }}
                   className="hover:bg-[var(--pragna-surface-2)]"
                 >
-                  <ChevronDown
+                  <ChevronDownIcon
                     size={12}
                     style={{
                       transform: collapsedSections.has('recents') ? 'rotate(-90deg)' : 'rotate(0deg)',

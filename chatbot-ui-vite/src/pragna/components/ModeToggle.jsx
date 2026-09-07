@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Zap, Brain } from 'lucide-react'
+import { ZapIcon, ThinkIcon } from './PragnaIcon'
 
 const ModeToggle = () => {
   const [mode, setMode] = useState(() => {
@@ -26,7 +26,7 @@ const ModeToggle = () => {
           }
         `}
       >
-        <Zap size={14} />
+        <ZapIcon size={14} />
         <span>Pragna Basic</span>
       </button>
       <button
@@ -40,7 +40,7 @@ const ModeToggle = () => {
           }
         `}
       >
-        <Brain size={14} />
+        <ThinkIcon size={14} />
         <span>Pragna Pro</span>
       </button>
     </div>

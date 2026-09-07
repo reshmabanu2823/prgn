@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { EyeIcon, EyeOffIcon } from "../icons/PragnaIcon";
 
 // Password <input> with a show/hide toggle. Renders a wrapper div in place of
 // the bare input, so it drops into flex-column forms (auth.css's
@@ -45,8 +45,7 @@ export default function PasswordInput({
         }}
         className="hover:text-[var(--pragna-gold)] opacity-90 hover:opacity-100"
       >
-        {visible ? <EyeOff size={17} /> : <Eye size={17} />}
-
+        {visible ? <EyeOffIcon size={17} /> : <EyeIcon size={17} />}
       </button>
     </div>
   );

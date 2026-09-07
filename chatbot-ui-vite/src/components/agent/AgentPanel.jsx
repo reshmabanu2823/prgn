@@ -1,55 +1,41 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
-  Bot, Search, Hammer, Bug, BookOpen, Sparkles,
-  Brain, Wrench, Upload, AlertTriangle, CheckCircle2, XCircle,
-  Paperclip, Square, Trash2, ChevronUp, ChevronDown,
-} from 'lucide-react'
+  BotIcon, SearchIcon, HammerIcon, BugIcon, BookOpenIcon, SparklesIcon,
+  ThinkIcon, WrenchIcon, UploadIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon,
+  PaperclipIcon, StopIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon,
+  ZapIcon, PlayIcon,
+} from '../icons/PragnaIcon'
 import { runAgentStream, resumeAgentStream } from '../../api/api'
 
 const MODES = [
-  { id: 'general',     label: 'General',     icon: Bot,      desc: 'General coding assistant' },
-  { id: 'code_review', label: 'Code Review',  icon: Search,   desc: 'Bugs, security, style analysis' },
-  { id: 'app_builder', label: 'App Builder',  icon: Hammer,   desc: 'Build complete apps step by step' },
-  { id: 'debug',       label: 'Debug',        icon: Bug,      desc: 'Find and fix bugs systematically' },
-  { id: 'explain',     label: 'Explain',      icon: BookOpen, desc: 'Understand code and concepts' },
-  { id: 'refactor',    label: 'Refactor',     icon: Sparkles, desc: 'Clean up and improve code' },
+  { id: 'general',     label: 'General',     icon: BotIcon,         desc: 'General coding assistant' },
+  { id: 'code_review', label: 'Code Review',  icon: SearchIcon,      desc: 'Bugs, security, style analysis' },
+  { id: 'app_builder', label: 'App Builder',  icon: HammerIcon,      desc: 'Build complete apps step by step' },
+  { id: 'debug',       label: 'Debug',        icon: BugIcon,         desc: 'Find and fix bugs systematically' },
+  { id: 'explain',     label: 'Explain',      icon: BookOpenIcon,    desc: 'Understand code and concepts' },
+  { id: 'refactor',    label: 'Refactor',     icon: SparklesIcon,    desc: 'Clean up and improve code' },
 ]
 
 // Event stream palette: cards sit on the gold/dark surface (`var(--pragna-surface)`),
 // only the border/label accent carries the semantic color (thinking = gold,
 // tool activity = green, needs-attention = amber, error = red).
 const EVENT_COLORS = {
-  thought:     { bg: 'var(--pragna-surface)', border: 'rgba(212,175,55,0.4)',  label: 'Thinking',        labelColor: 'var(--pragna-gold-soft)', Icon: Brain },
-  tool_call:   { bg: 'var(--pragna-surface)', border: 'rgba(52,211,153,0.4)',  label: 'Tool Call',       labelColor: '#34d399', Icon: Wrench },
-  tool_result: { bg: 'var(--pragna-surface)', border: 'rgba(251,191,36,0.35)', label: 'Result',          labelColor: '#fbbf24', Icon: Upload },
-  confirm_required: { bg: 'var(--pragna-surface)', border: 'rgba(251,191,36,0.5)', label: 'Approval needed', labelColor: '#fbbf24', Icon: AlertTriangle },
-  done:        { bg: 'var(--pragna-surface)', border: 'rgba(52,211,153,0.4)',  label: 'Done',            labelColor: '#6ee7b7', Icon: CheckCircle2 },
-  error:       { bg: 'var(--pragna-surface)', border: 'rgba(248,113,113,0.4)', label: 'Error',           labelColor: '#fca5a5', Icon: XCircle },
+  thought:     { bg: 'var(--pragna-surface)', border: 'rgba(212,175,55,0.4)',  label: 'Thinking',        labelColor: 'var(--pragna-gold-soft)', Icon: ThinkIcon },
+  tool_call:   { bg: 'var(--pragna-surface)', border: 'rgba(52,211,153,0.4)',  label: 'Tool Call',       labelColor: '#34d399', Icon: WrenchIcon },
+  tool_result: { bg: 'var(--pragna-surface)', border: 'rgba(251,191,36,0.35)', label: 'Result',          labelColor: '#fbbf24', Icon: UploadIcon },
+  confirm_required: { bg: 'var(--pragna-surface)', border: 'rgba(251,191,36,0.5)', label: 'Approval needed', labelColor: '#fbbf24', Icon: AlertTriangleIcon },
+  done:        { bg: 'var(--pragna-surface)', border: 'rgba(52,211,153,0.4)',  label: 'Done',            labelColor: '#6ee7b7', Icon: CheckCircleIcon },
+  error:       { bg: 'var(--pragna-surface)', border: 'rgba(248,113,113,0.4)', label: 'Error',           labelColor: '#fca5a5', Icon: XCircleIcon },
 }
 
 function LightningIcon({ size = 22, glow = false }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="var(--pragna-accent)"
+    <ZapIcon
+      size={size}
+      color="var(--pragna-accent)"
       strokeWidth={glow ? 1.6 : 2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
       style={glow ? { filter: 'drop-shadow(0 0 14px rgba(212,175,55,0.4))' } : undefined}
-    >
-      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-    </svg>
-  )
-}
-
-function PlayIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M8 5v14l11-7z" />
-    </svg>
+    />
   )
 }
 
@@ -72,10 +58,10 @@ function ToolCallCard({ event }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
            onClick={() => setExpanded(e => !e)}>
         <span style={{ color: cfg.labelColor, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Wrench size={13} /> {event.tool}
+          <WrenchIcon size={13} /> {event.tool}
         </span>
         <span style={{ color: 'var(--pragna-text-muted)', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} args
+          {expanded ? <ChevronUpIcon size={12} /> : <ChevronDownIcon size={12} />} args
         </span>
       </div>
       {expanded && (
@@ -108,11 +94,11 @@ function ToolResultCard({ event }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: hasMore ? 'pointer' : 'default' }}
            onClick={() => hasMore && setExpanded(e => !e)}>
         <span style={{ color: cfg.labelColor, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Upload size={13} /> {event.tool} result
+          <UploadIcon size={13} /> {event.tool} result
         </span>
         {hasMore && (
           <span style={{ color: 'var(--pragna-text-muted)', fontSize: 11, marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'less' : 'more'}
+            {expanded ? <ChevronUpIcon size={12} /> : <ChevronDownIcon size={12} />} {expanded ? 'less' : 'more'}
           </span>
         )}
       </div>
@@ -137,7 +123,7 @@ function ConfirmCard({ event, onDecision }) {
       boxShadow: '0 2px 8px rgba(0,0,0,0.28)',
     }}>
       <div style={{ color: cfg.labelColor, fontWeight: 700, fontSize: 12, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <AlertTriangle size={13} /> {cfg.label}: {event.tool}
+        <AlertTriangleIcon size={13} /> {cfg.label}: {event.tool}
       </div>
       <pre style={{
         margin: '0 0 10px',
@@ -160,7 +146,7 @@ function ConfirmCard({ event, onDecision }) {
           alignItems: 'center',
           gap: 6,
         }}>
-          {event.resolved === 'approved' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+          {event.resolved === 'approved' ? <CheckCircleIcon size={14} /> : <XCircleIcon size={14} />}
           {event.resolved === 'approved' ? 'Approved' : 'Rejected'}
         </div>
       ) : (
@@ -173,7 +159,7 @@ function ConfirmCard({ event, onDecision }) {
               background: 'var(--pragna-surface)', color: '#34d399', fontWeight: 700, fontSize: 12, cursor: 'pointer',
             }}
           >
-            <CheckCircle2 size={14} /> Approve
+            <CheckCircleIcon size={14} /> Approve
           </button>
           <button
             onClick={() => onDecision(event, 'reject')}
@@ -183,7 +169,7 @@ function ConfirmCard({ event, onDecision }) {
               background: 'var(--pragna-surface)', color: '#fca5a5', fontWeight: 700, fontSize: 12, cursor: 'pointer',
             }}
           >
-            <XCircle size={14} /> Reject
+            <XCircleIcon size={14} /> Reject
           </button>
         </div>
       )}
@@ -426,8 +412,8 @@ export default function AgentPanel() {
             onClick={() => setContextFilesOpen(v => !v)}
             style={{ color: 'var(--pragna-text-muted)', fontSize: 12, cursor: 'pointer', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', padding: 0 }}
           >
-            <Paperclip size={13} /> Context files (optional — paths to pre-load)
-            {contextFilesOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            <PaperclipIcon size={13} /> Context files (optional — paths to pre-load)
+            {contextFilesOpen ? <ChevronUpIcon size={13} /> : <ChevronDownIcon size={13} />}
           </button>
           {contextFilesOpen && (
             <textarea
@@ -508,7 +494,7 @@ export default function AgentPanel() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  <Square size={12} fill="currentColor" /> Stop
+                  <StopIcon size={12} /> Stop
                 </button>
               ) : (
                 <button
@@ -550,7 +536,7 @@ export default function AgentPanel() {
                     cursor: 'pointer',
                   }}
                 >
-                  <Trash2 size={12} /> Clear
+                  <TrashIcon size={12} /> Clear
                 </button>
               )}
             </div>

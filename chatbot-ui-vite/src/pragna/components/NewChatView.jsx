@@ -11,21 +11,23 @@ import { normalizeLanguageCode } from '../../utils/language'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import pragnaShield from '../../assets/pragna-shield-icon.png'
 import {
-  Paperclip,
-  Mic,
-  MicOff,
-  ArrowUp,
-  ChevronDown,
-  BookOpen,
-  PenLine,
-  Search,
-  Lightbulb,
-  Code2,
-  Image as ImageIcon,
-  FileText,
-  X,
-  Check,
-} from 'lucide-react'
+  PaperclipIcon,
+  MicIcon,
+  MicOffIcon,
+  SendIcon,
+  ChevronDownIcon,
+  BookOpenIcon,
+  PenLineIcon,
+  SearchIcon,
+  LightbulbIcon,
+  CodeIcon,
+  CreateImageIcon,
+  FileTextIcon,
+  CloseIcon,
+  CheckIcon,
+  SparklesIcon,
+  ThinkIcon,
+} from './PragnaIcon'
 
 const IMAGE_REQUEST_RE =
   /(create|generate|make|design)\s+(an?\s+)?(ai\s+)?image|image\s+of|illustration\s+of|poster\s+of|logo\s+of/i
@@ -70,72 +72,54 @@ const extractDocumentRequest = (text) => {
 
 const CHAT_MODES = [
   { id: 'general', label: 'General', icon: SparklesIcon },
-  { id: 'explain_concepts', label: 'Explain', icon: BookOpen },
-  { id: 'write_content', label: 'Write', icon: PenLine },
-  { id: 'generate_ideas', label: 'Brainstorm', icon: Lightbulb },
-  { id: 'code_assistance', label: 'Code', icon: Code2 },
-  { id: 'ask_questions', label: 'Questions', icon: Search },
-  { id: 'creative_writing', label: 'Story', icon: PenLine },
+  { id: 'explain_concepts', label: 'Explain', icon: BookOpenIcon },
+  { id: 'write_content', label: 'Write', icon: PenLineIcon },
+  { id: 'generate_ideas', label: 'Brainstorm', icon: LightbulbIcon },
+  { id: 'code_assistance', label: 'Code', icon: CodeIcon },
+  { id: 'ask_questions', label: 'Questions', icon: SearchIcon },
+  { id: 'creative_writing', label: 'Story', icon: PenLineIcon },
 ]
-
-function SparklesIcon(props) {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-    </svg>
-  )
-}
 
 const QUICK_ACTIONS = [
   {
     id: 'explain',
     label: 'Explain',
-    icon: BookOpen,
+    icon: BookOpenIcon,
     mode: 'explain_concepts',
     promptPrefix: 'Explain how ',
   },
   {
     id: 'write',
     label: 'Write',
-    icon: PenLine,
+    icon: PenLineIcon,
     mode: 'write_content',
     promptPrefix: 'Help me write ',
   },
   {
     id: 'research',
     label: 'Research',
-    icon: Search,
+    icon: SearchIcon,
     mode: 'general',
     promptPrefix: 'Research and analyze ',
   },
   {
     id: 'brainstorm',
     label: 'Brainstorm',
-    icon: Lightbulb,
+    icon: LightbulbIcon,
     mode: 'generate_ideas',
     promptPrefix: 'Brainstorm ideas for ',
   },
   {
     id: 'code',
     label: 'Code',
-    icon: Code2,
+    icon: CodeIcon,
     mode: 'code_assistance',
     promptPrefix: 'Write code to ',
   },
   {
     id: 'create_image',
     label: 'Create image',
-    icon: ImageIcon,
+    icon: CreateImageIcon,
     mode: 'general',
     promptPrefix: 'Create an image of ',
   },
@@ -812,9 +796,9 @@ export default function NewChatView({ onNavigateToImages }) {
                   }}
                 >
                   {att.type === 'image' ? (
-                    <ImageIcon size={13} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
+                    <CreateImageIcon size={13} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
                   ) : (
-                    <FileText size={13} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
+                    <FileTextIcon size={13} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
                   )}
                   <span
                     style={{
@@ -839,7 +823,7 @@ export default function NewChatView({ onNavigateToImages }) {
                     }}
                     className="hover:text-[var(--pragna-gold-soft)]"
                   >
-                    <X size={12} />
+                    <CloseIcon size={12} />
                   </button>
                 </div>
               ))}
@@ -907,7 +891,7 @@ export default function NewChatView({ onNavigateToImages }) {
                 >
                   <CurrentModeIcon size={13} />
                   <span>{currentModeObj.label}</span>
-                  <ChevronDown
+                  <ChevronDownIcon
                     size={12}
                     style={{
                       transform: modeDropdownOpen ? 'rotate(180deg)' : 'none',
@@ -984,7 +968,7 @@ export default function NewChatView({ onNavigateToImages }) {
                             <ModeIcon size={14} />
                             <span>{mode.label}</span>
                           </div>
-                          {active && <Check size={13} className="text-[var(--pragna-gold-soft)]" />}
+                          {active && <CheckIcon size={13} className="text-[var(--pragna-gold-soft)]" />}
                         </button>
                       )
                     })}
@@ -1014,10 +998,7 @@ export default function NewChatView({ onNavigateToImages }) {
                 }}
                 className="hover:bg-[rgba(212,175,55,0.08)] hover:text-[var(--pragna-gold-soft)]"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
-                  <path d="M9 21h6" />
-                </svg>
+                <ThinkIcon size={13} />
                 <span>Think</span>
               </button>
             </div>
@@ -1054,7 +1035,7 @@ export default function NewChatView({ onNavigateToImages }) {
                 }}
                 className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.1)]"
               >
-                <Paperclip size={17} />
+                <PaperclipIcon size={17} />
               </button>
 
               {/* Mic / Voice Button */}
@@ -1081,7 +1062,7 @@ export default function NewChatView({ onNavigateToImages }) {
                     : 'hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.1)]'
                 }
               >
-                {isRecording ? <MicOff size={17} /> : <Mic size={17} />}
+                {isRecording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
               </button>
 
               {/* Send Button */}
@@ -1117,7 +1098,7 @@ export default function NewChatView({ onNavigateToImages }) {
                     : ''
                 }
               >
-                <ArrowUp size={18} strokeWidth={2.6} />
+                <SendIcon size={16} strokeWidth={2.4} />
               </button>
             </div>
           </div>

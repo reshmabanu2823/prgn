@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDownIcon } from '../components/PragnaIcon'
 import { ChatContext } from '../../context/ChatContext'
 import { getModelsCatalog, runCompare } from '../../api/api'
 import { normalizeLanguageCode } from '../../utils/language'
@@ -171,7 +171,7 @@ const ComparePage = () => {
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', cursor: 'pointer' }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                  <ChevronDown
+                  <ChevronDownIcon
                     size={13}
                     style={{
                       color: 'var(--pragna-text-muted)',

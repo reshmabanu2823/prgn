@@ -3,65 +3,20 @@ import CodeBlock from "./CodeBlock";
 import { API_BASE } from "../../api/api";
 import pragnaShield from "../../assets/pragna-shield-icon.png";
 import { ChatContext } from "../../context/ChatContext";
-
-const CodeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6" />
-    <polyline points="8 6 2 12 8 18" />
-  </svg>
-);
-
-
-const CopyIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
-const ThumbsUpIcon = ({ filled }) => (
-  <svg width="1em" height="1em" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-  </svg>
-);
-const ThumbsDownIcon = ({ filled }) => (
-  <svg viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
-  </svg>
-);
-const RetryIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="23 4 23 10 17 10" />
-    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-  </svg>
-);
-const PencilIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
-  </svg>
-);
-const StarIcon = ({ filled }) => (
-  <svg viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-const VoiceIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-    <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14" />
-  </svg>
-);
-const CheckIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-const ErrorIcon = () => (
-
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d98b7f" strokeWidth="2.2" strokeLinecap="round">
-    <path d="M12 8v5M12 16.5v.5" />
-    <circle cx="12" cy="12" r="9.2" />
-  </svg>
-);
+import {
+  CodeIcon,
+  CopyIcon,
+  ThumbsUpIcon,
+  ThumbsDownIcon,
+  RetryIcon,
+  EditIcon as PencilIcon,
+  StarredIcon as StarIcon,
+  SpeakIcon as VoiceIcon,
+  CheckIcon,
+  ErrorIcon,
+  ThinkIcon,
+  ChevronDownIcon,
+} from "../icons/PragnaIcon";
 
 // BCP-47 language tag map - Comprehensive support for all Indian regional languages
 // Includes all 22 official languages + tribal languages, modern variants, and international languages
@@ -413,39 +368,18 @@ const ThinkingAccordion = ({ thinking, isStreaming }) => {
         className="hover:bg-[rgba(212,175,55,0.08)]"
       >
         <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
-            <path d="M9 21h6" />
-          </svg>
+          <ThinkIcon size={14} />
           <span>Thinking Process {isStreaming && !isOpen ? "(Reasoning...)" : ""}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pragna-text-muted)", fontSize: "11px" }}>
           <span>{isOpen ? "Hide" : "Show"}</span>
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <ChevronDownIcon
+            size={12}
             style={{
               transform: isOpen ? "rotate(180deg)" : "none",
               transition: "transform 0.2s ease",
             }}
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
+          />
         </div>
       </button>
 

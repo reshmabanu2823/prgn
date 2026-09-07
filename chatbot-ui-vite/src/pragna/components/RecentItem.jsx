@@ -1,5 +1,18 @@
 import { useState, useRef, useEffect } from 'react'
-import { MoreVertical, Share, Users, Edit2, Pin, Archive, Trash2, Download, Folder, Copy, Printer } from 'lucide-react'
+import {
+  ChatsIcon,
+  MoreVerticalIcon,
+  ShareIcon,
+  UserIcon,
+  EditIcon,
+  PinIcon,
+  ArchiveIcon,
+  TrashIcon,
+  DownloadIcon,
+  FolderIcon,
+  CopyIcon,
+  PrinterIcon,
+} from './PragnaIcon'
 
 const RecentItem = ({
   id,
@@ -79,19 +92,11 @@ const RecentItem = ({
       className="group focus-ring"
     >
       {/* Icon */}
-      <svg
-        width="15"
-        height="15"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)'}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <ChatsIcon
+        size={15}
+        color={active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)'}
         style={{ flexShrink: 0 }}
-      >
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-      </svg>
+      />
 
       {/* Title */}
       <span
@@ -131,7 +136,7 @@ const RecentItem = ({
         className="group-hover:opacity-100"
         aria-label={`Menu for ${title}`}
       >
-        <MoreVertical size={13} />
+        <MoreVerticalIcon size={13} />
       </button>
 
       {showMenu && (
@@ -169,7 +174,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Share size={14} />
+            <ShareIcon size={14} />
             <span>Share</span>
           </button>
 
@@ -191,7 +196,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Download size={14} />
+            <DownloadIcon size={14} />
             <span>Export</span>
           </button>
 
@@ -213,7 +218,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Printer size={14} />
+            <PrinterIcon size={14} />
             <span>Export as PDF</span>
           </button>
 
@@ -235,7 +240,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Copy size={14} />
+            <CopyIcon size={14} />
             <span>Duplicate</span>
           </button>
 
@@ -257,7 +262,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Users size={14} />
+            <UserIcon size={14} />
             <span>Group Chat</span>
           </button>
 
@@ -279,7 +284,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Edit2 size={14} />
+            <EditIcon size={14} />
             <span>Rename</span>
           </button>
 
@@ -301,7 +306,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Pin size={14} />
+            <PinIcon size={14} />
             <span>{isPinned ? 'Unpin' : 'Pin'}</span>
           </button>
 
@@ -326,7 +331,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Folder size={14} />
+            <FolderIcon size={14} />
             <span>Move to folder</span>
           </button>
 
@@ -399,7 +404,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <Archive size={14} />
+            <ArchiveIcon size={14} />
             <span>Archive</span>
           </button>
 
@@ -423,7 +428,7 @@ const RecentItem = ({
             }}
             className="hover:bg-[#301614]"
           >
-            <Trash2 size={14} />
+            <TrashIcon size={14} />
             <span>Delete</span>
           </button>
         </div>

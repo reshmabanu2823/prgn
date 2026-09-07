@@ -1,5 +1,5 @@
 import { useContext, useState } from 'react'
-import { Menu, PanelLeft } from 'lucide-react'
+import { MenuIcon, PanelExpandIcon } from '../components/PragnaIcon'
 import Sidebar from '../components/Sidebar'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { ChatContext } from '../../context/ChatContext'
@@ -88,7 +88,7 @@ const MainLayout = ({
             title="Open sidebar"
             className="fixed top-4 left-4 z-30 p-2 rounded-lg bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface-subtle transition-colors"
           >
-            <PanelLeft size={18} className="text-[var(--pragna-text-muted)]" />
+            <PanelExpandIcon size={18} color="var(--pragna-text-muted)" />
           </button>
         )}
 
@@ -99,7 +99,7 @@ const MainLayout = ({
               onClick={() => setMobileMenuOpen(true)}
               className="p-2 -ml-2 rounded-lg hover:bg-surface-subtle transition-colors"
             >
-              <Menu size={20} className="text-[var(--pragna-text-muted)]" />
+              <MenuIcon size={20} color="var(--pragna-text-muted)" />
             </button>
             <img src={pragnaLogo} alt="Pragna-1 A" className="h-8 w-auto object-contain" />
             <div className="w-8" />
