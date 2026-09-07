@@ -97,6 +97,30 @@ export const ChatManagementAPI = {
       throw error
     }
   },
+
+  searchChats: async (query, limit = 20) => {
+    try {
+      const response = await api.get(`/api/chat/search`, {
+        params: { q: query, limit },
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error searching chats:', error)
+      return { success: false, results: [] }
+    }
+  },
+
+  syncChats: async (chats) => {
+    try {
+      const response = await api.post(`/api/chat/sync`, {
+        chats: Array.isArray(chats) ? chats : [chats],
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error syncing chats:', error)
+      return { success: false }
+    }
+  },
 }
 
 export default ChatManagementAPI

@@ -84,12 +84,12 @@ class OrchestratorIntegrationTests(unittest.TestCase):
                         "event_id": "evt123",
                         "title": "Demo event",
                         "summary": "Summary",
-                        "region": "Global",
+                        "region": "India",
                         "severity": "low",
                         "source": "Demo",
                         "link": "https://example.com",
                         "published_at": "",
-                        "coordinates": {"lat": 0.0, "lon": 0.0},
+                        "coordinates": {"lat": 20.5937, "lon": 78.9629},
                     }
                 ],
             },
@@ -120,7 +120,7 @@ class OrchestratorIntegrationTests(unittest.TestCase):
             "app.get_geo_summary",
             return_value={
                 "generated_at": "2026-04-09T00:00:00Z",
-                "regions": [{"region": "Global", "events": 2, "lat": 0.0, "lon": 0.0}],
+                "regions": [{"region": "India", "events": 2, "lat": 20.5937, "lon": 78.9629}],
             },
         ):
             resp = self.client.get("/api/dashboard/geo?limit=5")

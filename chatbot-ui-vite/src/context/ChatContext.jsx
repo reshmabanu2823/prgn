@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useRef, useCallback } from "react";
 import { normalizeLanguageCode } from "../utils/language";
 import { listPersonas } from "../api/api";
+import ChatManagementAPI from "../api/chatManagement";
 
 export const ChatContext = createContext();
 
@@ -162,6 +163,20 @@ export function ChatProvider({ children }) {
   useEffect(() => {
     localStorage.setItem("pragna_sidebar_open", JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
+
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null);
+
+  // Sync chats to server in the background for cross-thread search persistence
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token || !chats || chats.length === 0) return;
+    const timer = setTimeout(() => {
+      ChatManagementAPI.syncChats(chats).catch((err) => {
+        console.warn("Background chat sync notice:", err);
+      });
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [chats]);
 
   // Save to localStorage
   useEffect(() => {
@@ -396,6 +411,8 @@ export function ChatProvider({ children }) {
         setIsArtifactOpen,
         openArtifact,
         closeArtifact,
+        highlightedMessageId,
+        setHighlightedMessageId,
       }}
     >
 

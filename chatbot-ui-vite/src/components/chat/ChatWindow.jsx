@@ -52,6 +52,7 @@ export default function ChatWindow() {
     activePersonaId,
     setActivePersonaId,
     sidebarOpen,
+    highlightedMessageId,
   } = useContext(ChatContext);
 
   // The floating "reopen sidebar" button this padding makes room for is
@@ -86,6 +87,17 @@ export default function ChatWindow() {
       scrollToBottom(false);
     }
   }, [chat?.messages, isLoading, scrollToBottom]);
+
+  useEffect(() => {
+    if (!highlightedMessageId) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`msg-${highlightedMessageId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [highlightedMessageId, activeChatId]);
 
 
   // Map display names for modes
@@ -641,17 +653,32 @@ export default function ChatWindow() {
         className="custom-scrollbar"
       >
         <div style={{ maxWidth: '780px', margin: '0 auto', padding: isMobile ? '0 12px' : '0 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
-          {chat.messages.map((m, idx) => (
-            <MessageBubble
-              key={idx}
-              message={m}
-              language={language}
-              onRetry={idx === chat.messages.length - 1 ? () => retryMessage(idx) : undefined}
-              onEdit={m.sender !== "bot" ? (newText) => editMessage(idx, newText) : undefined}
-              isLoading={isLoading}
-              onToggleBookmark={() => toggleBookmark(idx)}
-            />
-          ))}
+          {chat.messages.map((m, idx) => {
+            const isHighlighted = highlightedMessageId && (m.id === highlightedMessageId || String(idx) === String(highlightedMessageId));
+            return (
+              <div
+                key={m.id || idx}
+                id={`msg-${m.id || idx}`}
+                style={{
+                  borderRadius: '16px',
+                  transition: 'all 0.3s ease',
+                  border: isHighlighted ? '1.5px solid rgba(212,175,55,0.7)' : '1.5px solid transparent',
+                  boxShadow: isHighlighted ? '0 0 20px rgba(212,175,55,0.25)' : 'none',
+                  padding: isHighlighted ? '6px' : '0px',
+                  background: isHighlighted ? 'rgba(212,175,55,0.06)' : 'transparent',
+                }}
+              >
+                <MessageBubble
+                  message={m}
+                  language={language}
+                  onRetry={idx === chat.messages.length - 1 ? () => retryMessage(idx) : undefined}
+                  onEdit={m.sender !== "bot" ? (newText) => editMessage(idx, newText) : undefined}
+                  isLoading={isLoading}
+                  onToggleBookmark={() => toggleBookmark(idx)}
+                />
+              </div>
+            );
+          })}
           <div ref={messagesBottomRef} style={{ height: '1px' }} />
         </div>
       </div>

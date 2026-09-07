@@ -1,6 +1,6 @@
 """
 Chat Management API - Handles chat operations
-Provides endpoints for: rename, pin, archive, delete, share, group chat
+Provides endpoints for: search, sync, rename, pin, archive, delete, share, group chat
 """
 import logging
 import hashlib
@@ -9,7 +9,6 @@ from datetime import datetime
 from flask import Blueprint, request, jsonify
 from auth import require_auth
 from database import db
-from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
@@ -24,27 +23,130 @@ def validate_chat_ownership(chat_id, user_id):
     conn = db.get_connection()
     try:
         c = conn.cursor()
-        c.execute('SELECT user_id FROM conversations WHERE id = %s', (chat_id,))
+        param = '?' if db.is_sqlite else '%s'
+        c.execute(f'SELECT user_id FROM conversations WHERE id = {param}', (chat_id,))
         result = c.fetchone()
         if not result:
             try:
-                c.execute('''
+                c.execute(f'''
                     INSERT INTO conversations (id, user_id, title)
-                    VALUES (%s, %s, %s)
+                    VALUES ({param}, {param}, {param})
                 ''', (chat_id, user_id, "New Chat"))
                 conn.commit()
                 return True
             except Exception as e:
                 logger.error(f"Error auto-inserting conversation: {e}")
                 return True
-        return str(result[0]) == str(user_id)
+        owner_id = result.get('user_id') if isinstance(result, dict) else (result[0] if isinstance(result, (tuple, list)) else getattr(result, 'user_id', None))
+        return str(owner_id) == str(user_id)
     except Exception as exc:
         logger.warning("Notice validating chat ownership for chat %s: %s", chat_id, exc)
         return True
-
     finally:
         db.release_connection(conn)
 
+
+@chat_management_bp.route('/search', methods=['GET', 'POST'])
+@require_auth
+def search_chats():
+    """
+    Search past conversations and messages for the authenticated user.
+    Query param or JSON: q / query (search string), limit (optional integer)
+    """
+    try:
+        user_id = request.user_id
+        if request.method == 'POST':
+            data = request.get_json(silent=True) or {}
+            query = (data.get('q') or data.get('query') or '').strip()
+            limit = data.get('limit', 20)
+        else:
+            query = (request.args.get('q') or request.args.get('query') or '').strip()
+            limit = request.args.get('limit', 20)
+
+        try:
+            limit = int(limit)
+            limit = max(1, min(limit, 100))
+        except (ValueError, TypeError):
+            limit = 20
+
+        if not query:
+            return jsonify({
+                'success': True,
+                'query': '',
+                'count': 0,
+                'results': []
+            }), 200
+
+        results = db.search_conversations(user_id=user_id, query=query, limit=limit)
+
+        return jsonify({
+            'success': True,
+            'query': query,
+            'count': len(results),
+            'results': results
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error searching chats: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to search chats'}), 500
+
+
+@chat_management_bp.route('/sync', methods=['POST'])
+@require_auth
+def sync_chats():
+    """
+    Persist or sync client-side chat threads to the database for the authenticated user.
+    Accepts:
+      { "chats": [ { "id": "...", "title": "...", "messages": [...], "is_pinned": false, "is_archived": false } ] }
+      OR
+      { "chat": { "id": "...", "title": "...", "messages": [...], "is_pinned": false, "is_archived": false } }
+    """
+    try:
+        user_id = request.user_id
+        data = request.get_json(silent=True) or {}
+        chats_to_sync = data.get('chats')
+        if chats_to_sync is None and 'chat' in data:
+            chats_to_sync = [data['chat']]
+        elif chats_to_sync is None and ('id' in data or 'chat_id' in data):
+            chats_to_sync = [data]
+
+        if not isinstance(chats_to_sync, list):
+            return jsonify({'error': 'Invalid payload format: expected "chats" array'}), 400
+
+        synced_count = 0
+        for chat in chats_to_sync:
+            if not isinstance(chat, dict):
+                continue
+            chat_id = str(chat.get('id') or chat.get('chat_id') or '').strip()
+            if not chat_id:
+                continue
+            title = (chat.get('title') or 'New chat').strip()
+            messages = chat.get('messages') or []
+            is_pinned = bool(chat.get('is_pinned', False) or chat.get('isPinned', False))
+            is_archived = bool(chat.get('is_archived', False) or chat.get('isArchived', False))
+            language = chat.get('language', 'en') or 'en'
+
+            success = db.sync_conversation(
+                user_id=user_id,
+                chat_id=chat_id,
+                title=title,
+                messages=messages,
+                is_pinned=is_pinned,
+                is_archived=is_archived,
+                language=language
+            )
+            if success:
+                synced_count += 1
+
+        return jsonify({
+            'success': True,
+            'synced_count': synced_count,
+            'message': f'Successfully synced {synced_count} chat(s)'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error syncing chats: {str(e)}", exc_info=True)
+        return jsonify({'error': 'Failed to sync chats'}), 500
 
 
 @chat_management_bp.route('/<chat_id>/rename', methods=['PATCH'])
@@ -58,7 +160,7 @@ def rename_chat(chat_id):
         if not validate_chat_ownership(chat_id, user_id):
             return jsonify({'error': 'Unauthorized: Chat not found or not owned by user'}), 403
         
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         new_title = data.get('title', '').strip()
         
         if not new_title:
@@ -68,7 +170,7 @@ def rename_chat(chat_id):
             return jsonify({'error': 'Title too long (max 200 characters)'}), 400
         
         # Update title in database
-        db.update_conversation_title(chat_id, new_title)
+        db.update_conversation_title(chat_id, new_title, user_id=user_id)
         
         return jsonify({
             'success': True,
@@ -93,16 +195,18 @@ def pin_chat(chat_id):
         if not validate_chat_ownership(chat_id, user_id):
             return jsonify({'error': 'Unauthorized: Chat not found or not owned by user'}), 403
         
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         is_pinned = data.get('is_pinned', True)
         
         conn = db.get_connection()
         try:
-            conn.execute('''
+            param = '?' if db.is_sqlite else '%s'
+            now_sql = "CURRENT_TIMESTAMP" if db.is_sqlite else "NOW()"
+            conn.execute(f'''
                 UPDATE conversations
-                SET is_pinned = %s, updated_at = NOW()
-                WHERE id = %s
-            ''', (bool(is_pinned), chat_id))
+                SET is_pinned = {param}, updated_at = {now_sql}
+                WHERE id = {param} AND user_id = {param}
+            ''', (bool(is_pinned), chat_id, user_id))
             conn.commit()
         finally:
             db.release_connection(conn)
@@ -132,11 +236,14 @@ def archive_chat(chat_id):
         
         conn = db.get_connection()
         try:
-            conn.execute('''
+            param = '?' if db.is_sqlite else '%s'
+            now_sql = "CURRENT_TIMESTAMP" if db.is_sqlite else "NOW()"
+            true_val = '1' if db.is_sqlite else 'TRUE'
+            conn.execute(f'''
                 UPDATE conversations
-                SET is_archived = TRUE, updated_at = NOW()
-                WHERE id = %s
-            ''', (chat_id,))
+                SET is_archived = {true_val}, updated_at = {now_sql}
+                WHERE id = {param} AND user_id = {param}
+            ''', (chat_id, user_id))
             conn.commit()
         finally:
             db.release_connection(conn)
@@ -167,12 +274,13 @@ def delete_chat(chat_id):
         conn = db.get_connection()
         try:
             c = conn.cursor()
+            param = '?' if db.is_sqlite else '%s'
 
             # Delete associated messages first
-            c.execute('DELETE FROM messages WHERE conversation_id = %s', (chat_id,))
+            c.execute(f'DELETE FROM messages WHERE conversation_id = {param}', (chat_id,))
 
             # Delete the conversation
-            c.execute('DELETE FROM conversations WHERE id = %s', (chat_id,))
+            c.execute(f'DELETE FROM conversations WHERE id = {param} AND user_id = {param}', (chat_id, user_id))
 
             conn.commit()
         finally:
@@ -218,32 +326,40 @@ def share_chat(chat_id):
         conn = db.get_connection()
         try:
             c = conn.cursor()
+            param = '?' if db.is_sqlite else '%s'
+            now_sql = "CURRENT_TIMESTAMP" if db.is_sqlite else "NOW()"
 
             if title:
-                c.execute('''
+                c.execute(f'''
                     UPDATE conversations
-                    SET title = %s, share_token = %s, updated_at = NOW()
-                    WHERE id = %s
+                    SET title = {param}, share_token = {param}, updated_at = {now_sql}
+                    WHERE id = {param}
                 ''', (title[:200], share_token, chat_id))
             else:
-                c.execute('''
+                c.execute(f'''
                     UPDATE conversations
-                    SET share_token = %s, updated_at = NOW()
-                    WHERE id = %s
+                    SET share_token = {param}, updated_at = {now_sql}
+                    WHERE id = {param}
                 ''', (share_token, chat_id))
 
             if isinstance(messages, list) and messages:
                 # Replace any previously-synced snapshot with the current one.
-                c.execute('DELETE FROM messages WHERE conversation_id = %s', (chat_id,))
+                c.execute(f'DELETE FROM messages WHERE conversation_id = {param}', (chat_id,))
                 for msg in messages:
-                    sender = (msg.get('sender') or '').strip()
-                    text = (msg.get('text') or '').strip()
+                    sender = (msg.get('sender') or msg.get('role') or '').strip()
+                    if sender in ('assistant', 'model'):
+                        sender = 'bot'
+                    text = (msg.get('text') or msg.get('content') or '').strip()
                     if sender not in ('user', 'bot') or not text:
                         continue
-                    message_id = secrets.token_hex(16)
-                    c.execute('''
+                    raw_id = str(msg.get('id') or '').strip()
+                    if raw_id:
+                        message_id = hashlib.md5(f"{chat_id}_{raw_id}".encode()).hexdigest()
+                    else:
+                        message_id = secrets.token_hex(16)
+                    c.execute(f'''
                         INSERT INTO messages (id, conversation_id, sender, text)
-                        VALUES (%s, %s, %s, %s)
+                        VALUES ({param}, {param}, {param}, {param})
                     ''', (message_id, chat_id, sender, text))
 
             conn.commit()
@@ -277,26 +393,14 @@ def start_group_chat(chat_id):
         if not validate_chat_ownership(chat_id, user_id):
             return jsonify({'error': 'Unauthorized: Chat not found or not owned by user'}), 403
         
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         collaborators = data.get('collaborators', [])  # List of usernames/emails
         
         if not collaborators:
             return jsonify({'error': 'No collaborators specified'}), 400
         
         # Get current chat info
-        conn = db.get_connection()
-        try:
-            c = conn.cursor(row_factory=dict_row)
-            c.execute('SELECT * FROM conversations WHERE id = %s', (chat_id,))
-            chat = dict(c.fetchone())
-        finally:
-            db.release_connection(conn)
-
-        # In a real implementation, you would:
-        # 1. Verify each collaborator exists in the system
-        # 2. Save collaborator relationships in a dedicated table
-        # 3. Send notifications to collaborators
-        # For now, we'll just store the list
+        chat = db.get_conversation(chat_id, user_id=user_id)
         
         group_metadata = {
             'created_at': datetime.now().isoformat(),
@@ -329,19 +433,7 @@ def get_chat_info(chat_id):
         if not validate_chat_ownership(chat_id, user_id):
             return jsonify({'error': 'Unauthorized: Chat not found or not owned by user'}), 403
         
-        conn = db.get_connection()
-        try:
-            c = conn.cursor(row_factory=dict_row)
-            c.execute('''
-                SELECT id, title, created_at, updated_at, is_archived,
-                       is_pinned, share_token
-                FROM conversations
-                WHERE id = %s
-            ''', (chat_id,))
-
-            result = c.fetchone()
-        finally:
-            db.release_connection(conn)
+        result = db.get_conversation(chat_id, user_id=user_id)
 
         if not result:
             return jsonify({'error': 'Chat not found'}), 404
@@ -359,3 +451,4 @@ def get_chat_info(chat_id):
     except Exception as e:
         logger.error(f"Error getting chat info: {str(e)}")
         return jsonify({'error': 'Failed to get chat info'}), 500
+

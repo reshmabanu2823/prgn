@@ -39,12 +39,33 @@ export default function CommandPalette({ isOpen, onClose, onNavigate, onOpenSett
     setActivePersonaId,
     language,
     setLanguage,
+    setHighlightedMessageId,
   } = useContext(ChatContext)
 
   const [query, setQuery] = useState('')
+  const [serverMatches, setServerMatches] = useState([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [shareStatus, setShareStatus] = useState('')
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    const q = query.trim()
+    if (!q || !isOpen) {
+      setServerMatches([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await ChatManagementAPI.searchChats(q, 8)
+        if (res && Array.isArray(res.results)) {
+          setServerMatches(res.results.filter((r) => r.match_type === 'message'))
+        }
+      } catch (err) {
+        console.error('CommandPalette search error:', err)
+      }
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [query, isOpen])
 
   // Reset transient state on the closed->open transition, computed during
   // render (React's recommended way to adjust state on a prop change)
@@ -54,6 +75,7 @@ export default function CommandPalette({ isOpen, onClose, onNavigate, onOpenSett
     setWasOpen(isOpen)
     if (isOpen) {
       setQuery('')
+      setServerMatches([])
       setActiveIndex(0)
       setShareStatus('')
     }
@@ -143,8 +165,28 @@ export default function CommandPalette({ isOpen, onClose, onNavigate, onOpenSett
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return items.slice(0, 30)
-    return items.filter((item) => item.label.toLowerCase().includes(q) || item.section.toLowerCase().includes(q)).slice(0, 40)
-  }, [items, query])
+    const base = items.filter((item) => item.label.toLowerCase().includes(q) || item.section.toLowerCase().includes(q)).slice(0, 30)
+
+    if (serverMatches && serverMatches.length > 0) {
+      const matchItems = serverMatches.map((match) => ({
+        id: `match:${match.chat_id}:${match.message_id}`,
+        section: 'Matching Messages',
+        label: `${match.title || 'Chat'}: "${match.snippet}"`,
+        hint: match.sender === 'user' ? 'you' : 'ai',
+        onSelect: () => {
+          setActiveChatId(match.chat_id)
+          if (match.message_id && setHighlightedMessageId) {
+            setHighlightedMessageId(match.message_id)
+          }
+          onNavigate('chats')
+          onClose()
+        },
+      }))
+      return [...base, ...matchItems].slice(0, 40)
+    }
+
+    return base
+  }, [items, query, serverMatches, setActiveChatId, setHighlightedMessageId, onNavigate, onClose])
 
   // Reset the highlighted row whenever the query changes the result set -
   // same render-time adjustment pattern as the open/close reset above.

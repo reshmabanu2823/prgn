@@ -654,6 +654,27 @@ def index():
     return send_from_directory('static', 'index.html')
 
 
+def _persist_chat_turn(chat_id, user_id, user_message, bot_response, language='en'):
+    """Persist conversation and messages to database for history and cross-thread search."""
+    try:
+        if not chat_id or not user_id:
+            return
+        conv = db.get_conversation(chat_id, user_id=user_id)
+        if not conv:
+            title = (user_message or "New chat")[:60].strip() or "New chat"
+            db.create_conversation(user_id=user_id, title=title, language=language, conv_id=chat_id)
+        elif (conv.get('title') in ("New Chat", "New chat", "") or not conv.get('title')) and user_message:
+            title = user_message[:60].strip() or "New chat"
+            db.update_conversation_title(chat_id, title, user_id=user_id)
+
+        if user_message:
+            db.add_message(conv_id=chat_id, sender='user', text=user_message, language=language)
+        if bot_response:
+            db.add_message(conv_id=chat_id, sender='bot', text=bot_response, language=language)
+    except Exception as exc:
+        logger.warning(f"Notice persisting chat turn for {chat_id}: {exc}")
+
+
 @app.route('/api/chat', methods=['POST'])
 @require_auth
 def chat():
@@ -698,7 +719,9 @@ def chat():
             model_override=model_override,
             fallback_models=fallback_models,
         )
-        
+
+        _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
+
         return jsonify({
             'response': result['response'],
             'language': result['language'],
@@ -708,7 +731,7 @@ def chat():
             'actions': result['actions'],
             'web_search_sources': result['web_search_sources']
         })
-        
+
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}", exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
@@ -781,6 +804,7 @@ def orchestrator_query():
             model_override=model_override,
             fallback_models=fallback_models,
         )
+        _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
         return jsonify(result)
 
     except Exception as e:
@@ -830,6 +854,8 @@ def orchestrator_analyze_uploads():
             model_override=model_override,
             fallback_models=fallback_models,
         )
+
+        _persist_chat_turn(chat_id, request.user_id, user_message or "Analyzed uploaded files", result.get('response'), language=language)
 
         result['upload_analysis'] = {
             'processed_files': payload['processed_files'],
@@ -1940,8 +1966,9 @@ def chat_stream():
 
         user_message = data.get('message', '').strip()
         language = _normalize_language_code(data.get('language', 'en'))
-        chat_id = (data.get('user_id') or '').strip() or request.user_id
-        if not validate_chat_ownership(chat_id, request.user_id):
+        current_user_id = getattr(request, 'user_id', 'default_user')
+        chat_id = (data.get('user_id') or '').strip() or current_user_id
+        if not validate_chat_ownership(chat_id, current_user_id):
             return jsonify({'error': 'Unauthorized: chat not owned by user'}), 403
         chat_mode = data.get('chat_mode', 'general')
         model_override = data.get('model_override')
@@ -1976,6 +2003,8 @@ def chat_stream():
             raw_text = result.get('response', '')
             cleaned_text = clean_llm_response_text(raw_text)
             chat_text, artifact_data = extract_artifact_from_response(cleaned_text)
+
+            _persist_chat_turn(chat_id, current_user_id, user_message, chat_text or cleaned_text, language=language)
 
             if artifact_data:
                 yield f"data: {json.dumps(artifact_data)}\n\n"
