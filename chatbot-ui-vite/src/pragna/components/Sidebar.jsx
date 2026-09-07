@@ -372,15 +372,28 @@ ${turns}
     <aside style={{ width: onClose ? '100%' : '340px', maxWidth: '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pragna-surface)', borderRight: '1px solid var(--pragna-border)', backdropFilter: 'blur(8px)', height: '100%' }}>
       
       {/* Wordmark logo */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px 12px 18px', flexShrink: 0, gap: '12px' }}>
-        <img src={pragnaLogo} alt="Pragna-1 A" style={{ height: 'auto', maxHeight: '38px', width: 'auto', maxWidth: '170px', objectFit: 'contain' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 14px 20px', flexShrink: 0, gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img
+            src={pragnaLogo}
+            alt="Pragna-1 A"
+            style={{
+              height: '34px',
+              width: 'auto',
+              maxWidth: '175px',
+              objectFit: 'contain',
+              display: 'block',
+              filter: 'drop-shadow(0 2px 10px rgba(212,175,55,0.2))',
+            }}
+          />
+        </div>
 
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
             title="Close menu"
-            style={{ padding: '6px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', flexShrink: 0 }}
+            style={{ padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
             <PanelLeftClose size={18} />
@@ -390,7 +403,7 @@ ${turns}
             type="button"
             onClick={toggleSidebar}
             title="Close sidebar"
-            style={{ padding: '6px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', flexShrink: 0 }}
+            style={{ padding: '8px', borderRadius: '8px', border: 'none', background: 'transparent', color: 'var(--pragna-text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
             className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
             <PanelLeftClose size={18} />

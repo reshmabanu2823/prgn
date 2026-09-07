@@ -101,7 +101,7 @@ const MainLayout = ({
             >
               <Menu size={20} className="text-[var(--pragna-text-muted)]" />
             </button>
-            <img src={pragnaLogo} alt="Pragna-1 A" className="h-11 w-auto object-contain" />
+            <img src={pragnaLogo} alt="Pragna-1 A" className="h-8 w-auto object-contain" />
             <div className="w-8" />
           </div>
         )}
