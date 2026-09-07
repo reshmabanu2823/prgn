@@ -78,13 +78,58 @@ export default function StarredRequestsPage({ chats, setChats, onOpenChat }) {
       style={{
         height: '100%',
         overflowY: 'auto',
-        padding: '32px 24px 60px 24px',
+        padding: '24px 24px 60px 24px',
         background: 'var(--pragna-bg)',
         color: 'var(--pragna-text)',
+        position: 'relative',
       }}
       className="custom-scrollbar"
     >
-      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+      {/* Background ambient gold radial glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-80px',
+          right: '-80px',
+          width: '500px',
+          height: '500px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Top Header tracking phrase */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          marginBottom: '16px',
+          zIndex: 2,
+          position: 'relative',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              fontSize: '11px',
+              letterSpacing: '3.2px',
+              fontWeight: 600,
+              color: 'var(--pragna-text-muted)',
+              opacity: 0.75,
+              textTransform: 'uppercase',
+              userSelect: 'none',
+            }}
+          >
+            EXPLORE &nbsp; LEARN &nbsp; CREATE &nbsp; EVOLVE
+          </span>
+          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: '960px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         
         {/* Page Header */}
         <div style={{ marginBottom: '28px' }}>

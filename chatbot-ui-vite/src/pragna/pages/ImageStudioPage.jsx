@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { getImageStudioConfig } from '../../api/api'
+import { ImagesIcon, DownloadIcon, SparklesIcon } from '../components/PragnaIcon'
 
 const ImageStudioPage = ({
   imagePrompt,
@@ -35,17 +36,85 @@ const ImageStudioPage = ({
   }, [])
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 16px' : '40px', animation: 'fadeUp 0.4s ease', height: '100%' }}>
-      <h1 style={{ margin: '0 0 6px 0', fontSize: '28px', fontWeight: 700, color: 'var(--pragna-text)' }}>Image Studio</h1>
-      <p style={{ margin: rateLimit ? '0 0 4px 0' : '0 0 26px 0', fontSize: '14.5px', color: 'var(--pragna-text-muted)' }}>Generate production-quality AI images with style and quality controls.</p>
-      {rateLimit && (
-        <p style={{ margin: '0 0 24px 0', fontSize: '13px', color: 'var(--pragna-text-muted)', opacity: 0.85 }}>
-          Limit: {rateLimit} per account.
+    <div
+      style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: isMobile ? '20px 16px 36px 16px' : '40px 48px 48px 48px',
+        animation: 'fadeUp 0.35s ease',
+        height: '100%',
+        position: 'relative',
+        background: 'var(--pragna-bg)',
+      }}
+      className="custom-scrollbar"
+    >
+      {/* Background ambient gold radial glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-80px',
+          right: '-80px',
+          width: '500px',
+          height: '500px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Top Header tracking phrase */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          marginBottom: '20px',
+          zIndex: 2,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              fontSize: isMobile ? '9.5px' : '11px',
+              letterSpacing: isMobile ? '2px' : '3.2px',
+              fontWeight: 600,
+              color: 'var(--pragna-text-muted)',
+              opacity: 0.75,
+              textTransform: 'uppercase',
+              userSelect: 'none',
+            }}
+          >
+            EXPLORE &nbsp; LEARN &nbsp; CREATE &nbsp; EVOLVE
+          </span>
+          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <h1 style={{ margin: '0 0 6px 0', fontSize: '28px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+          Image Studio
+        </h1>
+        <p style={{ margin: rateLimit ? '0 0 4px 0' : '0 0 26px 0', fontSize: '14.5px', color: 'var(--pragna-text-muted)' }}>
+          Generate production-quality AI images with style and quality controls.
         </p>
-      )}
+        {rateLimit && (
+          <p style={{ margin: '0 0 24px 0', fontSize: '13px', color: 'var(--pragna-text-muted)', opacity: 0.85 }}>
+            Limit: {rateLimit} per account.
+          </p>
+        )}
 
-
-      <div style={{ maxWidth: '760px', padding: '24px', borderRadius: '20px', background: 'var(--pragna-surface)', border: '1px solid rgba(212,175,55,0.18)', backdropFilter: 'blur(8px)', boxShadow: '0 12px 28px rgba(0,0,0,0.42)' }}>
+        <div
+          style={{
+            maxWidth: '780px',
+            padding: '24px',
+            borderRadius: '20px',
+            background: 'rgba(18, 16, 12, 0.85)',
+            border: '1.5px solid rgba(212, 175, 55, 0.28)',
+            backdropFilter: 'blur(14px)',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.08)',
+          }}
+        >
         
         {/* Prompt textarea */}
         <textarea
@@ -186,6 +255,7 @@ const ImageStudioPage = ({
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   )

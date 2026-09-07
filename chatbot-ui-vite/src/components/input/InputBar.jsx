@@ -888,15 +888,21 @@ export default function InputBar() {
           style={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
-            alignItems: isMobile ? 'stretch' : 'flex-end',
+            alignItems: isMobile ? 'stretch' : 'center',
             gap: isMobile ? '8px' : '10px',
-            padding: isMobile ? '8px 10px' : '8px 12px',
-            borderRadius: '20px',
-            background: 'var(--pragna-surface)',
-            border: `1px solid ${inputBorder}`,
-            backdropFilter: 'blur(8px)',
-            boxShadow: '0 12px 28px rgba(0,0,0,0.42)',
-            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+            padding: isMobile ? '6px 10px 6px 14px' : '7px 10px 7px 16px',
+            borderRadius: '9999px',
+            background: 'rgba(18, 16, 12, 0.85)',
+            border: inputFocused
+              ? '1.5px solid rgba(212, 175, 55, 0.7)'
+              : '1.5px solid rgba(212, 175, 55, 0.42)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            boxShadow: inputFocused
+              ? '0 0 35px rgba(212, 175, 55, 0.22), 0 12px 36px rgba(0, 0, 0, 0.65)'
+              : '0 0 24px rgba(212, 175, 55, 0.12), 0 8px 28px rgba(0, 0, 0, 0.5)',
+            transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+            boxSizing: 'border-box',
           }}
         >
           {/* Text Area */}
@@ -946,29 +952,29 @@ export default function InputBar() {
             }}
           >
             {/* Left Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
               {/* Attach Button */}
               <div style={{ position: 'relative' }} ref={attachMenuRef}>
                 <button
-                  title="Attach"
+                  title="Attach file, image, or document"
                   onClick={() => setAttachMenuOpen(!attachMenuOpen)}
                   style={{
-                    width: '36px',
-                    height: '36px',
+                    width: '34px',
+                    height: '34px',
                     flexShrink: 0,
-                    borderRadius: '10px',
+                    borderRadius: '50%',
                     border: 'none',
-                    background: '#222222',
-                    color: 'var(--pragna-text-muted)',
+                    background: 'transparent',
+                    color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.15s ease',
                   }}
-                  className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
+                  className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.12)]"
                 >
-                  <PlusIcon size={17} strokeWidth={2.2} />
+                  <PlusIcon size={18} strokeWidth={2.2} />
                 </button>
 
                 {attachMenuOpen && (
@@ -980,9 +986,10 @@ export default function InputBar() {
                       zIndex: 50,
                       width: '150px',
                       background: 'var(--pragna-surface)',
-                      border: '1px solid rgba(212,175,55,0.22)',
-                      borderRadius: '10px',
-                      boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
+                      border: '1px solid rgba(212,175,55,0.28)',
+                      borderRadius: '12px',
+                      boxShadow: '0 12px 32px rgba(0,0,0,0.65), 0 0 16px rgba(212,175,55,0.12)',
+                      backdropFilter: 'blur(14px)',
                       padding: '4px',
                     }}
                   >
@@ -1028,20 +1035,20 @@ export default function InputBar() {
                 title="Voice input"
                 onClick={toggleMic}
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '34px',
+                  height: '34px',
                   flexShrink: 0,
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: recording ? 'rgba(220,100,100,0.2)' : 'transparent',
-                  color: recording ? '#ff6b6b' : 'var(--pragna-text-muted)',
+                  borderRadius: '50%',
+                  border: recording ? '1px solid rgba(239, 68, 68, 0.6)' : 'none',
+                  background: recording ? 'rgba(239, 68, 68, 0.18)' : 'transparent',
+                  color: recording ? '#ef4444' : 'var(--pragna-text-muted)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   transition: 'all 0.15s ease',
                 }}
-                className="hover:text-[var(--pragna-gold-soft)] hover:bg-[var(--pragna-surface-2)]"
+                className={recording ? 'animate-pulse' : 'hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.1)]'}
               >
                 {recording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
               </button>
@@ -1049,28 +1056,25 @@ export default function InputBar() {
               {/* Extended Thinking Toggle */}
               <button
                 type="button"
-                title={extendedThinking ? "Extended Thinking enabled (Deep Reasoning)" : "Enable Extended Thinking (Deep Reasoning)"}
+                title={extendedThinking ? "Extended Thinking enabled" : "Enable Extended Thinking"}
                 onClick={toggleExtendedThinking}
                 style={{
-                  height: '32px',
-                  padding: isMobile ? '0 8px' : '0 10px',
-                  borderRadius: '16px',
-                  border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  background: extendedThinking ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
-                  color: extendedThinking ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
-                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
-                  fontSize: '12px',
+                  gap: '4px',
+                  padding: '5px 8px',
+                  borderRadius: '999px',
+                  background: extendedThinking ? 'rgba(212, 175, 55, 0.16)' : 'transparent',
+                  border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid transparent',
+                  color: extendedThinking ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                  fontSize: '11.5px',
                   fontWeight: 600,
+                  cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  boxShadow: extendedThinking ? '0 0 10px rgba(212, 175, 55, 0.2)' : 'none',
                 }}
-                className="hover:text-[var(--pragna-gold-soft)] hover:border-[rgba(212,175,55,0.3)] hover:bg-[rgba(212,175,55,0.08)]"
+                className="hover:text-[var(--pragna-gold-soft)]"
               >
-                <ThinkIcon size={13} />
-                <span>Think</span>
+                <ThinkIcon size={14} />
               </button>
             </div>
 
@@ -1080,10 +1084,10 @@ export default function InputBar() {
                 onClick={stopGeneration}
                 title="Stop generating"
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '38px',
+                  height: '38px',
                   flexShrink: 0,
-                  borderRadius: '10px',
+                  borderRadius: '50%',
                   border: '1px solid rgba(220, 100, 100, 0.4)',
                   background: 'rgba(220, 60, 60, 0.25)',
                   color: '#ff7b7b',
@@ -1104,24 +1108,26 @@ export default function InputBar() {
                 disabled={!hasContent}
                 title="Send"
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '38px',
+                  height: '38px',
                   flexShrink: 0,
-                  borderRadius: '10px',
+                  borderRadius: '50%',
                   border: 'none',
-                  background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
-                  color: 'var(--pragna-bg)',
-                  cursor: 'pointer',
+                  background: hasContent
+                    ? 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)'
+                    : 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)',
+                  color: '#14120c',
+                  cursor: hasContent ? 'pointer' : 'default',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 6px 18px rgba(0,0,0,0.34), 0 0 16px rgba(212,175,55,0.25)',
-                  transition: 'all 0.15s ease',
-                  opacity: hasContent ? 1 : 0.5,
+                  boxShadow: '0 2px 14px rgba(212, 175, 55, 0.45)',
+                  transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                  opacity: hasContent ? 1 : 0.65,
                 }}
-                className="hover:shadow-[0_6px_18px_rgba(0,_0,_0,_0.34),_0_0_26px_rgba(212,_175,_55,_0.45)] active:scale-[0.94]"
+                className={hasContent ? 'hover:scale-108 active:scale-95 hover:shadow-[0_4px_18px_rgba(212,175,55,0.6)]' : ''}
               >
-                <SendIcon size={17} strokeWidth={2.2} />
+                <SendIcon size={17} strokeWidth={2.4} />
               </button>
             )}
           </div>
