@@ -853,7 +853,7 @@ export default function NewChatView({ onNavigateToImages }) {
               borderRadius: '50%',
               border: 'none',
               background: 'transparent',
-              color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+              color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : '#c9bda2',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -878,7 +878,7 @@ export default function NewChatView({ onNavigateToImages }) {
                 background: 'rgba(212, 175, 55, 0.14)',
                 border: '1px solid rgba(212, 175, 55, 0.3)',
                 fontSize: '11.5px',
-                color: 'var(--pragna-text)',
+                color: '#fffdf7',
                 maxWidth: '130px',
                 flexShrink: 0,
               }}
@@ -890,7 +890,7 @@ export default function NewChatView({ onNavigateToImages }) {
               <button
                 type="button"
                 onClick={() => setAttachments([])}
-                style={{ background: 'transparent', border: 'none', color: 'var(--pragna-text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                style={{ background: 'transparent', border: 'none', color: '#c9bda2', cursor: 'pointer', padding: 0, display: 'flex' }}
               >
                 <CloseIcon size={10} />
               </button>
@@ -913,7 +913,8 @@ export default function NewChatView({ onNavigateToImages }) {
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: 'var(--pragna-text)',
+              color: '#fffdf7',
+              caretColor: 'var(--pragna-gold)',
               fontSize: isMobile ? '14px' : '15px',
               fontFamily: 'inherit',
               lineHeight: 1.4,
@@ -1046,7 +1047,7 @@ export default function NewChatView({ onNavigateToImages }) {
                 borderRadius: '999px',
                 background: extendedThinking ? 'rgba(212, 175, 55, 0.16)' : 'transparent',
                 border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid transparent',
-                color: extendedThinking ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                color: extendedThinking ? 'var(--pragna-gold-soft)' : '#c9bda2',
                 fontSize: '11.5px',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -1068,7 +1069,7 @@ export default function NewChatView({ onNavigateToImages }) {
                 borderRadius: '50%',
                 border: isRecording ? '1px solid rgba(239, 68, 68, 0.6)' : 'none',
                 background: isRecording ? 'rgba(239, 68, 68, 0.18)' : 'transparent',
-                color: isRecording ? '#ef4444' : 'var(--pragna-text-muted)',
+                color: isRecording ? '#ef4444' : '#c9bda2',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

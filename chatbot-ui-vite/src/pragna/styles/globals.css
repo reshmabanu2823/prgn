@@ -72,9 +72,14 @@
     background: rgba(212, 175, 55, 0.35);
   }
 
-  textarea::placeholder, input::placeholder {
-    color: #a89878;
-    opacity: 0.75;
+  textarea::placeholder, input::placeholder, ::placeholder {
+    color: rgba(240, 230, 211, 0.78) !important;
+    opacity: 1 !important;
+  }
+
+  textarea, input {
+    color: #fffdf7;
+    caret-color: var(--pragna-gold);
   }
 
   textarea:focus, input:focus, button:focus {
