@@ -9,6 +9,7 @@ import GptModesPage from './pages/GptModesPage'
 import ComparePage from './pages/ComparePage'
 import StarredRequestsPage from './pages/StarredRequestsPage'
 import ChatWindow from '../components/chat/ChatWindow'
+import NewChatView from './components/NewChatView'
 
 import InputBar from '../components/input/InputBar'
 import AgentPanel from '../components/agent/AgentPanel'
@@ -325,6 +326,13 @@ function App({ onLogout, userProfile }) {
 
   const renderView = () => {
     if (activeView === 'chats') {
+      const activeChat = chats.find((c) => c.id === activeChatId)
+      const hasMessages = activeChat && activeChat.messages && activeChat.messages.length > 0
+
+      if (!hasMessages) {
+        return <NewChatView onNavigateToImages={() => setActiveView('images')} />
+      }
+
       return (
         <>
           <ChatWindow />
@@ -381,7 +389,6 @@ function App({ onLogout, userProfile }) {
     }
 
     if (activeView === 'compare') {
-
       return <ComparePage />
     }
 
@@ -393,7 +400,7 @@ function App({ onLogout, userProfile }) {
       )
     }
 
-    return <HomePage onUsePrompt={sendQuickPrompt} userProfile={userProfile} />
+    return <NewChatView onNavigateToImages={() => setActiveView('images')} />
   }
 
   return (
