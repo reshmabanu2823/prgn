@@ -376,7 +376,7 @@ def _build_image_generation_prompt(user_prompt: str, style: str, quality: str) -
                 "Do not add commentary, output only the rewritten prompt. "
                 f"Original: {user_clean}"
             )
-            resp, _ = llm.get_response(instruction, user_id='__image_prompt_rewriter__', chat_mode='general')
+            resp, *rest = llm.get_response(instruction, user_id='__image_prompt_rewriter__', chat_mode='general')
             rewritten = _clean_rewritten_image_prompt(resp)
             if rewritten and len(rewritten) >= 10:
                 logger.info(
@@ -704,11 +704,13 @@ def chat():
         chat_mode = data.get('chat_mode', 'general')
         model_override = data.get('model_override')
         fallback_models = data.get('fallback_models')
+        persona_system_prompt = data.get('persona_system_prompt')
+        extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
 
         if not user_message:
             return jsonify({'error': 'Message cannot be empty'}), 400
 
-        logger.info(f"Received message: {user_message[:50]}... (language: {language}, mode: {chat_mode})")
+        logger.info(f"Received message: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking})")
 
         # Unified orchestration path (agent tools + LLM/RAG)
         result = orchestrator.handle_query(
@@ -718,6 +720,8 @@ def chat():
             chat_mode=chat_mode,
             model_override=model_override,
             fallback_models=fallback_models,
+            persona_system_prompt=persona_system_prompt,
+            extended_thinking=extended_thinking,
         )
 
         _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
@@ -729,7 +733,9 @@ def chat():
             'route': result['route'],
             'action': result['action'],
             'actions': result['actions'],
-            'web_search_sources': result['web_search_sources']
+            'web_search_sources': result['web_search_sources'],
+            'thinking': result.get('thinking'),
+            'extended_thinking': result.get('extended_thinking', False),
         })
 
     except Exception as e:
@@ -792,6 +798,8 @@ def orchestrator_query():
         chat_mode = data.get('chat_mode', 'general')
         model_override = data.get('model_override')
         fallback_models = data.get('fallback_models')
+        persona_system_prompt = data.get('persona_system_prompt')
+        extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
 
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
@@ -803,6 +811,8 @@ def orchestrator_query():
             chat_mode=chat_mode,
             model_override=model_override,
             fallback_models=fallback_models,
+            persona_system_prompt=persona_system_prompt,
+            extended_thinking=extended_thinking,
         )
         _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
         return jsonify(result)
@@ -829,6 +839,11 @@ def orchestrator_analyze_uploads():
         chat_mode = request.form.get('chat_mode', 'general')
         model_override = request.form.get('model_override')
         fallback_models_raw = request.form.get('fallback_models', '[]')
+        persona_system_prompt = request.form.get('persona_system_prompt')
+        extended_thinking = (
+            request.form.get('extended_thinking') in ['true', 'True', '1']
+            or request.form.get('thinking_mode') in ['true', 'True', '1']
+        )
 
         try:
             fallback_models = json.loads(fallback_models_raw)
@@ -853,6 +868,8 @@ def orchestrator_analyze_uploads():
             chat_mode=chat_mode,
             model_override=model_override,
             fallback_models=fallback_models,
+            persona_system_prompt=persona_system_prompt,
+            extended_thinking=extended_thinking,
         )
 
         _persist_chat_turn(chat_id, request.user_id, user_message or "Analyzed uploaded files", result.get('response'), language=language)
@@ -1974,14 +1991,15 @@ def chat_stream():
         model_override = data.get('model_override')
         fallback_models = data.get('fallback_models')
         persona_system_prompt = data.get('persona_system_prompt')
+        extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
 
         if not user_message:
             return jsonify({'error': 'Message cannot be empty'}), 400
 
-        logger.info(f"Received streaming request: {user_message[:50]}... (language: {language}, mode: {chat_mode})")
+        logger.info(f"Received streaming request: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking})")
 
         def stream_orchestrated_chunks():
-            """Stream orchestrated response as real SSE (data: <json>\\n\\n lines)."""
+            """Stream orchestrated response as real SSE (data: <json>\n\n lines)."""
             result = orchestrator.handle_query(
                 user_message,
                 language=language,
@@ -1990,10 +2008,15 @@ def chat_stream():
                 model_override=model_override,
                 fallback_models=fallback_models,
                 persona_system_prompt=persona_system_prompt,
+                extended_thinking=extended_thinking,
             )
 
             actions = result.get('actions', [])
             sources = result.get('web_search_sources', [])
+            thinking = result.get('thinking')
+
+            if thinking:
+                yield f"data: {json.dumps({'thinking': thinking})}\n\n"
             if actions:
                 yield f"data: {json.dumps({'actions': actions})}\n\n"
             if sources:
@@ -2040,7 +2063,7 @@ def process_text():
         logger.info(f"Received text request: {user_message[:50]}... (language: {language})")
         
         # Get AI response with correct language (now returns tuple)
-        ai_response, search_sources = llm.get_response(user_message, language, user_id)
+        ai_response, search_sources, *rest = llm.get_response(user_message, language, user_id)
         
         # Generate TTS audio using gTTS
         from gtts import gTTS
@@ -2112,7 +2135,7 @@ def process_audio():
         
         # Get AI response in the detected language (now returns tuple)
         user_id = request.form.get('user_id', 'default')
-        ai_response, search_sources = llm.get_response(transcribed_text, detected_language, user_id)
+        ai_response, search_sources, *rest = llm.get_response(transcribed_text, detected_language, user_id)
         
         # Return both transcription and response
         # Generate TTS audio for the response

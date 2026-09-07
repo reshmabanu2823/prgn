@@ -104,6 +104,7 @@ export default function InputBar() {
     language, isLoading, setIsLoading, chatMode, setChatMode, inputRef,
     personas, activePersonaId, setActivePersonaId,
     newChat, setLanguage, abortControllerRef, stopGeneration, openArtifact,
+    extendedThinking, toggleExtendedThinking,
   } = useContext(ChatContext);
 
 
@@ -546,18 +547,20 @@ export default function InputBar() {
             normalizedLanguage,
             targetChatId,
             chatMode,
-            msgAttachments
+            msgAttachments,
+            extendedThinking
           );
         } catch (uploadErr) {
           console.warn("Upload analysis endpoint failed, falling back to text-only orchestrator:", uploadErr);
           const fallbackText = `${fullText}\n[Note: Attachment parsing endpoint unavailable.]`;
-          data = await sendOrchestratedMessage(fallbackText, normalizedLanguage, targetChatId, chatMode);
+          data = await sendOrchestratedMessage(fallbackText, normalizedLanguage, targetChatId, chatMode, extendedThinking);
         }
         setIsLoading(false);
 
         if (data && data.response) {
           const responseText = data.response;
           const sources = data.web_search_sources || [];
+          const thinking = data.thinking;
 
           setChats((prev) =>
             prev.map((c) =>
@@ -566,7 +569,7 @@ export default function InputBar() {
                     ...c,
                     messages: c.messages.map((m, idx) =>
                       idx === c.messages.length - 1
-                        ? { ...m, text: responseText, isStreaming: false, sources }
+                        ? { ...m, text: responseText, isStreaming: false, sources, thinking }
                         : m
                     ),
                   }
@@ -592,7 +595,22 @@ export default function InputBar() {
             user_id: targetChatId,
             chatMode,
             personaSystemPrompt: activePersona?.system_prompt,
+            extendedThinking,
             signal: controller.signal,
+            onThinking: (thinking) => {
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === targetChatId
+                    ? {
+                        ...c,
+                        messages: c.messages.map((m, idx) =>
+                          idx === c.messages.length - 1 ? { ...m, thinking } : m
+                        ),
+                      }
+                    : c
+                )
+              );
+            },
             onChunk: (chunk) => {
               sawResponse = true;
               setChats((prev) =>
@@ -1019,6 +1037,36 @@ export default function InputBar() {
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"></path>
                 </svg>
+              </button>
+
+              {/* Extended Thinking Toggle */}
+              <button
+                type="button"
+                title={extendedThinking ? "Extended Thinking enabled (Deep Reasoning)" : "Enable Extended Thinking (Deep Reasoning)"}
+                onClick={toggleExtendedThinking}
+                style={{
+                  height: '32px',
+                  padding: isMobile ? '0 8px' : '0 10px',
+                  borderRadius: '16px',
+                  border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  background: extendedThinking ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
+                  color: extendedThinking ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  transition: 'all 0.15s ease',
+                  boxShadow: extendedThinking ? '0 0 10px rgba(212, 175, 55, 0.2)' : 'none',
+                }}
+                className="hover:text-[var(--pragna-gold-soft)] hover:border-[rgba(212,175,55,0.3)] hover:bg-[rgba(212,175,55,0.08)]"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
+                  <path d="M9 21h6" />
+                </svg>
+                <span>Think</span>
               </button>
             </div>
 

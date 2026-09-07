@@ -17,6 +17,7 @@ def build_prompt(
     context_text: Optional[str],
     chat_mode: str = "general",
     user_profile_memory: Optional[str] = None,
+    extended_thinking: bool = False,
 ) -> List[Dict[str, str]]:
     """
     Construct the message list for the final Groq call with token-aware history.
@@ -101,6 +102,18 @@ def build_prompt(
         ),
     ]
 
+
+    if extended_thinking:
+        system_parts.append(
+            "EXTENDED REASONING / THINKING MODE ENABLED:\n"
+            "You must carefully think through the problem before providing your final answer.\n"
+            "Wrap your full step-by-step internal reasoning process inside <think> and </think> tags.\n"
+            "Inside <think>...</think>:\n"
+            "1. Break down the user query, identify core requirements, nuances, and constraints.\n"
+            "2. Formulate hypotheses, perform calculations, verify logic, and evaluate alternative approaches.\n"
+            "3. Check for edge cases, potential pitfalls, and confirm accuracy.\n"
+            "After the closing </think> tag, provide your final, well-structured, polished answer for the user."
+        )
 
     if user_profile_memory:
         system_parts.append(
@@ -271,6 +284,33 @@ def extract_artifact_from_response(text: str):
     }
 
     return cleaned_text, artifact_dict
+
+
+def extract_thinking_from_response(text: str) -> tuple[str, Optional[str]]:
+    """
+    Extract reasoning/thinking content enclosed in <think>...</think> or <thought>...</thought> tags.
+    Returns (cleaned_text_without_thinking, thinking_content_or_None).
+    """
+    if not text:
+        return text, None
+
+    import re
+
+    # Pattern 1: Complete <think>...</think> or <thought>...</thought> tags
+    match = re.search(r"<(?:think|thought)>(.*?)</(?:think|thought)>", text, flags=re.DOTALL | re.IGNORECASE)
+    if match:
+        thinking = match.group(1).strip()
+        cleaned = re.sub(r"<(?:think|thought)>.*?</(?:think|thought)>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+        return cleaned, thinking
+
+    # Pattern 2: Open tag not yet closed (e.g. truncated or streaming)
+    match_open = re.search(r"<(?:think|thought)>(.*)$", text, flags=re.DOTALL | re.IGNORECASE)
+    if match_open:
+        thinking = match_open.group(1).strip()
+        cleaned = re.sub(r"<(?:think|thought)>.*$", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+        return cleaned, thinking
+
+    return text, None
 
 
 

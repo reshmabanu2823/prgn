@@ -193,6 +193,7 @@ class LLMService:
         model_override: Optional[str] = None,
         fallback_models: Optional[List[str]] = None,
         persona_system_prompt: Optional[str] = None,
+        extended_thinking: bool = False,
     ) -> tuple:
         """
         Get AI response for a user message
@@ -202,14 +203,15 @@ class LLMService:
             language: Language code (en, hi, kn, etc.)
             user_id: User identifier for conversation history
             chat_mode: Chat mode (general, explain_concepts, code_assistance, etc.)
+            extended_thinking: Enable deeper step-by-step reasoning
             
         Returns:
-            Tuple of (AI response string, list of search sources)
+            Tuple of (AI response string, list of search sources, optional thinking content)
         """
         # In OLLAMA_ONLY or DEEPSEEK_LOCAL mode, skip Groq API key check
         if config.LLM_PROVIDER not in ('ollama_only', 'deepseek_local'):
             if not self.api_key and not self._can_run_without_groq(model_override):
-                return "Sorry, the AI service is not configured. Please set GROQ_API_KEY.", []
+                return "Sorry, the AI service is not configured. Please set GROQ_API_KEY.", [], None
 
         try:
             intent_result = classify_query(message, model_override=model_override)
@@ -229,7 +231,7 @@ class LLMService:
                 ai_response = plan.get('tool_result', 'I handled your calculation.')
                 self._add_to_history(user_id, "user", message)
                 self._add_to_history(user_id, "assistant", ai_response)
-                return ai_response, []
+                return ai_response, [], None
 
             context_text = plan.get('context')
             sources = plan.get('sources', [])
@@ -242,7 +244,7 @@ class LLMService:
                 )
                 self._add_to_history(user_id, "user", message)
                 self._add_to_history(user_id, "assistant", unavailable_msg)
-                return unavailable_msg, []
+                return unavailable_msg, [], None
             
             # ==================== RAG RETRIEVAL LOGIC ====================
             # If plan didn't provide context and RAG is available, try RAG
@@ -275,17 +277,15 @@ class LLMService:
                 )
                 self._add_to_history(user_id, "user", message)
                 self._add_to_history(user_id, "assistant", unavailable_msg)
-                return unavailable_msg, []
+                return unavailable_msg, [], None
 
             history = self._get_history(user_id)
             user_profile_memory = memory_db.get_user_profile_summary(user_id)
             
             # ==================== CACHING LOGIC ====================
             # Check if we should cache this query
-            # Skip caching entirely when a persona is active: the cache key is not
-            # keyed by persona, so a cached plain response could bleed into a
-            # persona request (or vice versa) with no indication persona logic ran.
-            is_cacheable = self._is_cacheable_query(message, history) and not persona_system_prompt
+            # Skip caching entirely when a persona or extended thinking is active
+            is_cacheable = self._is_cacheable_query(message, history) and not persona_system_prompt and not extended_thinking
             cache_key = None
             
             if is_cacheable:
@@ -301,7 +301,7 @@ class LLMService:
                     logger.info(f"🔥 LLM Cache HIT for: {message[:50]}...")
                     self._add_to_history(user_id, "user", message)
                     self._add_to_history(user_id, "assistant", cached_response)
-                    return cached_response, sources
+                    return cached_response, sources, None
             # =====================================================
             
             prompt_messages = build_prompt(
@@ -311,6 +311,7 @@ class LLMService:
                 context_text,
                 chat_mode,
                 user_profile_memory=user_profile_memory,
+                extended_thinking=extended_thinking,
             )
             
             if persona_system_prompt:
@@ -332,17 +333,22 @@ class LLMService:
 
             prompt_messages.insert(0, {"role": "system", "content": system_msg})
             
-            logger.info("Calling generate_completion: model_override=%s, fallback_models=%s", model_override, fallback_models)
+            logger.info("Calling generate_completion: model_override=%s, fallback_models=%s, extended_thinking=%s", model_override, fallback_models, extended_thinking)
             
-            ai_response = generate_completion(
+            raw_ai_response = generate_completion(
                 prompt_messages,
                 model_override=model_override,
                 fallback_models=fallback_models,
                 language=language,
                 chat_mode=chat_mode,
+                extended_thinking=extended_thinking,
             )
             
-            logger.info("AI response received: %s...", ai_response[:100])
+            from services.prompt_builder import extract_thinking_from_response
+            cleaned_ai_response, thinking = extract_thinking_from_response(raw_ai_response)
+            ai_response = cleaned_ai_response if cleaned_ai_response else raw_ai_response
+
+            logger.info("AI response received: %s... (thinking=%s)", ai_response[:100], bool(thinking))
 
             # Store in cache if cacheable
             if is_cacheable and cache_key:
@@ -352,12 +358,11 @@ class LLMService:
             self._add_to_history(user_id, "user", message)
             self._add_to_history(user_id, "assistant", ai_response)
 
-            logger.info(f"Got response: {ai_response[:100]}...")
-            return ai_response, sources
+            return ai_response, sources, thinking
 
         except Exception as exc:
             logger.error(f"Unexpected error in get_response: {exc}", exc_info=True)
-            return "Sorry, something went wrong. Please try again.", []
+            return "Sorry, something went wrong. Please try again.", [], None
 
     def get_response_stream(
         self,
@@ -367,6 +372,8 @@ class LLMService:
         chat_mode: str = 'general',
         model_override: Optional[str] = None,
         fallback_models: Optional[List[str]] = None,
+        persona_system_prompt: Optional[str] = None,
+        extended_thinking: bool = False,
     ):
         """
         Get streaming AI response for a user message
@@ -379,14 +386,18 @@ class LLMService:
                 return
 
         try:
-            response_text, sources = self.get_response(
+            response_text, sources, thinking = self.get_response(
                 message,
                 language,
                 user_id,
                 chat_mode,
                 model_override=model_override,
                 fallback_models=fallback_models,
+                persona_system_prompt=persona_system_prompt,
+                extended_thinking=extended_thinking,
             )
+            if thinking:
+                yield json.dumps({"thinking": thinking}) + "\n"
             if sources:
                 yield json.dumps({"sources": sources}) + "\n"
 

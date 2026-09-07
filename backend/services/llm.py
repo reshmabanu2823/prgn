@@ -11,7 +11,7 @@ import config
 logger = logging.getLogger(__name__)
 
 
-def _call_ollama_direct(messages: List[Dict[str, str]]) -> str:
+def _call_ollama_direct(messages: List[Dict[str, str]], extended_thinking: bool = False) -> str:
     """
     Call Ollama API directly - OLLAMA-ONLY MODE.
     Uses OpenAI-compatible /v1/chat/completions endpoint for local models.
@@ -23,7 +23,7 @@ def _call_ollama_direct(messages: List[Dict[str, str]]) -> str:
 
     
     try:
-        return _request_completion(messages, f"ollama:{primary_model}")
+        return _request_completion(messages, f"ollama:{primary_model}", extended_thinking=extended_thinking)
     except Exception as err:
         logger.warning(f"Primary model '{primary_model}' error: {err}. Checking if Ollama is running...")
         installed_models = []
@@ -40,7 +40,7 @@ def _call_ollama_direct(messages: List[Dict[str, str]]) -> str:
             if fb != primary_model:
                 try:
                     logger.info(f"Using available local model: {fb}")
-                    return _request_completion(messages, f"ollama:{fb}")
+                    return _request_completion(messages, f"ollama:{fb}", extended_thinking=extended_thinking)
                 except Exception as fb_err:
                     logger.warning(f"Fallback model '{fb}' failed: {fb_err}")
                     continue
@@ -142,7 +142,7 @@ def _resolve_request_config(model_key: Optional[str]) -> Dict[str, object]:
     }
 
 
-def _request_completion(messages: List[Dict[str, str]], model_key: Optional[str]) -> str:
+def _request_completion(messages: List[Dict[str, str]], model_key: Optional[str], extended_thinking: bool = False) -> str:
     request_cfg = _resolve_request_config(model_key)
     
     import sys
@@ -169,12 +169,12 @@ def _request_completion(messages: List[Dict[str, str]], model_key: Optional[str]
     payload = {
         "model": request_cfg["model"],
         "messages": messages,
-        "temperature": 0.7,
-        "max_tokens": 1024,
-        "top_p": 0.9,
+        "temperature": 0.6 if extended_thinking else 0.7,
+        "max_tokens": 3072 if extended_thinking else 1024,
+        "top_p": 0.95 if extended_thinking else 0.9,
     }
     if request_cfg["provider"] == "ollama":
-        payload["think"] = False  # disable thinking mode for qwen3/deepseek-r1 models
+        payload["think"] = True if extended_thinking else False
     headers = {"Content-Type": "application/json"}
     if request_cfg["api_key"]:
         headers["Authorization"] = f"Bearer {request_cfg['api_key']}"
@@ -217,6 +217,7 @@ def generate_completion(
     fallback_models: Optional[List[str]] = None,
     language: str = "en",
     chat_mode: str = "general",
+    extended_thinking: bool = False,
 ) -> str:
     """Generate completion with model override and fallback chain support.
     
@@ -226,6 +227,7 @@ def generate_completion(
         fallback_models: List of fallback models to try
         language: Language code (en, hi, ta, te, kn, etc.)
         chat_mode: Chat mode (general, explain_concepts, code_assistance, etc.)
+        extended_thinking: Whether to enable extended reasoning mode
         
     Returns:
         Completion string or error message
@@ -233,7 +235,7 @@ def generate_completion(
     
     # =========== OLLAMA-ONLY MODE ===========
     # If LLM_PROVIDER == 'ollama_only', skip all fallback logic
-    logger.info("generate_completion() called: LLM_PROVIDER='%s', model_override=%s", config.LLM_PROVIDER, model_override)
+    logger.info("generate_completion() called: LLM_PROVIDER='%s', model_override=%s, extended_thinking=%s", config.LLM_PROVIDER, model_override, extended_thinking)
     
     if config.LLM_PROVIDER == 'ollama_only':
         logger.info("OLLAMA-ONLY MODE: URL=%s, Model=%s", config.OLLAMA_API_URL, config.OLLAMA_MODEL)
@@ -241,11 +243,11 @@ def generate_completion(
         logger.info("🚀 OLLAMA-ONLY MODE ACTIVATED")
         logger.info(f"   URL: {config.OLLAMA_API_URL}")
         logger.info(f"   Model: {config.OLLAMA_MODEL}")
-        logger.info(f"   No fallbacks - Ollama required")
+        logger.info(f"   Extended Thinking: {extended_thinking}")
         logger.info("=" * 80)
         
         try:
-            result = _call_ollama_direct(messages)
+            result = _call_ollama_direct(messages, extended_thinking=extended_thinking)
             return result
         except RuntimeError as e:
             error_msg = str(e)
@@ -329,7 +331,7 @@ def generate_completion(
     for candidate in deduped:
         try:
             logger.info(f"🔴 [LLM] Attempting model: {candidate}")
-            result = _request_completion(messages, candidate)
+            result = _request_completion(messages, candidate, extended_thinking=extended_thinking)
             logger.info(f"✅ [LLM] SUCCESS with {candidate}: {len(result)} chars")
             return result
         except requests.exceptions.Timeout:
@@ -366,7 +368,7 @@ def generate_completion(
         seen.add(key)
         try:
             logger.warning("Trying emergency fallback text model: %s", candidate)
-            return _request_completion(messages, candidate)
+            return _request_completion(messages, candidate, extended_thinking=extended_thinking)
         except RuntimeError as exc:
             if "401" in str(exc):
                 logger.error("🔴 AUTHENTICATION ERROR in fallback: %s", exc)

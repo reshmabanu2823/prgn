@@ -359,6 +359,118 @@ const renderAttachments = (attachments) => (
   </div>
 );
 
+// Extract thinking process from raw message or direct thinking field
+const extractThinkingContent = (text, directThinking) => {
+  if (directThinking) {
+    const clean = (text || "").replace(/<think>[\s\S]*?<\/think>/gi, "").replace(/<thought>[\s\S]*?<\/thought>/gi, "").trim();
+    return { thinking: directThinking.trim(), cleanText: clean || text || "" };
+  }
+  if (!text) return { thinking: null, cleanText: "" };
+
+  const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/i) || text.match(/<thought>([\s\S]*?)(?:<\/thought>|$)/i);
+  if (thinkMatch) {
+    const thinking = thinkMatch[1].trim();
+    const cleanText = text.replace(/<think>[\s\S]*?<\/think>/gi, "").replace(/<thought>[\s\S]*?<\/thought>/gi, "").trim();
+    return { thinking: thinking || null, cleanText };
+  }
+  return { thinking: null, cleanText: text };
+};
+
+const ThinkingAccordion = ({ thinking, isStreaming }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!thinking) return null;
+
+  return (
+    <div
+      style={{
+        borderRadius: "12px",
+        background: "rgba(212, 175, 55, 0.05)",
+        border: "1px solid rgba(212, 175, 55, 0.2)",
+        overflow: "hidden",
+        marginBottom: "8px",
+        transition: "all 0.2s ease",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        style={{
+          width: "100%",
+          padding: "8px 12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          color: "var(--pragna-gold-soft)",
+          fontSize: "12.5px",
+          fontWeight: 600,
+          textAlign: "left",
+          gap: "8px",
+        }}
+        className="hover:bg-[rgba(212,175,55,0.08)]"
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
+            <path d="M9 21h6" />
+          </svg>
+          <span>Thinking Process {isStreaming && !isOpen ? "(Reasoning...)" : ""}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--pragna-text-muted)", fontSize: "11px" }}>
+          <span>{isOpen ? "Hide" : "Show"}</span>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transform: isOpen ? "rotate(180deg)" : "none",
+              transition: "transform 0.2s ease",
+            }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+      </button>
+
+      {isOpen && (
+        <div
+          style={{
+            padding: "10px 14px 12px 14px",
+            borderTop: "1px solid rgba(212, 175, 55, 0.12)",
+            background: "rgba(0, 0, 0, 0.22)",
+            color: "var(--pragna-text-muted)",
+            fontSize: "13px",
+            lineHeight: "1.6",
+            whiteSpace: "pre-wrap",
+            fontFamily: "var(--pragna-chat-font)",
+            maxHeight: "280px",
+            overflowY: "auto",
+          }}
+        >
+          {thinking}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function MessageBubble({ message, language = "en", onRetry, onEdit, isLoading, onToggleBookmark }) {
   const { openArtifact } = useContext(ChatContext);
   const [liked, setLiked] = useState(false);
@@ -370,9 +482,12 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
   const [draftText, setDraftText] = useState(message.text || "");
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
 
+  const { thinking: extractedThinking, cleanText: effectiveText } = extractThinkingContent(message.text, message.thinking);
+
   const copyToClipboard = () => {
-    if (!message.text) return;
-    navigator.clipboard?.writeText(message.text);
+    const textToCopy = effectiveText || message.text;
+    if (!textToCopy) return;
+    navigator.clipboard?.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -405,7 +520,8 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
   };
 
   const speakText = () => {
-    if (!message.text?.trim()) {
+    const textToSpeak = (effectiveText || message.text || "").trim();
+    if (!textToSpeak) {
       console.warn("No text to speak");
       return;
     }
@@ -423,11 +539,11 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
 
       // Call backend to generate speech (backend handles Google TTS silently)
       const requestBody = {
-        text: message.text,
+        text: textToSpeak,
         language: targetLang
       };
 
-      console.log(`Requesting speech from backend | Language: ${targetLang} | Text: ${message.text.substring(0, 50)}...`);
+      console.log(`Requesting speech from backend | Language: ${targetLang} | Text: ${textToSpeak.substring(0, 50)}...`);
 
       // Fetch audio from backend
       fetch(`${API_BASE}/api/speech`, {
@@ -675,7 +791,10 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
             </div>
           ) : (
             <>
-              {renderContentBlocks(message.text, isStreaming)}
+              {extractedThinking && (
+                <ThinkingAccordion thinking={extractedThinking} isStreaming={isStreaming} />
+              )}
+              {renderContentBlocks(effectiveText, isStreaming)}
               {message.artifact && (
                 <div
                   onClick={() => openArtifact?.(message.artifact)}

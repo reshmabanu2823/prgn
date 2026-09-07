@@ -154,6 +154,8 @@ export default function NewChatView({ onNavigateToImages }) {
     setChatMode,
     personas,
     activePersonaId,
+    extendedThinking,
+    toggleExtendedThinking,
   } = useContext(ChatContext)
 
   const [inputVal, setInputVal] = useState('')
@@ -404,18 +406,20 @@ export default function NewChatView({ onNavigateToImages }) {
               normalizedLanguage,
               targetChatId,
               chatMode,
-              promptAttachments
+              promptAttachments,
+              extendedThinking
             )
           } catch (uploadErr) {
             console.warn('Upload analysis failed, falling back to standard orchestrator:', uploadErr)
             const fallbackText = `${promptText}\n[Note: Attachment parsing endpoint unavailable.]`
-            data = await sendOrchestratedMessage(fallbackText, normalizedLanguage, targetChatId, chatMode)
+            data = await sendOrchestratedMessage(fallbackText, normalizedLanguage, targetChatId, chatMode, extendedThinking)
           }
           setIsLoading(false)
 
           if (data && data.response) {
             const responseText = data.response
             const sources = data.web_search_sources || []
+            const thinking = data.thinking
 
             setChats((prev) =>
               prev.map((c) =>
@@ -424,7 +428,7 @@ export default function NewChatView({ onNavigateToImages }) {
                       ...c,
                       messages: c.messages.map((m, idx) =>
                         idx === c.messages.length - 1
-                          ? { ...m, text: responseText, isStreaming: false, sources }
+                          ? { ...m, text: responseText, isStreaming: false, sources, thinking }
                           : m
                       ),
                     }
@@ -445,6 +449,21 @@ export default function NewChatView({ onNavigateToImages }) {
             user_id: targetChatId,
             chatMode,
             personaSystemPrompt: activePersona?.system_prompt,
+            extendedThinking,
+            onThinking: (thinking) => {
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === targetChatId
+                    ? {
+                        ...c,
+                        messages: c.messages.map((m, idx) =>
+                          idx === c.messages.length - 1 ? { ...m, thinking } : m
+                        ),
+                      }
+                    : c
+                )
+              )
+            },
             onChunk: (chunk) => {
               sawResponse = true
               setChats((prev) =>
@@ -863,113 +882,144 @@ export default function NewChatView({ onNavigateToImages }) {
               paddingTop: '2px',
             }}
           >
-            {/* Left side: Mode selector dropdown */}
-            <div style={{ position: 'relative' }} ref={modeDropdownRef}>
+            {/* Left side: Mode selector dropdown & Think button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ position: 'relative' }} ref={modeDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setModeDropdownOpen((prev) => !prev)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '5px 12px',
+                    borderRadius: '999px',
+                    background: 'rgba(212, 175, 55, 0.08)',
+                    border: '1px solid rgba(212, 175, 55, 0.22)',
+                    color: 'var(--pragna-gold-soft)',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    letterSpacing: '0.2px',
+                  }}
+                  className="hover:bg-[rgba(212,175,55,0.16)] hover:border-accent-500/40"
+                >
+                  <CurrentModeIcon size={13} />
+                  <span>{currentModeObj.label}</span>
+                  <ChevronDown
+                    size={12}
+                    style={{
+                      transform: modeDropdownOpen ? 'rotate(180deg)' : 'none',
+                      transition: 'transform 0.15s ease',
+                      opacity: 0.8,
+                    }}
+                  />
+                </button>
+
+                {/* Mode Dropdown Popover */}
+                {modeDropdownOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      left: '0',
+                      zIndex: 40,
+                      width: '190px',
+                      borderRadius: '14px',
+                      background: 'var(--pragna-surface)',
+                      border: '1px solid rgba(212, 175, 55, 0.28)',
+                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(212, 175, 55, 0.1)',
+                      backdropFilter: 'blur(12px)',
+                      padding: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      animation: 'fadeUp 0.15s ease',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        letterSpacing: '1.2px',
+                        color: 'var(--pragna-text-muted)',
+                        textTransform: 'uppercase',
+                        padding: '6px 10px 4px 10px',
+                      }}
+                    >
+                      Select Chat Mode
+                    </div>
+                    {CHAT_MODES.map((mode) => {
+                      const active = chatMode === mode.id
+                      const ModeIcon = mode.icon
+                      return (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() => {
+                            setChatMode(mode.id)
+                            setModeDropdownOpen(false)
+                            if (textareaRef.current) textareaRef.current.focus()
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: active ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
+                            color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text)',
+                            fontSize: '13px',
+                            fontWeight: active ? 650 : 500,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.12s ease',
+                          }}
+                          className="hover:bg-[rgba(212,175,55,0.1)] hover:text-[var(--pragna-gold-soft)]"
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <ModeIcon size={14} />
+                            <span>{mode.label}</span>
+                          </div>
+                          {active && <Check size={13} className="text-[var(--pragna-gold-soft)]" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Extended Thinking Toggle */}
               <button
                 type="button"
-                onClick={() => setModeDropdownOpen((prev) => !prev)}
+                onClick={toggleExtendedThinking}
+                title={extendedThinking ? "Extended Thinking enabled (Deep Reasoning)" : "Enable Extended Thinking (Deep Reasoning)"}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '5px 12px',
+                  gap: '5px',
+                  padding: '5px 10px',
                   borderRadius: '999px',
-                  background: 'rgba(212, 175, 55, 0.08)',
-                  border: '1px solid rgba(212, 175, 55, 0.22)',
-                  color: 'var(--pragna-gold-soft)',
-                  fontSize: '12.5px',
+                  background: extendedThinking ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
+                  border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
+                  color: extendedThinking ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                  fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  letterSpacing: '0.2px',
+                  boxShadow: extendedThinking ? '0 0 10px rgba(212, 175, 55, 0.2)' : 'none',
                 }}
-                className="hover:bg-[rgba(212,175,55,0.16)] hover:border-accent-500/40"
+                className="hover:bg-[rgba(212,175,55,0.08)] hover:text-[var(--pragna-gold-soft)]"
               >
-                <CurrentModeIcon size={13} />
-                <span>{currentModeObj.label}</span>
-                <ChevronDown
-                  size={12}
-                  style={{
-                    transform: modeDropdownOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 0.15s ease',
-                    opacity: 0.8,
-                  }}
-                />
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
+                  <path d="M9 21h6" />
+                </svg>
+                <span>Think</span>
               </button>
-
-              {/* Mode Dropdown Popover */}
-              {modeDropdownOpen && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 6px)',
-                    left: '0',
-                    zIndex: 40,
-                    width: '190px',
-                    borderRadius: '14px',
-                    background: 'var(--pragna-surface)',
-                    border: '1px solid rgba(212, 175, 55, 0.28)',
-                    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(212, 175, 55, 0.1)',
-                    backdropFilter: 'blur(12px)',
-                    padding: '6px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                    animation: 'fadeUp 0.15s ease',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: '10.5px',
-                      fontWeight: 700,
-                      letterSpacing: '1.2px',
-                      color: 'var(--pragna-text-muted)',
-                      textTransform: 'uppercase',
-                      padding: '6px 10px 4px 10px',
-                    }}
-                  >
-                    Select Chat Mode
-                  </div>
-                  {CHAT_MODES.map((mode) => {
-                    const active = chatMode === mode.id
-                    const ModeIcon = mode.icon
-                    return (
-                      <button
-                        key={mode.id}
-                        type="button"
-                        onClick={() => {
-                          setChatMode(mode.id)
-                          setModeDropdownOpen(false)
-                          if (textareaRef.current) textareaRef.current.focus()
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '8px',
-                          padding: '8px 10px',
-                          borderRadius: '8px',
-                          border: 'none',
-                          background: active ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
-                          color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text)',
-                          fontSize: '13px',
-                          fontWeight: active ? 650 : 500,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.12s ease',
-                        }}
-                        className="hover:bg-[rgba(212,175,55,0.1)] hover:text-[var(--pragna-gold-soft)]"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <ModeIcon size={14} />
-                          <span>{mode.label}</span>
-                        </div>
-                        {active && <Check size={13} className="text-[var(--pragna-gold-soft)]" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
             </div>
 
             {/* Right side: Attachment, Mic, Send */}

@@ -135,6 +135,23 @@ export function ChatProvider({ children }) {
     return localStorage.getItem("pragna_chat_mode") || "general";
   });
 
+  const [extendedThinking, setExtendedThinkingState] = useState(() => {
+    return localStorage.getItem("pragna_extended_thinking") === "true";
+  });
+
+  const setExtendedThinking = (val) => {
+    setExtendedThinkingState(val);
+    localStorage.setItem("pragna_extended_thinking", val ? "true" : "false");
+  };
+
+  const toggleExtendedThinking = () => {
+    setExtendedThinkingState((prev) => {
+      const next = !prev;
+      localStorage.setItem("pragna_extended_thinking", next ? "true" : "false");
+      return next;
+    });
+  };
+
   const [personas, setPersonas] = useState([]);
 
   const [activePersonaId, setActivePersonaId] = useState(() => {
@@ -396,6 +413,9 @@ export function ChatProvider({ children }) {
         deleteTemplate,
         chatMode,
         setChatMode,
+        extendedThinking,
+        setExtendedThinking,
+        toggleExtendedThinking,
         personas,
         activePersonaId,
         setActivePersonaId,

@@ -77,7 +77,13 @@ export const sendAudio = (audioBlob, language, user_id) => {
   return api.post("/process_audio", form);
 };
 
-export const sendOrchestratedMessage = async (text, language, user_id, chatMode = "general") => {
+export const sendOrchestratedMessage = async (
+  text,
+  language,
+  user_id,
+  chatMode = "general",
+  extendedThinking = false
+) => {
   const normalizedLanguage = normalizeLanguageCode(language);
   const modelRouting = _resolveModelProfileRouting();
 
@@ -94,6 +100,7 @@ export const sendOrchestratedMessage = async (text, language, user_id, chatMode 
       chat_mode: chatMode,
       model_override: modelRouting.model_override,
       fallback_models: modelRouting.fallback_models,
+      extended_thinking: extendedThinking,
     }),
   });
 
@@ -112,10 +119,12 @@ export const sendOrchestratedMessageStream = async ({
   user_id,
   chatMode = "general",
   personaSystemPrompt,
+  extendedThinking = false,
   signal,
   onChunk,
   onSources,
   onArtifact,
+  onThinking,
   onDone,
 }) => {
   const normalizedLanguage = normalizeLanguageCode(language);
@@ -135,6 +144,7 @@ export const sendOrchestratedMessageStream = async ({
       chat_mode: chatMode,
       model_override: modelRouting.model_override,
       fallback_models: modelRouting.fallback_models,
+      extended_thinking: extendedThinking,
       ...(personaSystemPrompt ? { persona_system_prompt: personaSystemPrompt } : {}),
     }),
   });
@@ -148,7 +158,9 @@ export const sendOrchestratedMessageStream = async ({
   }
 
   await _consumeSSE(response, (event) => {
-    if (event.type === "artifact") {
+    if (event.thinking) {
+      onThinking?.(event.thinking);
+    } else if (event.type === "artifact") {
       onArtifact?.(event);
     } else if (event.content) {
       onChunk?.(event.content);
@@ -166,12 +178,12 @@ export const sendOrchestratedMessageStream = async ({
 
 
 export const sendOrchestratedUploadMessage = async (
-
   text,
   language,
   user_id,
   chatMode = "general",
-  attachments = []
+  attachments = [],
+  extendedThinking = false
 ) => {
   const normalizedLanguage = normalizeLanguageCode(language);
   const modelRouting = _resolveModelProfileRouting();
@@ -183,6 +195,9 @@ export const sendOrchestratedUploadMessage = async (
   formData.append("chat_mode", chatMode);
   formData.append("model_override", modelRouting.model_override);
   formData.append("fallback_models", JSON.stringify(modelRouting.fallback_models || []));
+  if (extendedThinking) {
+    formData.append("extended_thinking", "true");
+  }
 
   attachments.forEach((item) => {
     if (!item?.file) return;
@@ -206,7 +221,13 @@ export const sendOrchestratedUploadMessage = async (
   return data;
 };
 
-export const sendMessage = async (text, language, user_id, chatMode = "general") => {
+export const sendMessage = async (
+  text,
+  language,
+  user_id,
+  chatMode = "general",
+  extendedThinking = false
+) => {
   const normalizedLanguage = normalizeLanguageCode(language);
   const modelRouting = _resolveModelProfileRouting();
 
@@ -223,6 +244,7 @@ export const sendMessage = async (text, language, user_id, chatMode = "general")
       chat_mode: chatMode,
       model_override: modelRouting.model_override,
       fallback_models: modelRouting.fallback_models,
+      extended_thinking: extendedThinking,
     }),
   });
 

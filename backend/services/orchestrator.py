@@ -25,6 +25,7 @@ class AIOrchestrator:
         model_override: Optional[str] = None,
         fallback_models: Optional[List[str]] = None,
         persona_system_prompt: Optional[str] = None,
+        extended_thinking: bool = False,
     ) -> Dict[str, Any]:
         """Process one request and return a unified response envelope."""
         route = self._route_agent_action(message)
@@ -37,6 +38,8 @@ class AIOrchestrator:
                 "action": "world_news",
                 "actions": [agent_tools.open_world_monitor()],
                 "web_search_sources": [],
+                "thinking": None,
+                "extended_thinking": extended_thinking,
                 "language": language,
                 "chat_mode": chat_mode,
             }
@@ -48,6 +51,8 @@ class AIOrchestrator:
                 "action": "open_world_monitor",
                 "actions": [agent_tools.open_world_monitor()],
                 "web_search_sources": [],
+                "thinking": None,
+                "extended_thinking": extended_thinking,
                 "language": language,
                 "chat_mode": chat_mode,
             }
@@ -59,6 +64,8 @@ class AIOrchestrator:
                 "action": "time",
                 "actions": [],
                 "web_search_sources": [],
+                "thinking": None,
+                "extended_thinking": extended_thinking,
                 "language": language,
                 "chat_mode": chat_mode,
             }
@@ -75,6 +82,8 @@ class AIOrchestrator:
                 "action": "system_info",
                 "actions": [],
                 "web_search_sources": [],
+                "thinking": None,
+                "extended_thinking": extended_thinking,
                 "language": language,
                 "chat_mode": chat_mode,
             }
@@ -89,6 +98,8 @@ class AIOrchestrator:
                 "action": "model_update_info",
                 "actions": [],
                 "web_search_sources": [],
+                "thinking": None,
+                "extended_thinking": extended_thinking,
                 "language": language,
                 "chat_mode": chat_mode,
             }
@@ -106,12 +117,14 @@ class AIOrchestrator:
                 "action": "word_count",
                 "actions": [],
                 "web_search_sources": [],
+                "thinking": None,
+                "extended_thinking": extended_thinking,
                 "language": language,
                 "chat_mode": chat_mode,
             }
 
         # Default: reuse existing classifier/router/planner + RAG flow through LLM service.
-        ai_response, sources = self.llm.get_response(
+        ai_response, sources, thinking = self.llm.get_response(
             message,
             language,
             user_id,
@@ -119,6 +132,7 @@ class AIOrchestrator:
             model_override=model_override,
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
+            extended_thinking=extended_thinking,
         )
         return {
             "response": ai_response,
@@ -126,6 +140,8 @@ class AIOrchestrator:
             "action": "chat",
             "actions": [],
             "web_search_sources": sources,
+            "thinking": thinking,
+            "extended_thinking": extended_thinking,
             "language": language,
             "chat_mode": chat_mode,
         }
