@@ -17,13 +17,13 @@ const extractImagePrompt = (text) => {
     .trim() || raw;
 };
 
-const DOCUMENT_VERB_RE = /\b(create|generate|make|write|draft)\b.*\b((word\s*)?doc(ument)?|report|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point|presentation|slides?)\b/i;
+const DOCUMENT_VERB_RE = /\b(create|generate|make|write|draft|build|export|give\s+me)\b.*\b(word(\s*(doc(ument)?|file))?|\bdocx\b|\bdoc(ument)?\b|report|excel(\s*(sheet|spreadsheet|file))?|spreadsheet|\bxlsx\b|\bpdf(\s*file)?\b|power\s*point(\s*(presentation|deck|file|slides?))?|presentation|slides?|\bpptx\b)\b/i;
 
 const DOCUMENT_FORMAT_PATTERNS = [
-  { format: "pptx", re: /power\s*point|presentation|slides?/i },
-  { format: "xlsx", re: /excel|spreadsheet|sheet/i },
+  { format: "pptx", re: /power\s*point|presentation|slides?|\bpptx\b/i },
+  { format: "xlsx", re: /excel|spreadsheet|sheet|\bxlsx\b/i },
   { format: "pdf", re: /\bpdf\b/i },
-  { format: "docx", re: /word\s*doc(ument)?|\bdoc(ument)?\b|report/i },
+  { format: "docx", re: /word(\s*(doc(ument)?|file))?|\bdoc(ument)?\b|\bdocx\b|report/i },
 ];
 
 const extractDocumentRequest = (text) => {
@@ -32,7 +32,7 @@ const extractDocumentRequest = (text) => {
   const match = DOCUMENT_FORMAT_PATTERNS.find((p) => p.re.test(raw));
   if (!match) return null;
   const subject = raw
-    .replace(/^(please\s+)?(create|generate|make|write|draft)\s+(an?\s+)?(ms\s*)?((word\s*)?doc(ument)?|excel\s*(sheet|spreadsheet)|spreadsheet|pdf|power\s*point(\s*(presentation|deck))?|presentation|slides?|report)\s*(about|on|for|regarding)?\s*/i, "")
+    .replace(/^(please\s+)?(create|generate|make|write|draft|build|export|give\s+me)\s+(me\s+)?(an?\s+)?(ms\s*)?((word(\s*(doc(ument)?|file))?|\bdocx\b|\bdoc(ument)?\b|excel(\s*(sheet|spreadsheet|file))?|spreadsheet|\bxlsx\b|pdf(\s*file)?|power\s*point(\s*(presentation|deck|file))?|presentation|slides?|\bpptx\b|report))\s*(about|on|for|regarding|with|containing|and|to|,)?\s*/i, "")
     .trim() || raw;
   return { format: match.format, subject };
 };
