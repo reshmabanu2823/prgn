@@ -236,16 +236,6 @@ class LLMService:
             context_text = plan.get('context')
             sources = plan.get('sources', [])
 
-            # For live/realtime/news intents, do not fabricate when providers fail.
-            if intent in {"realtime", "news"} and not context_text:
-                unavailable_msg = (
-                    "I could not fetch verified live data right now from the connected providers. "
-                    "Please try again in a few seconds, or ask for a specific match/team so I can retry a narrower live lookup."
-                )
-                self._add_to_history(user_id, "user", message)
-                self._add_to_history(user_id, "assistant", unavailable_msg)
-                return unavailable_msg, [], None
-            
             # ==================== RAG RETRIEVAL LOGIC ====================
             # If plan didn't provide context and RAG is available, try RAG
             if context_text is None and self._should_use_rag(intent, message):
@@ -269,11 +259,11 @@ class LLMService:
                         logger.info(f"📚 RAG provided context from {len(rag_sources)} sources")
             # =========================================================
 
-            # Re-check after retrieval attempts: realtime/news must stay source-grounded.
+            # If live/realtime context is still unavailable, provide a clean professional notification.
             if intent in {"realtime", "news"} and not context_text:
                 unavailable_msg = (
-                    "Live context is still unavailable after retrying sources, so I cannot provide a trustworthy live update right now. "
-                    "Please retry shortly."
+                    "I could not fetch verified live web data for this topic right now. "
+                    "Please check your internet connection or try rephrasing your question."
                 )
                 self._add_to_history(user_id, "user", message)
                 self._add_to_history(user_id, "assistant", unavailable_msg)
