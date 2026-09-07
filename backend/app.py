@@ -65,7 +65,7 @@ TEXT_FILE_EXTENSIONS = {
     '.h', '.hpp', '.sql', '.yml', '.yaml', '.toml', '.ini', '.cfg', '.conf', '.log'
 }
 
-RICH_TEXT_EXTENSIONS = {'.pdf', '.docx', '.xlsx'}
+RICH_TEXT_EXTENSIONS = {'.pdf', '.docx', '.xlsx', '.pptx'}
 
 
 def _format_bytes(size):
@@ -140,6 +140,28 @@ def _extract_text_from_blob(filename, content_type, blob):
             return '\n'.join(lines).strip(), 'xlsx', None
         except Exception as exc:
             return '', 'xlsx', f"XLSX extraction unavailable: {exc}"
+
+    if ext == '.pptx':
+        try:
+            from pptx import Presentation
+
+            prs = Presentation(io.BytesIO(blob))
+            lines = []
+            for slide_idx, slide in enumerate(prs.slides, start=1):
+                if slide_idx > 30:
+                    break
+                slide_texts = []
+                for shape in slide.shapes:
+                    if shape.has_text_frame:
+                        for paragraph in shape.text_frame.paragraphs:
+                            t = paragraph.text.strip()
+                            if t:
+                                slide_texts.append(t)
+                if slide_texts:
+                    lines.append(f"[Slide {slide_idx}]\n" + "\n".join(slide_texts))
+            return '\n\n'.join(lines).strip(), 'pptx', None
+        except Exception as exc:
+            return '', 'pptx', f"PPTX extraction unavailable: {exc}"
 
     return '', 'metadata_only', None
 
@@ -2691,6 +2713,37 @@ def summarize_chat():
 GENERATED_DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'generated_docs')
 
 
+def _cleanup_old_generated_docs(max_age_seconds=86400, max_files=100):
+    """Remove generated documents older than max_age_seconds or keeping only the newest max_files."""
+    try:
+        if not os.path.exists(GENERATED_DOCS_DIR):
+            return
+        now = time.time()
+        files = []
+        for entry in os.scandir(GENERATED_DOCS_DIR):
+            if entry.is_file():
+                files.append(entry)
+        for entry in files:
+            try:
+                stat = entry.stat()
+                if now - stat.st_mtime > max_age_seconds:
+                    os.remove(entry.path)
+            except Exception:
+                pass
+        remaining = sorted(
+            [e for e in os.scandir(GENERATED_DOCS_DIR) if e.is_file()],
+            key=lambda e: e.stat().st_mtime
+        )
+        if len(remaining) > max_files:
+            for entry in remaining[:-max_files]:
+                try:
+                    os.remove(entry.path)
+                except Exception:
+                    pass
+    except Exception as exc:
+        logger.warning(f"Generated docs cleanup error: {exc}")
+
+
 @app.route('/api/documents/generate', methods=['POST'])
 @limiter.limit(config.AI_GENERATION_RATE_LIMIT)
 def generate_document():
@@ -2721,6 +2774,7 @@ def generate_document():
             return jsonify({'error': 'Failed to generate document content'}), 500
 
         os.makedirs(GENERATED_DOCS_DIR, exist_ok=True)
+        _cleanup_old_generated_docs()
 
         builders = {'docx': _build_docx, 'xlsx': _build_xlsx, 'pdf': _build_pdf, 'pptx': _build_pptx}
         subject_slug = _sanitize_filename_component(structure.get('title') or prompt)
