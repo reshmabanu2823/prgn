@@ -600,12 +600,12 @@ export default function NewChatView({ onNavigateToImages }) {
       <div
         style={{
           position: 'absolute',
-          top: '-120px',
-          right: '-100px',
-          width: '550px',
-          height: '550px',
+          top: '-100px',
+          right: '-80px',
+          width: '600px',
+          height: '600px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.09) 0%, rgba(212, 175, 55, 0.02) 45%, transparent 70%)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
@@ -613,11 +613,11 @@ export default function NewChatView({ onNavigateToImages }) {
       <div
         style={{
           position: 'absolute',
-          top: '35%',
+          top: '30%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: '680px',
-          height: '420px',
+          width: '750px',
+          height: '450px',
           borderRadius: '50%',
           background: 'radial-gradient(ellipse, rgba(212, 175, 55, 0.04) 0%, transparent 75%)',
           pointerEvents: 'none',
@@ -625,30 +625,91 @@ export default function NewChatView({ onNavigateToImages }) {
         }}
       />
 
+      {/* Celestial Golden Horizon Arc Graphic (Bottom Right) */}
+      <svg
+        style={{
+          position: 'absolute',
+          right: 0,
+          bottom: 0,
+          width: isMobile ? '280px' : '520px',
+          height: isMobile ? '220px' : '380px',
+          pointerEvents: 'none',
+          zIndex: 0,
+          overflow: 'visible',
+        }}
+        viewBox="0 0 520 380"
+        fill="none"
+      >
+        <defs>
+          <linearGradient id="celestialArcGrad" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#f5ebd9" stopOpacity="0.85" />
+            <stop offset="35%" stopColor="#e5c76b" stopOpacity="0.65" />
+            <stop offset="70%" stopColor="#d4af37" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#b8860b" stopOpacity="0.0" />
+          </linearGradient>
+          <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="30%" stopColor="#f5ebd9" stopOpacity="0.8" />
+            <stop offset="70%" stopColor="#d4af37" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#d4af37" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        {/* Outer subtle glow arc */}
+        <path
+          d="M 520 80 Q 320 180 180 380"
+          stroke="#d4af37"
+          strokeWidth="6"
+          strokeOpacity="0.08"
+          fill="none"
+        />
+        {/* Main luminous arc */}
+        <path
+          d="M 520 80 Q 320 180 180 380"
+          stroke="url(#celestialArcGrad)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Secondary inner contour arc */}
+        <path
+          d="M 520 120 Q 360 210 240 380"
+          stroke="url(#celestialArcGrad)"
+          strokeWidth="0.8"
+          strokeOpacity="0.35"
+          fill="none"
+        />
+        {/* Bright celestial star dot */}
+        <circle cx="370" cy="158" r="8" fill="url(#starGlow)" />
+        <circle cx="370" cy="158" r="2.5" fill="#ffffff" />
+      </svg>
+
       {/* Top Header tracking phrase */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'flex-end',
           alignItems: 'center',
-          padding: isMobile ? '16px 20px 0 20px' : '22px 36px 0 36px',
+          padding: isMobile ? '16px 20px 0 20px' : '22px 40px 0 40px',
           zIndex: 2,
           flexShrink: 0,
         }}
       >
-        <span
-          style={{
-            fontSize: isMobile ? '10px' : '11px',
-            letterSpacing: isMobile ? '2px' : '3.2px',
-            fontWeight: 600,
-            color: 'var(--pragna-text-muted)',
-            opacity: 0.7,
-            textTransform: 'uppercase',
-            userSelect: 'none',
-          }}
-        >
-          EXPLORE &middot; LEARN &middot; CREATE &middot; EVOLVE
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              fontSize: isMobile ? '9.5px' : '11px',
+              letterSpacing: isMobile ? '2px' : '3.2px',
+              fontWeight: 600,
+              color: 'var(--pragna-text-muted)',
+              opacity: 0.75,
+              textTransform: 'uppercase',
+              userSelect: 'none',
+            }}
+          >
+            EXPLORE &nbsp; LEARN &nbsp; CREATE &nbsp; EVOLVE
+          </span>
+          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
+        </div>
       </div>
 
       {/* Center Main Content Container */}
@@ -659,10 +720,10 @@ export default function NewChatView({ onNavigateToImages }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: isMobile ? '24px 16px 36px 16px' : '40px 24px 48px 24px',
+          padding: isMobile ? '20px 16px 32px 16px' : '36px 24px 44px 24px',
           zIndex: 1,
           width: '100%',
-          maxWidth: '920px',
+          maxWidth: '880px',
           margin: '0 auto',
           boxSizing: 'border-box',
           animation: 'fadeUp 0.35s ease',
@@ -684,7 +745,7 @@ export default function NewChatView({ onNavigateToImages }) {
               width: isMobile ? '46px' : '54px',
               height: isMobile ? '46px' : '54px',
               objectFit: 'contain',
-              filter: 'drop-shadow(0 4px 16px rgba(212, 175, 55, 0.28))',
+              filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))',
               transition: 'transform 0.25s ease',
             }}
             className="hover:scale-105"
@@ -695,9 +756,10 @@ export default function NewChatView({ onNavigateToImages }) {
         <div
           style={{
             fontSize: isMobile ? '10.5px' : '11.5px',
-            letterSpacing: '2.8px',
+            letterSpacing: '3px',
             fontWeight: 600,
-            color: 'var(--pragna-text-muted)',
+            color: 'var(--pragna-gold-soft)',
+            opacity: 0.85,
             textTransform: 'uppercase',
             marginBottom: '10px',
             textAlign: 'center',
@@ -722,10 +784,10 @@ export default function NewChatView({ onNavigateToImages }) {
           How can Pragna help you{' '}
           <span
             style={{
-              background: 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 60%, #d4af37 100%)',
+              background: 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              display: isMobile ? 'inline' : 'inline',
+              display: 'inline',
             }}
           >
             today?
@@ -746,365 +808,314 @@ export default function NewChatView({ onNavigateToImages }) {
           Ask, explore, create or dive into any topic.
         </p>
 
-        {/* Main Prompt Input Box */}
+        {/* Glowing Capsule Prompt Input Box (Matching Approved Reference Design) */}
         <div
           style={{
             width: '100%',
-            maxWidth: '740px',
-            background: 'var(--pragna-surface-2)',
+            maxWidth: '780px',
+            background: 'rgba(18, 16, 12, 0.85)',
             border: isFocused
-              ? '1px solid rgba(212, 175, 55, 0.55)'
-              : '1px solid rgba(212, 175, 55, 0.22)',
-            borderRadius: '22px',
+              ? '1.5px solid rgba(212, 175, 55, 0.7)'
+              : '1.5px solid rgba(212, 175, 55, 0.42)',
+            borderRadius: '9999px',
             boxShadow: isFocused
-              ? '0 10px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(212, 175, 55, 0.14)'
-              : '0 4px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(212, 175, 55, 0.04)',
-            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-            padding: isMobile ? '12px 14px' : '14px 18px',
+              ? '0 0 35px rgba(212, 175, 55, 0.22), 0 12px 36px rgba(0, 0, 0, 0.65)'
+              : '0 0 24px rgba(212, 175, 55, 0.12), 0 8px 28px rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+            padding: isMobile ? '6px 10px 6px 14px' : '7px 10px 7px 18px',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
+            alignItems: 'center',
+            gap: isMobile ? '6px' : '10px',
             position: 'relative',
-            marginBottom: '22px',
+            marginBottom: '24px',
+            boxSizing: 'border-box',
           }}
         >
-          {/* Attachment preview chips */}
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".docx,.xlsx,.pdf,.pptx,.txt,.md,.csv,.json,image/*"
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+          />
+
+          {/* Attachment Button (Leftmost) */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Attach document or image"
+            style={{
+              padding: '6px',
+              borderRadius: '50%',
+              border: 'none',
+              background: 'transparent',
+              color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+            className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.12)]"
+          >
+            <PaperclipIcon size={19} strokeWidth={1.9} />
+          </button>
+
+          {/* Attachment Chips (Floating preview if attached) */}
           {attachments.length > 0 && (
             <div
               style={{
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: '8px',
-                paddingBottom: '6px',
-                borderBottom: '1px solid rgba(212, 175, 55, 0.12)',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '3px 8px',
+                borderRadius: '999px',
+                background: 'rgba(212, 175, 55, 0.14)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                fontSize: '11.5px',
+                color: 'var(--pragna-text)',
+                maxWidth: '130px',
+                flexShrink: 0,
               }}
             >
-              {attachments.map((att, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    background: 'rgba(212, 175, 55, 0.1)',
-                    border: '1px solid rgba(212, 175, 55, 0.25)',
-                    fontSize: '12px',
-                    color: 'var(--pragna-text)',
-                    maxWidth: '220px',
-                  }}
-                >
-                  {att.type === 'image' ? (
-                    <CreateImageIcon size={13} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
-                  ) : (
-                    <FileTextIcon size={13} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
-                  )}
-                  <span
-                    style={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {att.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(idx)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--pragna-text-muted)',
-                      cursor: 'pointer',
-                      padding: '2px',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                    className="hover:text-[var(--pragna-gold-soft)]"
-                  >
-                    <CloseIcon size={12} />
-                  </button>
-                </div>
-              ))}
+              <FileTextIcon size={12} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {attachments.length} file{attachments.length > 1 ? 's' : ''}
+              </span>
+              <button
+                type="button"
+                onClick={() => setAttachments([])}
+                style={{ background: 'transparent', border: 'none', color: 'var(--pragna-text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+              >
+                <CloseIcon size={10} />
+              </button>
             </div>
           )}
 
-          {/* Text input area */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%', minHeight: '26px' }}>
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              placeholder="Ask Pragna anything..."
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: 'var(--pragna-text)',
-                fontSize: isMobile ? '14px' : '15px',
-                fontFamily: 'inherit',
-                lineHeight: 1.5,
-                resize: 'none',
-                padding: '2px 4px',
-              }}
-            />
-          </div>
-
-          {/* Bottom row inside input: Controls (Mode, Attach, Mic, Send) */}
-          <div
+          {/* Text Input */}
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="Ask Pragna anything..."
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '8px',
-              paddingTop: '2px',
+              flex: 1,
+              minWidth: 0,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--pragna-text)',
+              fontSize: isMobile ? '14px' : '15px',
+              fontFamily: 'inherit',
+              lineHeight: 1.4,
+              resize: 'none',
+              padding: '6px 0',
+              maxHeight: '120px',
             }}
-          >
-            {/* Left side: Mode selector dropdown & Think button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ position: 'relative' }} ref={modeDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setModeDropdownOpen((prev) => !prev)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '5px 12px',
-                    borderRadius: '999px',
-                    background: 'rgba(212, 175, 55, 0.08)',
-                    border: '1px solid rgba(212, 175, 55, 0.22)',
-                    color: 'var(--pragna-gold-soft)',
-                    fontSize: '12.5px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    letterSpacing: '0.2px',
-                  }}
-                  className="hover:bg-[rgba(212,175,55,0.16)] hover:border-accent-500/40"
-                >
-                  <CurrentModeIcon size={13} />
-                  <span>{currentModeObj.label}</span>
-                  <ChevronDownIcon
-                    size={12}
-                    style={{
-                      transform: modeDropdownOpen ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.15s ease',
-                      opacity: 0.8,
-                    }}
-                  />
-                </button>
+          />
 
-                {/* Mode Dropdown Popover */}
-                {modeDropdownOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      left: '0',
-                      zIndex: 40,
-                      width: '190px',
-                      borderRadius: '14px',
-                      background: 'var(--pragna-surface)',
-                      border: '1px solid rgba(212, 175, 55, 0.28)',
-                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(212, 175, 55, 0.1)',
-                      backdropFilter: 'blur(12px)',
-                      padding: '6px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '2px',
-                      animation: 'fadeUp 0.15s ease',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '10.5px',
-                        fontWeight: 700,
-                        letterSpacing: '1.2px',
-                        color: 'var(--pragna-text-muted)',
-                        textTransform: 'uppercase',
-                        padding: '6px 10px 4px 10px',
-                      }}
-                    >
-                      Select Chat Mode
-                    </div>
-                    {CHAT_MODES.map((mode) => {
-                      const active = chatMode === mode.id
-                      const ModeIcon = mode.icon
-                      return (
-                        <button
-                          key={mode.id}
-                          type="button"
-                          onClick={() => {
-                            setChatMode(mode.id)
-                            setModeDropdownOpen(false)
-                            if (textareaRef.current) textareaRef.current.focus()
-                          }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '8px',
-                            padding: '8px 10px',
-                            borderRadius: '8px',
-                            border: 'none',
-                            background: active ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
-                            color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text)',
-                            fontSize: '13px',
-                            fontWeight: active ? 650 : 500,
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.12s ease',
-                          }}
-                          className="hover:bg-[rgba(212,175,55,0.1)] hover:text-[var(--pragna-gold-soft)]"
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <ModeIcon size={14} />
-                            <span>{mode.label}</span>
-                          </div>
-                          {active && <CheckIcon size={13} className="text-[var(--pragna-gold-soft)]" />}
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Extended Thinking Toggle */}
+          {/* Right Action Group */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '7px', flexShrink: 0 }}>
+            {/* Mode selector dropdown */}
+            <div style={{ position: 'relative' }} ref={modeDropdownRef}>
               <button
                 type="button"
-                onClick={toggleExtendedThinking}
-                title={extendedThinking ? "Extended Thinking enabled (Deep Reasoning)" : "Enable Extended Thinking (Deep Reasoning)"}
+                onClick={() => setModeDropdownOpen((prev) => !prev)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
+                  gap: '4px',
                   padding: '5px 10px',
                   borderRadius: '999px',
-                  background: extendedThinking ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
-                  border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
-                  color: extendedThinking ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
-                  fontSize: '12px',
+                  background: 'rgba(212, 175, 55, 0.08)',
+                  border: '1px solid rgba(212, 175, 55, 0.22)',
+                  color: 'var(--pragna-gold-soft)',
+                  fontSize: '12.5px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  boxShadow: extendedThinking ? '0 0 10px rgba(212, 175, 55, 0.2)' : 'none',
+                  letterSpacing: '0.2px',
                 }}
-                className="hover:bg-[rgba(212,175,55,0.08)] hover:text-[var(--pragna-gold-soft)]"
+                className="hover:bg-[rgba(212,175,55,0.16)] hover:border-accent-500/40"
               >
-                <ThinkIcon size={13} />
-                <span>Think</span>
+                <span>{currentModeObj.label}</span>
+                <ChevronDownIcon
+                  size={12}
+                  style={{
+                    transform: modeDropdownOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.15s ease',
+                    opacity: 0.8,
+                  }}
+                />
               </button>
+
+              {/* Mode Dropdown Popover */}
+              {modeDropdownOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: '0',
+                    zIndex: 40,
+                    width: '180px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface)',
+                    border: '1px solid rgba(212, 175, 55, 0.28)',
+                    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65), 0 0 16px rgba(212, 175, 55, 0.12)',
+                    backdropFilter: 'blur(14px)',
+                    padding: '6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    animation: 'fadeUp 0.15s ease',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      letterSpacing: '1.2px',
+                      color: 'var(--pragna-text-muted)',
+                      textTransform: 'uppercase',
+                      padding: '6px 10px 4px 10px',
+                    }}
+                  >
+                    Select Chat Mode
+                  </div>
+                  {CHAT_MODES.map((mode) => {
+                    const active = chatMode === mode.id
+                    const ModeIcon = mode.icon
+                    return (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => {
+                          setChatMode(mode.id)
+                          setModeDropdownOpen(false)
+                          if (textareaRef.current) textareaRef.current.focus()
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px',
+                          padding: '7px 10px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: active ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
+                          color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text)',
+                          fontSize: '12.5px',
+                          fontWeight: active ? 650 : 500,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.12s ease',
+                        }}
+                        className="hover:bg-[rgba(212,175,55,0.1)] hover:text-[var(--pragna-gold-soft)]"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <ModeIcon size={13} />
+                          <span>{mode.label}</span>
+                        </div>
+                        {active && <CheckIcon size={12} className="text-[var(--pragna-gold-soft)]" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Right side: Attachment, Mic, Send */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".docx,.xlsx,.pdf,.pptx,.txt,.md,.csv,.json,image/*"
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-              />
+            {/* Extended Thinking Toggle */}
+            <button
+              type="button"
+              onClick={toggleExtendedThinking}
+              title={extendedThinking ? "Extended Thinking enabled" : "Enable Extended Thinking"}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '5px 8px',
+                borderRadius: '999px',
+                background: extendedThinking ? 'rgba(212, 175, 55, 0.16)' : 'transparent',
+                border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid transparent',
+                color: extendedThinking ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                fontSize: '11.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              className="hover:text-[var(--pragna-gold-soft)]"
+            >
+              <ThinkIcon size={14} />
+            </button>
 
-              {/* Attachment Button */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                title="Attach document or image"
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--pragna-text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.1)]"
-              >
-                <PaperclipIcon size={17} />
-              </button>
+            {/* Mic / Voice Button */}
+            <button
+              type="button"
+              onClick={toggleSpeechRecognition}
+              title={isRecording ? 'Stop recording' : 'Voice input'}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: isRecording ? '1px solid rgba(239, 68, 68, 0.6)' : 'none',
+                background: isRecording ? 'rgba(239, 68, 68, 0.18)' : 'transparent',
+                color: isRecording ? '#ef4444' : 'var(--pragna-text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              className={isRecording ? 'animate-pulse' : 'hover:text-[var(--pragna-gold-soft)]'}
+            >
+              {isRecording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
+            </button>
 
-              {/* Mic / Voice Button */}
-              <button
-                type="button"
-                onClick={toggleSpeechRecognition}
-                title={isRecording ? 'Stop recording' : 'Voice input'}
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  border: isRecording ? '1px solid rgba(239, 68, 68, 0.6)' : 'none',
-                  background: isRecording ? 'rgba(239, 68, 68, 0.18)' : 'transparent',
-                  color: isRecording ? '#ef4444' : 'var(--pragna-text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                className={
-                  isRecording
-                    ? 'animate-pulse'
-                    : 'hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.1)]'
-                }
-              >
-                {isRecording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
-              </button>
-
-              {/* Send Button */}
-              <button
-                type="button"
-                onClick={() => handleSubmit()}
-                disabled={!hasContent || isLoading}
-                title="Send message"
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: hasContent
-                    ? 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-accent))'
-                    : 'rgba(212, 175, 55, 0.15)',
-                  color: hasContent ? '#1a1405' : 'var(--pragna-text-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: hasContent && !isLoading ? 'pointer' : 'default',
-                  opacity: hasContent && !isLoading ? 1 : 0.45,
-                  boxShadow:
-                    hasContent && !isLoading
-                      ? '0 2px 10px rgba(212, 175, 55, 0.4), 0 0 12px rgba(212, 175, 55, 0.2)'
-                      : 'none',
-                  transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                  transform: hasContent && !isLoading ? 'scale(1)' : 'scale(0.95)',
-                }}
-                className={
-                  hasContent && !isLoading
-                    ? 'hover:scale-105 active:scale-95 hover:shadow-[0_4px_16px_rgba(212,175,55,0.5)]'
-                    : ''
-                }
-              >
-                <SendIcon size={16} strokeWidth={2.4} />
-              </button>
-            </div>
+            {/* Send Button (Solid Gold Circular Pill matching Reference Design) */}
+            <button
+              type="button"
+              onClick={() => handleSubmit()}
+              disabled={!hasContent || isLoading}
+              title="Send message"
+              style={{
+                width: isMobile ? '36px' : '40px',
+                height: isMobile ? '36px' : '40px',
+                borderRadius: '50%',
+                border: 'none',
+                background: hasContent
+                  ? 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)'
+                  : 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)',
+                color: '#14120c',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: hasContent && !isLoading ? 'pointer' : 'default',
+                opacity: hasContent && !isLoading ? 1 : 0.65,
+                boxShadow: '0 2px 14px rgba(212, 175, 55, 0.45)',
+                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                transform: hasContent && !isLoading ? 'scale(1.02)' : 'scale(1)',
+              }}
+              className={
+                hasContent && !isLoading
+                  ? 'hover:scale-108 active:scale-95 hover:shadow-[0_4px_18px_rgba(212,175,55,0.6)]'
+                  : ''
+              }
+            >
+              <SendIcon size={17} strokeWidth={2.4} />
+            </button>
           </div>
         </div>
 
-        {/* Quick Action Chips */}
+        {/* Quick Action Chips (6 Pill Capsules matching Reference Design) */}
         <div
           style={{
             display: 'flex',
@@ -1113,7 +1124,7 @@ export default function NewChatView({ onNavigateToImages }) {
             justifyContent: 'center',
             gap: isMobile ? '8px' : '10px',
             width: '100%',
-            maxWidth: '740px',
+            maxWidth: '780px',
           }}
         >
           {QUICK_ACTIONS.map((action) => {
@@ -1127,22 +1138,23 @@ export default function NewChatView({ onNavigateToImages }) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '7px',
-                  padding: isMobile ? '7px 14px' : '8px 16px',
+                  padding: isMobile ? '7px 14px' : '9px 18px',
                   borderRadius: '999px',
-                  background: 'var(--pragna-surface-2)',
-                  border: '1px solid rgba(212, 175, 55, 0.18)',
+                  background: 'rgba(22, 19, 14, 0.65)',
+                  border: '1px solid rgba(212, 175, 55, 0.22)',
                   color: 'var(--pragna-text-soft)',
                   fontSize: isMobile ? '12.5px' : '13.5px',
                   fontWeight: 500,
                   cursor: 'pointer',
                   transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
+                  backdropFilter: 'blur(8px)',
                 }}
-                className="hover:border-accent-500/50 hover:bg-[rgba(212,175,55,0.08)] hover:text-[var(--pragna-gold-soft)] hover:-translate-y-0.5"
+                className="hover:border-accent-500/60 hover:bg-[rgba(212,175,55,0.12)] hover:text-[var(--pragna-gold-soft)] hover:shadow-[0_0_12px_rgba(212,175,55,0.25)] hover:-translate-y-0.5"
               >
-                <IconComponent size={14} className="opacity-80" />
+                <IconComponent size={14} className="opacity-90 text-[var(--pragna-gold-soft)]" />
                 <span>{action.label}</span>
               </button>
             )
@@ -1150,67 +1162,45 @@ export default function NewChatView({ onNavigateToImages }) {
         </div>
       </div>
 
-      {/* Bottom Footer Tagline */}
+      {/* Bottom Left Tagline (Matching Reference Design) */}
       <div
         style={{
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: isMobile ? '16px 16px 20px 16px' : '20px 24px 28px 24px',
+          alignItems: 'flex-start',
+          gap: '12px',
+          padding: isMobile ? '16px 20px 20px 20px' : '20px 40px 28px 40px',
           flexShrink: 0,
           zIndex: 1,
           userSelect: 'none',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            maxWidth: '280px',
-            width: '100%',
-            marginBottom: '6px',
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              height: '1px',
-              background: 'linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.25))',
-            }}
-          />
+        <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.6, fontSize: '14px', lineHeight: 1 }}>—</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <span
             style={{
               fontSize: '10px',
               fontWeight: 700,
-              letterSpacing: '2.5px',
+              letterSpacing: '2.4px',
               color: 'var(--pragna-text-muted)',
-              opacity: 0.7,
+              opacity: 0.75,
+              textTransform: 'uppercase',
             }}
           >
-            PRAGNA-1A
+            SAME CURIOSITY.
           </span>
-          <div
+          <span
             style={{
-              flex: 1,
-              height: '1px',
-              background: 'linear-gradient(90deg, rgba(212, 175, 55, 0.25), transparent)',
+              fontSize: '9.5px',
+              letterSpacing: '2px',
+              fontWeight: 600,
+              color: 'var(--pragna-text-muted)',
+              opacity: 0.55,
+              textTransform: 'uppercase',
             }}
-          />
+          >
+            A BRIGHTER TOMORROW.
+          </span>
         </div>
-        <span
-          style={{
-            fontSize: '9.5px',
-            letterSpacing: '2px',
-            fontWeight: 600,
-            color: 'var(--pragna-text-muted)',
-            opacity: 0.5,
-            textTransform: 'uppercase',
-          }}
-        >
-          CURIOSITY DRIVES PROGRESS
-        </span>
       </div>
     </div>
   )

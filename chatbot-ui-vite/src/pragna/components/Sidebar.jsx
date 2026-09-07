@@ -397,7 +397,7 @@ ${turns}
   const unfiledChats = filteredChats.filter((chat) => !chat.folderId)
 
   return (
-    <aside style={{ width: onClose ? '100%' : '340px', maxWidth: '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pragna-surface)', borderRight: '1px solid var(--pragna-border)', backdropFilter: 'blur(8px)', height: '100%' }}>
+    <aside style={{ width: onClose ? '100%' : '270px', maxWidth: '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pragna-surface)', borderRight: '1px solid var(--pragna-border)', backdropFilter: 'blur(8px)', height: '100%' }}>
       
       {/* Wordmark logo */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 14px 20px', flexShrink: 0, gap: '12px' }}>
@@ -528,7 +528,22 @@ ${turns}
             gap: '3px',
           }}
         >
-          <div style={{ padding: '0 10px 10px 10px', position: 'relative' }}>
+          <div style={{ padding: '0 8px 10px 8px', position: 'relative' }}>
+            <span
+              style={{
+                position: 'absolute',
+                left: '18px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--pragna-text-muted)',
+                pointerEvents: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                opacity: 0.8,
+              }}
+            >
+              <SearchIcon size={14} />
+            </span>
             <input
               ref={sidebarSearchInputRef}
               type="text"
@@ -537,12 +552,13 @@ ${turns}
               placeholder="Search chats..."
               style={{
                 width: '100%',
-                padding: searchQuery ? '7px 60px 7px 12px' : '7px 44px 7px 12px',
+                padding: searchQuery ? '7px 54px 7px 34px' : '7px 42px 7px 34px',
                 borderRadius: '8px',
                 border: '1px solid var(--pragna-border)',
                 background: 'var(--pragna-surface-2)',
                 color: 'var(--pragna-text)',
-                fontSize: '13px',
+                fontSize: '12.5px',
+                boxSizing: 'border-box',
               }}
               className="focus-ring"
             />
@@ -553,7 +569,7 @@ ${turns}
                 title="Clear search"
                 style={{
                   position: 'absolute',
-                  right: '48px',
+                  right: '44px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'none',
@@ -572,17 +588,18 @@ ${turns}
               title="Open command palette (jump to any chat or run an action)"
               style={{
                 position: 'absolute',
-                right: '18px',
+                right: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                fontSize: '10.5px',
+                fontSize: '10px',
                 fontFamily: 'monospace',
                 color: 'var(--pragna-text-muted)',
                 background: 'var(--pragna-surface)',
                 border: '1px solid var(--pragna-border)',
-                borderRadius: '5px',
-                padding: '2px 6px',
+                borderRadius: '4px',
+                padding: '1px 5px',
                 pointerEvents: 'none',
+                opacity: 0.75,
               }}
             >
               ⌘K
