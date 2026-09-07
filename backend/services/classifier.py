@@ -15,14 +15,17 @@ _ALLOWED_INTENTS = {"general", "realtime", "news", "tool"}
 _CLASSIFIER_PROMPT = (
     "You are an intent classifier for a multilingual enterprise assistant. "
     "Decide if the user request is general, realtime, news, or tool. "
-    "Realtime covers questions needing current facts (elections, finance, scores). "
+    "Realtime covers questions about current facts, recent events, elections, finance, scores, "
+    "newly released products, AI models (such as GPT-6, Astra, DeepSeek, Claude, Gemini), "
+    "software versions, specs, tech announcements, or factual entity lookups. "
     "News covers headline or industry update requests. "
     "Tool covers arithmetic or calculator-like expressions. "
-    "Respond ONLY with JSON like {\"intent\": \"general\", \"confidence\": 0.82, \"reason\": \"...\"}."
+    "General covers broad conceptual knowledge, creative writing, coding advice, greetings, or conversational questions. "
+    "Respond ONLY with JSON like {\"intent\": \"realtime\", \"confidence\": 0.9, \"reason\": \"...\"}."
 )
 
 _FALLBACK_KEYWORDS = {
-    "tool": ["calculate", "times", "multiply", "divided", "sum", "product"],
+    "tool": ["calculate", "times", "multiply", "divided", "sum", "product", "calculator"],
     "news": [
         "news", "headlines", "breaking", "press release", "recent events",
         "today's news", "latest news", "world news"
@@ -31,14 +34,31 @@ _FALLBACK_KEYWORDS = {
         "current", "today", "now", "right now", "cm of", "price", "score", "live", "won",
         "latest", "latest version", "current version", "latest development", "latest developments",
         "recent research", "current technology", "current technologies", "latest ai",
-        "newest version", "recent update", "recent updates", "what is the latest", "what are the latest"
+        "newest version", "recent update", "recent updates", "what is the latest", "what are the latest",
+        "release date", "released", "launch", "launched", "announced", "features", "specifications", "specs",
+        "benchmark", "benchmarks", "pricing", "cost of", "founder of", "ceo of",
+        "gpt", "gpt-4", "gpt-5", "gpt-6", "gpt 4", "gpt 5", "gpt 6", "gpt astra", "astra",
+        "openai", "deepseek", "gemini", "claude", "mistral", "llama", "grok", "sora", "qwen",
+        "chatgpt astra", "project astra",
     ],
 }
 
+_CHITCHAT_EXACT = {
+    "hi", "hello", "hey", "hola", "namaste", "sup", "yo",
+    "good morning", "good afternoon", "good evening", "good night",
+    "how are you", "how are you doing", "what's up", "whats up",
+    "who are you", "what are you", "what can you do", "help",
+    "thanks", "thank you", "ok", "okay", "cool", "nice", "great",
+    "bye", "goodbye", "see you", "tell me a joke", "make me laugh",
+    "test", "testing", "ping"
+}
 
 _MATH_SYMBOL_PATTERN = re.compile(r"[+\-*/=]")
 _MATH_EXPRESSION_PATTERN = re.compile(r"\d+\s*([+\-*/]\s*\d+)+")
-_FAST_GENERAL_PATTERN = re.compile(r"^[a-zA-Z0-9\s,.!?'-]{1,40}$")
+_MODEL_VERSION_PATTERN = re.compile(
+    r"\b(gpt|claude|gemini|deepseek|llama|grok|qwen|mistral|sora|astra|iphone|pixel|rtx|react|python|angular|vue|vuejs|node)\s*[-_]?\s*(\d+(\.\d+)*|[a-z]+)\b",
+    re.IGNORECASE
+)
 
 def classify_query(query: str, model_override: Optional[str] = None) -> Dict[str, object]:
     """Return the detected intent for a user query."""
@@ -46,17 +66,20 @@ def classify_query(query: str, model_override: Optional[str] = None) -> Dict[str
     if not cleaned:
         return {"intent": "general", "confidence": 0.0}
 
-    # Fast-path heuristics to avoid an extra LLM call for obvious intents.
+    lowered = cleaned.lower().strip(".,!?- ")
+
+    # Pure chitchat fast path
+    if lowered in _CHITCHAT_EXACT:
+        return {"intent": "general", "confidence": 0.95}
+
+    # Fast-path heuristics for obvious intents
     heuristic_intent = _fallback_intent(cleaned)
     if heuristic_intent != "general":
         return {"intent": heuristic_intent, "confidence": 0.92}
 
-    # Short/simple chat input is usually general and does not need model classification.
-    lowered = cleaned.lower()
-    if _FAST_GENERAL_PATTERN.match(cleaned) and len(cleaned) <= 24 and not any(
-        k in lowered for k in ["latest", "news", "today", "current", "live", "price", "score"]
-    ):
-        return {"intent": "general", "confidence": 0.70}
+    # Model / version / tech lookup pattern matching
+    if _MODEL_VERSION_PATTERN.search(cleaned):
+        return {"intent": "realtime", "confidence": 0.90}
 
     messages = [
         {"role": "system", "content": _CLASSIFIER_PROMPT},
