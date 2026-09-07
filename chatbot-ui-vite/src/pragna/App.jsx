@@ -341,6 +341,10 @@ function App({ onLogout, userProfile }) {
       )
     }
 
+    if (activeView === 'modes') {
+      return <HomePage onUsePrompt={sendQuickPrompt} userProfile={userProfile} />
+    }
+
     if (activeView === 'gpts') {
       return (
         <GptModesPage
@@ -400,7 +404,7 @@ function App({ onLogout, userProfile }) {
       )
     }
 
-    return <NewChatView onNavigateToImages={() => setActiveView('images')} />
+    return <HomePage onUsePrompt={sendQuickPrompt} userProfile={userProfile} />
   }
 
   return (
