@@ -142,6 +142,24 @@ export default function InputBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [attachMenuOpen]);
 
+  // Auto-resize textarea dynamically based on input length
+  useEffect(() => {
+    const el = inputRef?.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const singleLineHeight = 24;
+    const maxHeight = 180;
+    if (!text) {
+      el.style.height = `${singleLineHeight}px`;
+      el.style.overflowY = "hidden";
+    } else {
+      const scrollHeight = el.scrollHeight;
+      const targetHeight = Math.min(Math.max(scrollHeight, singleLineHeight), maxHeight);
+      el.style.height = `${targetHeight}px`;
+      el.style.overflowY = scrollHeight > maxHeight ? "auto" : "hidden";
+    }
+  }, [text, inputRef]);
+
   // Handle file picked from any input
   const handleFilePick = (e, type) => {
     const files = Array.from(e.target.files);
@@ -842,13 +860,13 @@ export default function InputBar() {
             flexDirection: isMobile ? 'column' : 'row',
             alignItems: isMobile ? 'stretch' : 'flex-end',
             gap: isMobile ? '8px' : '10px',
-            padding: isMobile ? '10px 12px 8px 12px' : '10px 12px',
+            padding: isMobile ? '8px 10px' : '8px 12px',
             borderRadius: '20px',
             background: 'var(--pragna-surface)',
             border: `1px solid ${inputBorder}`,
             backdropFilter: 'blur(8px)',
             boxShadow: '0 12px 28px rgba(0,0,0,0.42)',
-            transition: 'border-color 0.2s ease',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
           }}
         >
           {/* Text Area */}
@@ -872,14 +890,18 @@ export default function InputBar() {
               width: '100%',
               resize: 'none',
               border: 'none',
+              outline: 'none',
+              boxShadow: 'none',
               background: 'transparent',
               color: 'var(--pragna-text)',
               fontFamily: 'var(--pragna-chat-font)',
               fontSize: '15px',
-              lineHeight: 1.5,
-              padding: isMobile ? '4px 2px' : '10px 4px',
-              maxHeight: '140px',
-              minHeight: isMobile ? '40px' : 'auto',
+              lineHeight: '24px',
+              padding: isMobile ? '4px 2px' : '6px 6px',
+              maxHeight: '180px',
+              minHeight: '24px',
+              boxSizing: 'border-box',
+              overflowY: 'hidden',
             }}
           />
 
