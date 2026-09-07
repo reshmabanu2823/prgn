@@ -72,6 +72,7 @@ class AuthService:
 
         otp_code = f"{secrets.randbelow(1_000_000):06d}"
         db.create_pending_registration(username, email, password, otp_code, ttl_minutes=AuthService.OTP_TTL_MINUTES)
+        logger.info(f"🔑 [DEV MODE] Registration OTP for {email}: {otp_code}")
 
         from services.email_service import send_otp_email
         import threading
@@ -114,14 +115,15 @@ class AuthService:
     @staticmethod
     def login(username, password):
 
-        """Login user"""
         user = db.get_user(username)
         if not user:
-            if getattr(config, 'DEVELOPMENT_MODE', True):
-                email = f"{username.lower()}@dev.local"
-                user_id = db.create_user(username, email, password)
+            if getattr(config, 'DEVELOPMENT_MODE', False):
+                clean_username = username.split('@')[0] if '@' in username else username
+                user_email = username if '@' in username else f"{username.lower()}@dev.local"
+                user_id = db.create_user(clean_username, user_email, password)
                 if not user_id:
-                    user_id = f"dev_{username}"
+                    user_id = f"dev_{clean_username}"
+                logger.info(f"✨ [DEV MODE] Auto-registered account for '{username}'")
                 token = AuthService.generate_token(user_id)
                 return user_id, token, None
             return None, None, "Invalid username or password"
