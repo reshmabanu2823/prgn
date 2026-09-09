@@ -4,11 +4,17 @@
 import logging
 import sys
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Set up DEBUG logging
 logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(levelname)s - %(message)s')
 
-# Add backend services to path
-sys.path.insert(0, '/c/Users/Reshma\ Banu/OneDrive/Desktop/EtherXChatBot-main\ \(1\)/EtherXChatBot-main/backend')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
 
 print("=" * 80)
 print("TEST 1: Direct demo_responses test")

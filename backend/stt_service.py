@@ -6,6 +6,7 @@ import logging
 import io
 import os
 import tempfile
+from typing import Optional
 import requests
 import config
 
@@ -26,7 +27,7 @@ class STTService:
         else:
             logger.info("✅ STT Service initialized with Groq Whisper API (FREE)")
     
-    def transcribe(self, audio_file, language: str = None) -> tuple:
+    def transcribe(self, audio_file, language: Optional[str] = None) -> tuple:
         """
         Transcribe audio file to text using Groq's FREE Whisper API
         
@@ -123,7 +124,7 @@ class STTService:
             logger.error(f"Error in transcribe: {e}", exc_info=True)
             return None, language or 'en'
     
-    def _detect_language(self, text: str, hint: str = None) -> str:
+    def _detect_language(self, text: str, hint: Optional[str] = None) -> str:
         """
         Detect language from text
         Uses simple heuristics based on character ranges

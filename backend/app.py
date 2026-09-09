@@ -10,7 +10,11 @@ import os
 import io
 import time
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, send_from_directory, Response, redirect
+from typing import Any
+from flask import Flask, jsonify, send_from_directory, Response, redirect
+from flask import request as _flask_request
+# Dynamic attributes like user_id are attached by auth middleware
+request: Any = _flask_request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -131,7 +135,11 @@ def _extract_text_from_blob(filename, content_type, blob):
             lines = []
             for sheet in wb.worksheets[:5]:
                 lines.append(f"[Sheet: {sheet.title}]")
-                for row_idx, row in enumerate(sheet.iter_rows(values_only=True), start=1):
+                iter_rows: Any = getattr(sheet, 'iter_rows', None)
+                if not callable(iter_rows):
+                    continue
+                rows_iter: Any = iter_rows(values_only=True)
+                for row_idx, row in enumerate(rows_iter, start=1):
                     if row_idx > 150:
                         break
                     values = [str(v).strip() for v in row if v is not None and str(v).strip()]
@@ -152,11 +160,13 @@ def _extract_text_from_blob(filename, content_type, blob):
                     break
                 slide_texts = []
                 for shape in slide.shapes:
-                    if shape.has_text_frame:
-                        for paragraph in shape.text_frame.paragraphs:
-                            t = paragraph.text.strip()
-                            if t:
-                                slide_texts.append(t)
+                    if getattr(shape, 'has_text_frame', False):
+                        tf = getattr(shape, 'text_frame', None)
+                        if tf and hasattr(tf, 'paragraphs'):
+                            for paragraph in tf.paragraphs:
+                                t = paragraph.text.strip()
+                                if t:
+                                    slide_texts.append(t)
                 if slide_texts:
                     lines.append(f"[Slide {slide_idx}]\n" + "\n".join(slide_texts))
             return '\n\n'.join(lines).strip(), 'pptx', None
@@ -675,6 +685,27 @@ def _persist_chat_turn(chat_id, user_id, user_message, bot_response, language='e
         logger.warning(f"Notice persisting chat turn for {chat_id}: {exc}")
 
 
+@app.route('/api/time', methods=['GET'])
+def get_time():
+    """
+    Get real-time time and date information according to location or timezone.
+    Query parameters:
+      - location: optional city/country/region name (e.g. 'Tokyo', 'London', 'New York')
+      - timezone: optional IANA timezone or abbreviation (e.g. 'Asia/Kolkata', 'PST', 'UTC')
+    Headers:
+      - X-Timezone: optional client timezone
+    """
+    try:
+        from services import time_service
+        location = request.args.get('location', '').strip() or None
+        tz = request.args.get('timezone', '').strip() or request.headers.get('X-Timezone', '').strip() or None
+        result = time_service.get_time_and_date(location=location, default_timezone=tz)
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error in /api/time endpoint: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to retrieve time and date', 'details': str(e)}), 500
+
+
 @app.route('/api/chat', methods=['POST'])
 @require_auth
 def chat():
@@ -706,11 +737,17 @@ def chat():
         fallback_models = data.get('fallback_models')
         persona_system_prompt = data.get('persona_system_prompt')
         extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
+        client_timezone = (
+            data.get('client_timezone')
+            or data.get('timezone')
+            or request.headers.get('X-Timezone')
+        )
+        client_location = data.get('client_location') or data.get('location')
 
         if not user_message:
             return jsonify({'error': 'Message cannot be empty'}), 400
 
-        logger.info(f"Received message: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking})")
+        logger.info(f"Received message: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking}, tz: {client_timezone})")
 
         # Unified orchestration path (agent tools + LLM/RAG)
         result = orchestrator.handle_query(
@@ -722,6 +759,8 @@ def chat():
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
             extended_thinking=extended_thinking,
+            user_timezone=client_timezone,
+            user_location=client_location,
         )
 
         _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
@@ -800,6 +839,12 @@ def orchestrator_query():
         fallback_models = data.get('fallback_models')
         persona_system_prompt = data.get('persona_system_prompt')
         extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
+        client_timezone = (
+            data.get('client_timezone')
+            or data.get('timezone')
+            or request.headers.get('X-Timezone')
+        )
+        client_location = data.get('client_location') or data.get('location')
 
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
@@ -813,6 +858,8 @@ def orchestrator_query():
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
             extended_thinking=extended_thinking,
+            user_timezone=client_timezone,
+            user_location=client_location,
         )
         _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
         return jsonify(result)
@@ -870,6 +917,8 @@ def orchestrator_analyze_uploads():
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
             extended_thinking=extended_thinking,
+            user_timezone=request.form.get('client_timezone') or request.form.get('timezone') or request.headers.get('X-Timezone'),
+            user_location=request.form.get('client_location') or request.form.get('location'),
         )
 
         _persist_chat_turn(chat_id, request.user_id, user_message or "Analyzed uploaded files", result.get('response'), language=language)
@@ -1253,7 +1302,7 @@ def get_shared_chat(token):
                 'SELECT sender, text, timestamp FROM messages WHERE conversation_id = %s ORDER BY timestamp ASC',
                 (convo['id'],)
             )
-            messages = [dict(row) for row in c.fetchall()]
+            messages = [dict(row) for row in c.fetchall() if row is not None]
         finally:
             db.release_connection(conn)
 
@@ -1992,11 +2041,17 @@ def chat_stream():
         fallback_models = data.get('fallback_models')
         persona_system_prompt = data.get('persona_system_prompt')
         extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
+        client_timezone = (
+            data.get('client_timezone')
+            or data.get('timezone')
+            or request.headers.get('X-Timezone')
+        )
+        client_location = data.get('client_location') or data.get('location')
 
         if not user_message:
             return jsonify({'error': 'Message cannot be empty'}), 400
 
-        logger.info(f"Received streaming request: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking})")
+        logger.info(f"Received streaming request: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking}, tz: {client_timezone})")
 
         def stream_orchestrated_chunks():
             """Stream orchestrated response as real SSE (data: <json>\n\n lines)."""
@@ -2009,6 +2064,8 @@ def chat_stream():
                 fallback_models=fallback_models,
                 persona_system_prompt=persona_system_prompt,
                 extended_thinking=extended_thinking,
+                user_timezone=client_timezone,
+                user_location=client_location,
             )
 
             actions = result.get('actions', [])
@@ -2590,6 +2647,8 @@ def get_conversations():
         # Format for frontend
         formatted = []
         for conv in conversations:
+            if not conv:
+                continue
             formatted.append({
                 'id': conv['id'],
                 'title': conv['title'],
@@ -2697,16 +2756,15 @@ Assistant: {ai_response[:200]}"""
         from groq import Groq
         client = Groq(api_key=config.GROQ_API_KEY)
         
-        response = client.messages.create(
+        response = client.chat.completions.create(
             model=config.GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=50
         )
         
-        summary = response.choices[0].message.content.strip()
-        # Clean up any quotes
-        summary = summary.replace('"', '').replace("'", '')
+        content = response.choices[0].message.content or "New Chat"
+        summary = content.strip().replace('"', '').replace("'", '')
         
         logger.info(f"Chat summary: {summary}")
         return jsonify({'summary': summary}), 200

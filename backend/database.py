@@ -8,6 +8,7 @@ import sqlite3
 import threading
 import bcrypt
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import config
 
@@ -134,9 +135,11 @@ class Database:
             return {'type': 'sqlite', 'pid': os.getpid(), 'path': getattr(self, 'sqlite_path', '')}
         try:
             pool = self._get_pool()
+            if pool is None:
+                return {'error': 'No pool configured', 'pid': os.getpid()}
             stats = dict(pool.get_stats())
             stats['pid'] = os.getpid()
-            stats['max_size_cfg'] = pool.max_size
+            stats['max_size_cfg'] = getattr(pool, 'max_size', 0)
             return stats
         except Exception as exc:
             return {'error': str(exc)[:100], 'pid': os.getpid()}
@@ -146,7 +149,10 @@ class Database:
             raw_conn = sqlite3.connect(self.sqlite_path)
             raw_conn.row_factory = sqlite3.Row
             return SQLiteConnWrapper(raw_conn)
-        return self._get_pool().getconn()
+        pool = self._get_pool()
+        if pool is None:
+            raise RuntimeError("Database pool is not available")
+        return pool.getconn()
 
     def release_connection(self, conn):
         if self.is_sqlite:
@@ -165,13 +171,15 @@ class Database:
                 conn.close()
             except Exception:
                 pass
-        self._get_pool().putconn(conn)
+        pool = self._get_pool()
+        if pool is not None:
+            pool.putconn(conn)
 
     def init_db(self):
         conn = self.get_connection()
         try:
+            c: Any = conn.cursor()
             if self.is_sqlite:
-                c = conn.cursor()
                 c.execute('''
                     CREATE TABLE IF NOT EXISTS users (
                         id TEXT PRIMARY KEY,
@@ -456,18 +464,20 @@ class Database:
     MAX_OTP_ATTEMPTS = 5
 
     # PENDING REGISTRATION / OTP
-    def create_pending_registration(self, username, email, password, otp_code, ttl_minutes=15):
-        password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    def create_pending_registration(self, username, email, password, otp_code, ttl_minutes=10):
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)
+        expires_str = expires_at.strftime('%Y-%m-%d %H:%M:%S')
+
         conn = self.get_connection()
         try:
             c = conn.cursor()
             param = '?' if self.is_sqlite else '%s'
             c.execute(f'DELETE FROM pending_registrations WHERE email = {param}', (email,))
             c.execute(f'''
-                INSERT INTO pending_registrations (email, username, password_hash, otp_code, expires_at)
-                VALUES ({param}, {param}, {param}, {param}, {param})
-            ''', (email, username, password_hash, otp_code, expires_at))
+                INSERT INTO pending_registrations (email, username, password_hash, otp_code, attempts, expires_at)
+                VALUES ({param}, {param}, {param}, {param}, 0, {param})
+            ''', (email, username, password_hash, otp_code, expires_str))
             conn.commit()
             return True
         finally:
@@ -480,20 +490,23 @@ class Database:
             param = '?' if self.is_sqlite else '%s'
             c.execute(f'SELECT * FROM pending_registrations WHERE email = {param}', (email,))
             row = _row_to_dict(c, c.fetchone())
+            if not row:
+                return None
+            
+            exp = row.get('expires_at') if isinstance(row, dict) else None
+            if isinstance(exp, str):
+                try:
+                    exp = datetime.fromisoformat(exp.replace('Z', '+00:00'))
+                except Exception:
+                    pass
+            if isinstance(exp, datetime):
+                if exp.tzinfo is None:
+                    exp = exp.replace(tzinfo=timezone.utc)
+                if exp < datetime.now(timezone.utc):
+                    return None
+            return row
         finally:
             self.release_connection(conn)
-
-        if not row:
-            return None
-        exp = row.get('expires_at') if isinstance(row, dict) else None
-        if isinstance(exp, str):
-            exp = datetime.fromisoformat(exp.replace('Z', '+00:00'))
-        if exp and exp.tzinfo is None:
-            exp = exp.replace(tzinfo=timezone.utc)
-        if exp and exp < datetime.now(timezone.utc):
-            self.delete_pending_registration(email)
-            return None
-        return row
 
     def delete_pending_registration(self, email):
         conn = self.get_connection()
@@ -642,69 +655,6 @@ class Database:
         finally:
             self.release_connection(conn)
 
-    MAX_OTP_ATTEMPTS = 5
-
-    def create_pending_registration(self, username, email, password, otp_code, ttl_minutes=10):
-        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)
-        expires_str = expires_at.strftime('%Y-%m-%d %H:%M:%S')
-
-        conn = self.get_connection()
-        try:
-            c = conn.cursor()
-            param = '?' if self.is_sqlite else '%s'
-            c.execute(f'DELETE FROM pending_registrations WHERE email = {param}', (email,))
-            c.execute(f'''
-                INSERT INTO pending_registrations (email, username, password_hash, otp_code, attempts, expires_at)
-                VALUES ({param}, {param}, {param}, {param}, 0, {param})
-            ''', (email, username, password_hash, otp_code, expires_str))
-            conn.commit()
-        finally:
-            self.release_connection(conn)
-
-    def get_pending_registration(self, email):
-        conn = self.get_connection()
-        try:
-            c = conn.cursor()
-            param = '?' if self.is_sqlite else '%s'
-            c.execute(f'SELECT * FROM pending_registrations WHERE email = {param}', (email,))
-            row = _row_to_dict(c, c.fetchone())
-            if not row:
-                return None
-            
-            exp = row.get('expires_at') if isinstance(row, dict) else None
-            if isinstance(exp, str):
-                try:
-                    exp = datetime.fromisoformat(exp.replace('Z', '+00:00'))
-                except Exception:
-                    pass
-            if isinstance(exp, datetime):
-                if exp.tzinfo is None:
-                    exp = exp.replace(tzinfo=timezone.utc)
-                if exp < datetime.now(timezone.utc):
-                    return None
-            return row
-        finally:
-            self.release_connection(conn)
-
-    def delete_pending_registration(self, email):
-        conn = self.get_connection()
-        try:
-            param = '?' if self.is_sqlite else '%s'
-            conn.execute(f'DELETE FROM pending_registrations WHERE email = {param}', (email,))
-            conn.commit()
-        finally:
-            self.release_connection(conn)
-
-    def increment_otp_attempts(self, email):
-        conn = self.get_connection()
-        try:
-            param = '?' if self.is_sqlite else '%s'
-            conn.execute(f'UPDATE pending_registrations SET attempts = attempts + 1 WHERE email = {param}', (email,))
-            conn.commit()
-        finally:
-            self.release_connection(conn)
-
     # CONVERSATION MANAGEMENT
     def create_conversation(self, user_id, title, language='en', conv_id=None, is_pinned=False, is_archived=False):
         if not conv_id:
@@ -838,12 +788,16 @@ class Database:
         history = []
         token_count = 0
         for msg in messages:
-            msg_tokens = len(msg['text'].split())
+            if not msg or not isinstance(msg, dict):
+                continue
+            text = str(msg.get('text') or '')
+            sender = str(msg.get('sender') or '')
+            msg_tokens = len(text.split())
             if token_count + msg_tokens > max_tokens:
                 break
             history.append({
-                'role': 'user' if msg['sender'] == 'user' else 'assistant',
-                'content': msg['text']
+                'role': 'user' if sender == 'user' else 'assistant',
+                'content': text
             })
             token_count += msg_tokens
         return history
@@ -988,6 +942,8 @@ class Database:
             # Process title matches
             for r in title_rows:
                 row = _row_to_dict(c, r)
+                if not row or not isinstance(row, dict):
+                    continue
                 chat_id = row.get("conversation_id")
                 entry_key = f"title:{chat_id}"
                 if entry_key not in seen_entries:
@@ -1011,6 +967,8 @@ class Database:
             # Process message matches
             for r in message_rows:
                 row = _row_to_dict(c, r)
+                if not row or not isinstance(row, dict):
+                    continue
                 chat_id = row.get("conversation_id")
                 msg_id = row.get("message_id")
                 entry_key = f"msg:{chat_id}:{msg_id}"

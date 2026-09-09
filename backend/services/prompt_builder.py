@@ -18,6 +18,8 @@ def build_prompt(
     chat_mode: str = "general",
     user_profile_memory: Optional[str] = None,
     extended_thinking: bool = False,
+    user_timezone: Optional[str] = None,
+    user_location: Optional[str] = None,
 ) -> List[Dict[str, str]]:
     """
     Construct the message list for the final Groq call with token-aware history.
@@ -101,6 +103,21 @@ def build_prompt(
             "CRITICAL: Apply ```artifact:html ONLY to complete, standalone web pages. Small HTML snippets used to explain a concept or answer a question MUST remain as regular ```html code fences and NOT use the artifact marker."
         ),
     ]
+
+    # Real-time temporal grounding according to user location / timezone
+    from services import time_service
+    time_info = time_service.get_time_and_date(location=user_location, default_timezone=user_timezone)
+    temporal_grounding = (
+        "REAL-TIME TEMPORAL GROUNDING:\n"
+        f"- Current Date: {time_info['date']}\n"
+        f"- Current Time: {time_info['time_12h']} ({time_info['timezone_abbr']}, UTC{time_info['utc_offset']})\n"
+        f"- Day of the Week: {time_info['day_of_week']}\n"
+        f"- Current Year: {time_info['year']}, Month: {time_info['month_name']}, Day: {time_info['day']}\n"
+        f"- Timezone: {time_info['timezone']}\n"
+        f"- Location Context: {time_info['resolved_location']}\n"
+        "Use this verified real-time temporal context for any questions about today's date, current time, day of week, or relative dates."
+    )
+    system_parts.append(temporal_grounding)
 
 
     if extended_thinking:

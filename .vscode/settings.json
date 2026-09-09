@@ -1,4 +1,22 @@
 {
+    "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/backend",
+        "${workspaceFolder}/backend/.venv/Lib/site-packages",
+        "${workspaceFolder}/.venv/Lib/site-packages"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/backend",
+        "${workspaceFolder}/backend/.venv/Lib/site-packages",
+        "${workspaceFolder}/.venv/Lib/site-packages"
+    ],
+    "python-envs.pythonProjects": [
+        {
+            "path": "backend",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ],
     "files.associations": {
         "*.py": "python",
         "chatbot-ui-vite/package.json": "plaintext",
@@ -18,33 +36,42 @@
                 "title": "Workspace local package schema",
                 "type": "object",
                 "properties": {
-                    "$schema": { "type": "string" },
-                    "name": { "type": "string" },
-                    "version": { "type": "string" },
-                    "private": { "type": "boolean" },
-                    "type": { "type": "string" },
+                    "$schema": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "private": {
+                        "type": "boolean"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
                     "scripts": {
                         "type": "object",
-                        "additionalProperties": { "type": "string" }
+                        "additionalProperties": {
+                            "type": "string"
+                        }
                     },
                     "dependencies": {
                         "type": "object",
-                        "additionalProperties": { "type": "string" }
+                        "additionalProperties": {
+                            "type": "string"
+                        }
                     },
                     "devDependencies": {
                         "type": "object",
-                        "additionalProperties": { "type": "string" }
+                        "additionalProperties": {
+                            "type": "string"
+                        }
                     }
                 },
                 "additionalProperties": true
             }
-        }
-    ],
-    "python-envs.pythonProjects": [
-        {
-            "path": ".",
-            "envManager": "ms-python.python:venv",
-            "packageManager": "ms-python.python:pip"
         }
     ]
 }

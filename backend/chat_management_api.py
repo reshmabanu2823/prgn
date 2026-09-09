@@ -6,7 +6,10 @@ import logging
 import hashlib
 import secrets
 from datetime import datetime
-from flask import Blueprint, request, jsonify
+from typing import Any
+from flask import Blueprint, jsonify
+from flask import request as _flask_request
+request: Any = _flask_request
 from auth import require_auth
 from database import db
 
