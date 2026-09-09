@@ -11,7 +11,7 @@ import platform
 import re
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -25,9 +25,24 @@ SEED_FEEDS = [
 ]
 
 
-def get_current_time() -> str:
-    """Return current server time as ISO string."""
-    return datetime.datetime.now().isoformat()
+from services import time_service
+
+
+def get_current_time(
+    location: Optional[str] = None,
+    timezone: Optional[str] = None,
+) -> str:
+    """Return formatted current time and date for location or timezone."""
+    info = time_service.get_time_and_date(location=location, default_timezone=timezone)
+    return info["formatted_summary"]
+
+
+def get_time_and_date(
+    location: Optional[str] = None,
+    timezone: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Return complete real-time time and date telemetry for location or timezone."""
+    return time_service.get_time_and_date(location=location, default_timezone=timezone)
 
 
 def get_system_info() -> Dict[str, str]:

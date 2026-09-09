@@ -101,6 +101,7 @@ export const sendOrchestratedMessage = async (
       model_override: modelRouting.model_override,
       fallback_models: modelRouting.fallback_models,
       extended_thinking: extendedThinking,
+      client_timezone: _getClientTimezone(),
     }),
   });
 
@@ -145,6 +146,7 @@ export const sendOrchestratedMessageStream = async ({
       model_override: modelRouting.model_override,
       fallback_models: modelRouting.fallback_models,
       extended_thinking: extendedThinking,
+      client_timezone: _getClientTimezone(),
       ...(personaSystemPrompt ? { persona_system_prompt: personaSystemPrompt } : {}),
     }),
   });
@@ -245,6 +247,7 @@ export const sendMessage = async (
       model_override: modelRouting.model_override,
       fallback_models: modelRouting.fallback_models,
       extended_thinking: extendedThinking,
+      client_timezone: _getClientTimezone(),
     }),
   });
 
@@ -517,11 +520,36 @@ export const deleteAccount = async (password) => {
 };
 
 
-// ── Pragna Code Agent ────────────────────────────────────────────────────────
+const _getClientTimezone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  } catch {
+    return "";
+  }
+};
 
 const _authHeaders = () => {
   const token = localStorage.getItem('authToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const tz = _getClientTimezone();
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(tz ? { 'X-Timezone': tz } : {}),
+  };
+};
+
+export const getTimeAndDate = async (location = "") => {
+  const params = new URLSearchParams();
+  if (location) params.set("location", location);
+  const tz = _getClientTimezone();
+  if (tz) params.set("timezone", tz);
+
+  const response = await fetch(`${API_BASE}/api/time?${params.toString()}`, {
+    headers: _authHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch time and date");
+  }
+  return response.json();
 };
 
 async function _consumeSSE(response, onEvent) {

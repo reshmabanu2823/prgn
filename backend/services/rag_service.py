@@ -6,8 +6,12 @@ Uses sentence-transformers for embeddings and FAISS for efficient vector search.
 import logging
 import os
 import pickle
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 import numpy as np
+
+# Module-level stubs for optional heavy ML dependencies, loaded lazily in RAGService.__init__
+SentenceTransformer: Any = None
+faiss: Any = None
 
 # sentence_transformers/faiss are NOT imported at module level - importing
 # the sentence_transformers package alone (even without instantiating a
@@ -45,8 +49,10 @@ class RAGService:
 
         global SentenceTransformer, faiss
         try:
-            from sentence_transformers import SentenceTransformer
-            import faiss
+            from sentence_transformers import SentenceTransformer as _ST  # type: ignore
+            import faiss as _faiss  # type: ignore
+            SentenceTransformer = _ST
+            faiss = _faiss
             self.enabled = True
         except ImportError:
             self.enabled = False
@@ -131,7 +137,7 @@ class RAGService:
         
         return chunks
     
-    def add_documents(self, documents: List[str], document_ids: List[str] = None) -> bool:
+    def add_documents(self, documents: List[str], document_ids: Optional[List[str]] = None) -> bool:
         """
         Add documents to RAG index.
         
@@ -165,7 +171,8 @@ class RAGService:
             
             # Generate embeddings
             chunk_texts = [chunk['text'] for chunk in all_chunks]
-            logger.info(f"📊 Generating embeddings for {len(chunk_texts)} chunks...")
+            if self.model is None:
+                return False
             embeddings = self.model.encode(chunk_texts, convert_to_numpy=True)
             
             # Create or update FAISS index
@@ -218,6 +225,8 @@ class RAGService:
                 return cached_result
             
             # Generate query embedding
+            if self.model is None or self.index is None:
+                return {'found': False, 'context': '', 'sources': []}
             query_embedding = self.model.encode([query], convert_to_numpy=True)
             
             # Search FAISS index
@@ -351,6 +360,7 @@ def initialize_rag_with_defaults() -> bool:
             if success:
                 logger.info("✅ RAG initialized with default documents")
                 return True
+            return False
         else:
             logger.info(f"ℹ️ RAG already has {len(rag.metadata)} documents")
             return True

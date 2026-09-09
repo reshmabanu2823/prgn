@@ -9,6 +9,8 @@ Usage:
     python pragna_code.py /path/to/project  # start in a specific directory
 """
 
+from __future__ import annotations
+
 import sys
 import os
 import difflib

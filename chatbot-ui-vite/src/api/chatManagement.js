@@ -8,11 +8,19 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 })
 
-// Add auth token to requests
+// Add auth token and timezone to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
+  }
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (tz) {
+      config.headers['X-Timezone'] = tz
+    }
+  } catch {
+    // Ignore if timezone detection fails
   }
   return config
 })

@@ -5,7 +5,7 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-from services import agent_tools
+from services import agent_tools, time_service
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,8 @@ class AIOrchestrator:
         fallback_models: Optional[List[str]] = None,
         persona_system_prompt: Optional[str] = None,
         extended_thinking: bool = False,
+        user_timezone: Optional[str] = None,
+        user_location: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Process one request and return a unified response envelope."""
         route = self._route_agent_action(message)
@@ -58,11 +60,18 @@ class AIOrchestrator:
             }
 
         if route == "time":
+            target_location = time_service.extract_location_from_query(message) or user_location
+            time_data = agent_tools.get_time_and_date(location=target_location, timezone=user_timezone)
+            time_action = {
+                "action": "time_info",
+                "label": "time_and_date",
+                "data": time_data,
+            }
             return {
-                "response": f"Current server time is {agent_tools.get_current_time()}.",
+                "response": time_data["formatted_summary"],
                 "route": "agent",
                 "action": "time",
-                "actions": [],
+                "actions": [time_action],
                 "web_search_sources": [],
                 "thinking": None,
                 "extended_thinking": extended_thinking,
@@ -133,6 +142,8 @@ class AIOrchestrator:
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
             extended_thinking=extended_thinking,
+            user_timezone=user_timezone,
+            user_location=user_location,
         )
         return {
             "response": ai_response,
@@ -158,7 +169,7 @@ class AIOrchestrator:
         if any(k in text for k in ["world monitor", "open monitor", "open dashboard"]):
             return "world_monitor"
 
-        if any(k in text for k in ["current time", "time now", "what time"]):
+        if time_service.is_time_date_query(text):
             return "time"
 
         if any(k in text for k in ["system info", "system information", "device info", "host info"]):

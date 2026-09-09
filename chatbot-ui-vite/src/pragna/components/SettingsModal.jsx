@@ -27,7 +27,6 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
 
   const [userName, setUserName] = useState(() => userProfile?.username || localStorage.getItem('authUsername') || 'User')
 
-  const [nickname, setNickname] = useState(() => localStorage.getItem(`pragna_nickname_${userId}`) || '')
   const [instructions, setInstructions] = useState(() => localStorage.getItem(`pragna_instructions_${userId}`) || '')
   const [generalSaved, setGeneralSaved] = useState(false)
 
@@ -160,7 +159,6 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
 
   const handleSaveGeneral = () => {
     localStorage.setItem('authUsername', userName)
-    localStorage.setItem(`pragna_nickname_${userId}`, nickname)
     localStorage.setItem(`pragna_instructions_${userId}`, instructions)
     setGeneralSaved(true)
     setTimeout(() => setGeneralSaved(false), 2500)
@@ -319,21 +317,11 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : '20px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : '20px', marginBottom: '28px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: isMobile ? 'auto' : '110px', flexShrink: 0 }}>Full name</div>
                 <input
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  style={{ width: isMobile ? '100%' : 'auto', flex: isMobile ? 'none' : 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'flex-start', gap: isMobile ? '8px' : '20px', marginBottom: '30px' }}>
-                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: isMobile ? 'auto' : '110px', flexShrink: 0, paddingTop: isMobile ? '0' : '11px' }}>Nickname</div>
-                <input
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="What should Pragna call you?"
                   style={{ width: isMobile ? '100%' : 'auto', flex: isMobile ? 'none' : 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
                 />
               </div>

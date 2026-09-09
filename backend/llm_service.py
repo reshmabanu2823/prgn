@@ -194,6 +194,8 @@ class LLMService:
         fallback_models: Optional[List[str]] = None,
         persona_system_prompt: Optional[str] = None,
         extended_thinking: bool = False,
+        user_timezone: Optional[str] = None,
+        user_location: Optional[str] = None,
     ) -> tuple:
         """
         Get AI response for a user message
@@ -215,9 +217,9 @@ class LLMService:
 
         try:
             intent_result = classify_query(message, model_override=model_override)
-            intent = intent_result.get('intent', 'general')
+            intent = str(intent_result.get('intent') or 'general')
             route = route_query(intent)
-            confidence = float(intent_result.get('confidence', 0.0))
+            confidence = float(str(intent_result.get('confidence') or '0.0'))
             logger.info(
                 "Intent classified as %s (confidence %.2f) routed to %s",
                 intent,
@@ -228,17 +230,18 @@ class LLMService:
             plan = create_plan(message, route)
 
             if plan.get('mode') == 'tool':
-                ai_response = plan.get('tool_result', 'I handled your calculation.')
+                ai_response = str(plan.get('tool_result') or 'I handled your calculation.')
                 self._add_to_history(user_id, "user", message)
                 self._add_to_history(user_id, "assistant", ai_response)
                 return ai_response, [], None
 
             context_text = plan.get('context')
-            sources = plan.get('sources', [])
+            raw_sources = plan.get('sources', [])
+            sources: list = list(raw_sources) if isinstance(raw_sources, list) else []
 
             # ==================== RAG RETRIEVAL LOGIC ====================
             # If plan didn't provide context and RAG is available, try RAG
-            if context_text is None and self._should_use_rag(intent, message):
+            if context_text is None and self.rag is not None and self._should_use_rag(intent, message):
                 logger.debug(f"🔍 Attempting RAG retrieval for: {message[:50]}...")
                 rag_result = self.rag.retrieve_context(message, top_k=3)
                 
@@ -298,10 +301,12 @@ class LLMService:
                 message,
                 history,
                 language,
-                context_text,
+                str(context_text) if context_text is not None else None,
                 chat_mode,
                 user_profile_memory=user_profile_memory,
                 extended_thinking=extended_thinking,
+                user_timezone=user_timezone,
+                user_location=user_location,
             )
             
             if persona_system_prompt:
