@@ -473,6 +473,7 @@ export default function ChatWindow() {
                   onEdit={m.sender !== "bot" ? (newText) => editMessage(idx, newText) : undefined}
                   isLoading={isLoading}
                   onToggleBookmark={() => toggleBookmark(idx)}
+                  onSendPrompt={sendSuggestionMessage}
                 />
               </div>
             );

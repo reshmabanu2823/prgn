@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import CodeBlock from "./CodeBlock";
+import PragnaCanvas from "../canvas/PragnaCanvas";
 import { API_BASE } from "../../api/api";
 import pragnaShield from "../../assets/pragna-shield-icon.png";
 import { ChatContext } from "../../context/ChatContext";
@@ -490,7 +491,7 @@ const renderMarkdownContent = (rawText, isStreaming, isLast) => {
 
 // Parse code blocks from message text
 const parseMessageContent = (text) => {
-  const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+  const codeBlockRegex = /```([\w:-]+)?\n([\s\S]*?)```/g;
   const parts = [];
   let lastIndex = 0;
 
@@ -502,12 +503,61 @@ const parseMessageContent = (text) => {
         content: text.slice(lastIndex, index),
       });
     }
-    // Add code block
-    parts.push({
-      type: "code",
-      language: language || "plaintext",
-      content: code.trim(),
-    });
+
+    const lang = (language || "").toLowerCase().trim();
+    const isCanvasLang =
+      lang === "canvas" ||
+      lang === "pragna-canvas" ||
+      lang === "json:canvas" ||
+      lang === "artifact:canvas";
+
+    let parsedCanvas = null;
+    if (isCanvasLang) {
+      try {
+        parsedCanvas = JSON.parse(code.trim());
+      } catch {
+        parsedCanvas = null;
+      }
+    } else if (lang === "json" || !lang) {
+      try {
+        const obj = JSON.parse(code.trim());
+        if (
+          obj &&
+          obj.type &&
+          [
+            "table",
+            "tree",
+            "flowchart",
+            "mindmap",
+            "timeline",
+            "chart",
+            "graph",
+            "kanban",
+            "er_diagram",
+            "er",
+            "system_architecture",
+            "architecture",
+            "roadmap",
+          ].includes(obj.type.toLowerCase())
+        ) {
+          parsedCanvas = obj;
+        }
+      } catch {}
+    }
+
+    if (parsedCanvas) {
+      parts.push({
+        type: "canvas",
+        content: parsedCanvas,
+      });
+    } else {
+      parts.push({
+        type: "code",
+        language: language || "plaintext",
+        content: code.trim(),
+      });
+    }
+
     lastIndex = index + match.length;
   });
 
@@ -523,10 +573,13 @@ const parseMessageContent = (text) => {
 };
 
 // Render parsed message content as a stack of blocks: text segments become
-// individual "glass card" bubbles, code segments render as standalone CodeBlocks
-const renderContentBlocks = (text, isStreaming) => {
+// individual "glass card" bubbles, canvas segments render as PragnaCanvas, code segments as CodeBlocks
+const renderContentBlocks = (text, isStreaming, onSendPrompt) => {
   const parts = parseMessageContent(text);
   return parts.map((part, idx) => {
+    if (part.type === "canvas") {
+      return <PragnaCanvas key={idx} canvasData={part.content} onSendPrompt={onSendPrompt} />;
+    }
     if (part.type === "code") {
       return <CodeBlock key={idx} code={part.content} language={part.language} />;
     }
@@ -699,7 +752,7 @@ const ThinkingAccordion = ({ thinking, isStreaming }) => {
   );
 };
 
-export default function MessageBubble({ message, language = "en", onRetry, onEdit, isLoading, onToggleBookmark }) {
+export default function MessageBubble({ message, language = "en", onRetry, onEdit, isLoading, onToggleBookmark, onSendPrompt }) {
   const { openArtifact } = useContext(ChatContext);
   const [liked, setLiked] = useState(false);
 
@@ -1022,7 +1075,10 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
               {extractedThinking && (
                 <ThinkingAccordion thinking={extractedThinking} isStreaming={isStreaming} />
               )}
-              {renderContentBlocks(effectiveText, isStreaming)}
+              {renderContentBlocks(effectiveText, isStreaming, onSendPrompt)}
+              {message.canvas && (
+                <PragnaCanvas canvasData={message.canvas} onSendPrompt={onSendPrompt} />
+              )}
               {message.artifact && (
                 <div
                   onClick={() => openArtifact?.(message.artifact)}
