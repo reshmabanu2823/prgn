@@ -106,7 +106,7 @@ AGENT_SYSTEM_PROMPTS = {
 
 # ─── Tool definitions ────────────────────────────────────────────────────────
 
-TOOLS = [
+TOOLS: list[dict[str, Any]] = [
     {
         "name": "read_file",
         "description": "Read the contents of a file. Returns the file content as text.",
@@ -169,7 +169,7 @@ TOOLS = [
 ]
 
 TOOLS_DESCRIPTION = "\n".join(
-    f"- {t['name']}({', '.join(t['parameters'].keys())}): {t['description']}"
+    f"- {t['name']}({', '.join(t['parameters'].keys() if isinstance(t.get('parameters'), dict) else [])}): {t['description']}"
     for t in TOOLS
 )
 
@@ -283,7 +283,7 @@ def tool_list_dir(root: Path, path: str) -> str:
         return f"ERROR listing dir: {e}"
 
 
-def tool_run_command(root: Path, command: str, cwd: str = None) -> str:
+def tool_run_command(root: Path, command: str, cwd: str | None = None) -> str:
     if _is_blocked_command(command):
         return f"ERROR: Blocked command — this command pattern is not allowed for safety: {command}"
     try:
@@ -315,7 +315,7 @@ def tool_run_command(root: Path, command: str, cwd: str = None) -> str:
         return f"ERROR running command: {e}"
 
 
-def tool_search_code(root: Path, pattern: str, path: str = ".", file_pattern: str = None) -> str:
+def tool_search_code(root: Path, pattern: str, path: str = ".", file_pattern: str | None = None) -> str:
     try:
         p = _resolve_in_root(root, path)
     except ValueError as e:
@@ -493,8 +493,8 @@ def _new_session(messages: list, root: Path, mode: str) -> str:
 def run_agent_stream(
     task: str,
     mode: str = "general",
-    context_files: list = None,
-    working_dir: str = None,
+    context_files: list | None = None,
+    working_dir: str | None = None,
 ) -> Generator[str, None, None]:
     """
     Start a new agentic run and yield SSE-formatted events until the model
@@ -661,7 +661,7 @@ def _agent_loop(session_id: str) -> Generator[str, None, None]:
 
 # ─── Non-streaming single-shot chat (for simpler UI calls) ────────────────────
 
-def agent_chat(task: str, mode: str = "general", history: list = None) -> dict:
+def agent_chat(task: str, mode: str = "general", history: list | None = None) -> dict:
     """Simple non-streaming agent response for quick queries."""
     system_prompt = AGENT_SYSTEM_PROMPTS.get(mode, AGENT_SYSTEM_PROMPTS["general"])
     messages = [{"role": "system", "content": system_prompt}]

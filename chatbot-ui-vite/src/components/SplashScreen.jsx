@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import etherxLogo from "../assets/etherx-logo.png";
 import pragnaLogoFull from "../assets/pragna-logo-full.png";
+import pragnaWordmark from "../assets/pragna-wordmark.png";
 
 // Full 8-frame sequence from the "Pragna Splash screen" Figma file, in canvas
 // order (left to right): EtherX intro -> Hindi -> Kannada -> Telugu -> Tamil
@@ -166,7 +167,7 @@ export default function SplashScreen({ visible = true }) {
         )}
 
         {frame.kind === "lang" && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "clamp(12px, 2vw, 28px)", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "clamp(12px, 2vw, 28px)", flexWrap: "nowrap" }}>
             <img
               src={etherxLogo}
               alt=""
@@ -186,7 +187,7 @@ export default function SplashScreen({ visible = true }) {
                   fontSize: "clamp(24px, 4.5vw, 60px)",
                   lineHeight: 1.15,
                   color: GOLD_TITLE,
-                  wordBreak: "break-word",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {frame.title}
@@ -197,7 +198,7 @@ export default function SplashScreen({ visible = true }) {
                   fontWeight: 400,
                   fontSize: "clamp(13px, 1.8vw, 24px)",
                   color: "#fff",
-                  wordBreak: "break-word",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {frame.subtitle}
@@ -207,28 +208,43 @@ export default function SplashScreen({ visible = true }) {
         )}
 
         {frame.kind === "pragna" && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "100%", maxWidth: "586px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "clamp(12px, 2vw, 28px)", flexWrap: "nowrap" }}>
             <img
-              src={pragnaLogoFull}
-              alt="Pragna-1 A"
+              src={etherxLogo}
+              alt="EtherX"
               style={{
-                width: "100%",
-                maxWidth: "clamp(240px, 85vw, 586px)",
+                width: "clamp(72px, 10vw, 150px)",
+                height: "clamp(72px, 10vw, 150px)",
                 objectFit: "contain",
-                filter: "drop-shadow(0 0 24px rgba(212, 175, 55, 0.3))",
+                filter: "drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))",
+                flexShrink: 0,
               }}
             />
-            <span
-              style={{
-                fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-                fontWeight: 700,
-                fontSize: "clamp(13px, 1.8vw, 24px)",
-                color: "#fff",
-                marginTop: "-16px",
-              }}
-            >
-              A regional chatbot
-            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: 0, textAlign: "left" }}>
+              <img
+                src={pragnaWordmark}
+                alt="PRAGNA-1 A"
+                style={{
+                  height: "clamp(22px, 3.6vw, 48px)",
+                  width: "auto",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 0 16px rgba(212, 175, 55, 0.3))",
+                  display: "block",
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+                  fontWeight: 600,
+                  fontSize: "clamp(13px, 1.8vw, 24px)",
+                  color: "#fff",
+                  whiteSpace: "nowrap",
+                  letterSpacing: "0.3px",
+                }}
+              >
+                A regional chatbot
+              </span>
+            </div>
           </div>
         )}
 

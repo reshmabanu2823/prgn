@@ -10,7 +10,11 @@ import os
 import io
 import time
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, send_from_directory, Response, redirect
+from typing import Any
+from flask import Flask, jsonify, send_from_directory, Response, redirect
+from flask import request as _flask_request
+# Dynamic attributes like user_id are attached by auth middleware
+request: Any = _flask_request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -131,7 +135,11 @@ def _extract_text_from_blob(filename, content_type, blob):
             lines = []
             for sheet in wb.worksheets[:5]:
                 lines.append(f"[Sheet: {sheet.title}]")
-                for row_idx, row in enumerate(sheet.iter_rows(values_only=True), start=1):
+                iter_rows: Any = getattr(sheet, 'iter_rows', None)
+                if not callable(iter_rows):
+                    continue
+                rows_iter: Any = iter_rows(values_only=True)
+                for row_idx, row in enumerate(rows_iter, start=1):
                     if row_idx > 150:
                         break
                     values = [str(v).strip() for v in row if v is not None and str(v).strip()]
@@ -152,11 +160,13 @@ def _extract_text_from_blob(filename, content_type, blob):
                     break
                 slide_texts = []
                 for shape in slide.shapes:
-                    if shape.has_text_frame:
-                        for paragraph in shape.text_frame.paragraphs:
-                            t = paragraph.text.strip()
-                            if t:
-                                slide_texts.append(t)
+                    if getattr(shape, 'has_text_frame', False):
+                        tf = getattr(shape, 'text_frame', None)
+                        if tf and hasattr(tf, 'paragraphs'):
+                            for paragraph in tf.paragraphs:
+                                t = paragraph.text.strip()
+                                if t:
+                                    slide_texts.append(t)
                 if slide_texts:
                     lines.append(f"[Slide {slide_idx}]\n" + "\n".join(slide_texts))
             return '\n\n'.join(lines).strip(), 'pptx', None
@@ -678,6 +688,27 @@ def _persist_chat_turn(chat_id, user_id, user_message, bot_response, language='e
         logger.warning(f"Notice persisting chat turn for {chat_id}: {exc}")
 
 
+@app.route('/api/time', methods=['GET'])
+def get_time():
+    """
+    Get real-time time and date information according to location or timezone.
+    Query parameters:
+      - location: optional city/country/region name (e.g. 'Tokyo', 'London', 'New York')
+      - timezone: optional IANA timezone or abbreviation (e.g. 'Asia/Kolkata', 'PST', 'UTC')
+    Headers:
+      - X-Timezone: optional client timezone
+    """
+    try:
+        from services import time_service
+        location = request.args.get('location', '').strip() or None
+        tz = request.args.get('timezone', '').strip() or request.headers.get('X-Timezone', '').strip() or None
+        result = time_service.get_time_and_date(location=location, default_timezone=tz)
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error in /api/time endpoint: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to retrieve time and date', 'details': str(e)}), 500
+
+
 @app.route('/api/chat', methods=['POST'])
 @require_auth
 def chat():
@@ -709,11 +740,17 @@ def chat():
         fallback_models = data.get('fallback_models')
         persona_system_prompt = data.get('persona_system_prompt')
         extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
+        client_timezone = (
+            data.get('client_timezone')
+            or data.get('timezone')
+            or request.headers.get('X-Timezone')
+        )
+        client_location = data.get('client_location') or data.get('location')
 
         if not user_message:
             return jsonify({'error': 'Message cannot be empty'}), 400
 
-        logger.info(f"Received message: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking})")
+        logger.info(f"Received message: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking}, tz: {client_timezone})")
 
         # Unified orchestration path (agent tools + LLM/RAG)
         result = orchestrator.handle_query(
@@ -725,6 +762,8 @@ def chat():
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
             extended_thinking=extended_thinking,
+            user_timezone=client_timezone,
+            user_location=client_location,
         )
 
         _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
@@ -803,6 +842,12 @@ def orchestrator_query():
         fallback_models = data.get('fallback_models')
         persona_system_prompt = data.get('persona_system_prompt')
         extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
+        client_timezone = (
+            data.get('client_timezone')
+            or data.get('timezone')
+            or request.headers.get('X-Timezone')
+        )
+        client_location = data.get('client_location') or data.get('location')
 
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
@@ -816,6 +861,8 @@ def orchestrator_query():
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
             extended_thinking=extended_thinking,
+            user_timezone=client_timezone,
+            user_location=client_location,
         )
         _persist_chat_turn(chat_id, request.user_id, user_message, result.get('response'), language=language)
         return jsonify(result)
@@ -873,6 +920,8 @@ def orchestrator_analyze_uploads():
             fallback_models=fallback_models,
             persona_system_prompt=persona_system_prompt,
             extended_thinking=extended_thinking,
+            user_timezone=request.form.get('client_timezone') or request.form.get('timezone') or request.headers.get('X-Timezone'),
+            user_location=request.form.get('client_location') or request.form.get('location'),
         )
 
         _persist_chat_turn(chat_id, request.user_id, user_message or "Analyzed uploaded files", result.get('response'), language=language)
@@ -1256,7 +1305,7 @@ def get_shared_chat(token):
                 'SELECT sender, text, timestamp FROM messages WHERE conversation_id = %s ORDER BY timestamp ASC',
                 (convo['id'],)
             )
-            messages = [dict(row) for row in c.fetchall()]
+            messages = [dict(row) for row in c.fetchall() if row is not None]
         finally:
             db.release_connection(conn)
 
@@ -2106,11 +2155,17 @@ def chat_stream():
         fallback_models = data.get('fallback_models')
         persona_system_prompt = data.get('persona_system_prompt')
         extended_thinking = bool(data.get('extended_thinking') or data.get('thinking_mode'))
+        client_timezone = (
+            data.get('client_timezone')
+            or data.get('timezone')
+            or request.headers.get('X-Timezone')
+        )
+        client_location = data.get('client_location') or data.get('location')
 
         if not user_message:
             return jsonify({'error': 'Message cannot be empty'}), 400
 
-        logger.info(f"Received streaming request: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking})")
+        logger.info(f"Received streaming request: {user_message[:50]}... (language: {language}, mode: {chat_mode}, thinking: {extended_thinking}, tz: {client_timezone})")
 
         def stream_orchestrated_chunks():
             """Stream orchestrated response as real SSE (data: <json>\n\n lines)."""
@@ -2123,6 +2178,8 @@ def chat_stream():
                 fallback_models=fallback_models,
                 persona_system_prompt=persona_system_prompt,
                 extended_thinking=extended_thinking,
+                user_timezone=client_timezone,
+                user_location=client_location,
             )
 
             actions = result.get('actions', [])
@@ -2494,17 +2551,44 @@ def _resolve_oauth_user(provider, profile):
     return user_id, auth_service.generate_token(user_id)
 
 
+def _get_target_frontend_url(state_or_target=None):
+    if state_or_target and isinstance(state_or_target, str) and state_or_target.startswith(('http://', 'https://')):
+        return state_or_target.rstrip('/')
+    if state_or_target:
+        extracted = oauth_service.get_state_frontend_url(state_or_target)
+        if extracted:
+            return extracted.rstrip('/')
+    configured = (os.getenv('FRONTEND_URL') or getattr(config, 'FRONTEND_URL', '')).strip().rstrip('/')
+    if configured and 'localhost' not in configured:
+        return configured
+    ref = request.headers.get('Referer') or request.headers.get('Origin')
+    if ref:
+        parsed = urllib.parse.urlparse(ref)
+        if parsed.scheme and parsed.netloc and 'localhost' not in parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    return configured or 'https://etherx-frontend-r7l3.onrender.com'
+
+
 def _oauth_redirect_uri(provider):
-    backend_url = (os.getenv('BACKEND_URL') or getattr(config, 'BACKEND_URL', 'http://localhost:5001')).strip().rstrip('/')
-    return f"{backend_url}/api/auth/{provider}/callback"
+    # If incoming request is through a live public domain (e.g. on Render), use that exact host
+    host = request.headers.get('X-Forwarded-Host') or request.host
+    proto = request.headers.get('X-Forwarded-Proto') or request.scheme or 'https'
+    if host and 'localhost' not in host and '127.0.0.1' not in host:
+        return f"{proto}://{host}/api/auth/{provider}/callback"
+
+    configured = (os.getenv('BACKEND_URL') or getattr(config, 'BACKEND_URL', '')).strip().rstrip('/')
+    if configured and 'localhost' not in configured:
+        return f"{configured}/api/auth/{provider}/callback"
+
+    return f"https://etherx-backend-jygo.onrender.com/api/auth/{provider}/callback"
 
 
+def _oauth_error_redirect(reason, state=None):
+    target_frontend = _get_target_frontend_url(state)
+    return redirect(f"{target_frontend}/?oauth_error={urllib.parse.quote(reason)}")
 
-def _oauth_error_redirect(reason):
-    return redirect(f"{config.FRONTEND_URL}/?oauth_error={urllib.parse.quote(reason)}")
 
-
-def _oauth_success_redirect(user_id, token):
+def _oauth_success_redirect(user_id, token, state=None):
     user_row = db.get_user_by_id(user_id)
     params = urllib.parse.urlencode({
         'oauth_token': token,
@@ -2512,7 +2596,20 @@ def _oauth_success_redirect(user_id, token):
         'username': (user_row or {}).get('username', ''),
         'email': (user_row or {}).get('email', ''),
     })
-    return redirect(f"{config.FRONTEND_URL}/?{params}")
+    target_frontend = _get_target_frontend_url(state)
+    return redirect(f"{target_frontend}/?{params}")
+
+
+def _extract_login_return_to():
+    return_to = request.args.get('return_to')
+    if return_to and return_to.startswith(('http://', 'https://')):
+        return return_to.rstrip('/')
+    ref = request.headers.get('Referer') or request.headers.get('Origin')
+    if ref:
+        parsed = urllib.parse.urlparse(ref)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    return None
 
 
 @app.route('/api/auth/google/login', methods=['GET'])
@@ -2522,29 +2619,30 @@ def google_oauth_login():
     logger.info(f"Google login attempt: client_id_len={len(client_id)}, client_secret_len={len(client_secret)}")
     if not client_id or not client_secret:
         return jsonify({'error': 'Google login is not configured on this server'}), 503
-    state = oauth_service.make_state()
+    return_to = _extract_login_return_to()
+    state = oauth_service.make_state(return_to)
     return redirect(oauth_service.google_authorize_url(_oauth_redirect_uri('google'), state))
 
 
 
 @app.route('/api/auth/google/callback', methods=['GET'])
 def google_oauth_callback():
-    if request.args.get('error'):
-        return _oauth_error_redirect(request.args['error'])
-
     state = request.args.get('state')
     code = request.args.get('code')
+    if request.args.get('error'):
+        return _oauth_error_redirect(request.args['error'], state)
+
     if not oauth_service.verify_state(state) or not code:
-        return _oauth_error_redirect('invalid_state')
+        return _oauth_error_redirect('invalid_state', state)
 
     try:
         profile = oauth_service.google_fetch_profile(code, _oauth_redirect_uri('google'))
         user_id, token = _resolve_oauth_user('google', profile)
     except Exception as e:
         logger.error(f"Google OAuth callback failed: {e}", exc_info=True)
-        return _oauth_error_redirect('login_failed')
+        return _oauth_error_redirect('login_failed', state)
 
-    return _oauth_success_redirect(user_id, token)
+    return _oauth_success_redirect(user_id, token, state)
 
 
 @app.route('/api/auth/github/login', methods=['GET'])
@@ -2553,7 +2651,8 @@ def github_oauth_login():
     client_secret = (getattr(config, 'GITHUB_CLIENT_SECRET', '') or os.getenv('GITHUB_CLIENT_SECRET', '')).strip().strip('"').strip("'")
     if not client_id or not client_secret:
         return jsonify({'error': 'GitHub login is not configured on this server'}), 503
-    state = oauth_service.make_state()
+    return_to = _extract_login_return_to()
+    state = oauth_service.make_state(return_to)
     return redirect(oauth_service.github_authorize_url(_oauth_redirect_uri('github'), state))
 
 
@@ -2561,22 +2660,53 @@ def github_oauth_login():
 
 @app.route('/api/auth/github/callback', methods=['GET'])
 def github_oauth_callback():
-    if request.args.get('error'):
-        return _oauth_error_redirect(request.args['error'])
-
     state = request.args.get('state')
     code = request.args.get('code')
+    if request.args.get('error'):
+        return _oauth_error_redirect(request.args['error'], state)
+
     if not oauth_service.verify_state(state) or not code:
-        return _oauth_error_redirect('invalid_state')
+        return _oauth_error_redirect('invalid_state', state)
 
     try:
         profile = oauth_service.github_fetch_profile(code, _oauth_redirect_uri('github'))
         user_id, token = _resolve_oauth_user('github', profile)
     except Exception as e:
         logger.error(f"GitHub OAuth callback failed: {e}", exc_info=True)
-        return _oauth_error_redirect('login_failed')
+        return _oauth_error_redirect('login_failed', state)
 
-    return _oauth_success_redirect(user_id, token)
+    return _oauth_success_redirect(user_id, token, state)
+
+
+@app.route('/api/auth/discord/login', methods=['GET'])
+def discord_oauth_login():
+    client_id = (getattr(config, 'DISCORD_CLIENT_ID', '') or os.getenv('DISCORD_CLIENT_ID', '')).strip().strip('"').strip("'")
+    client_secret = (getattr(config, 'DISCORD_CLIENT_SECRET', '') or os.getenv('DISCORD_CLIENT_SECRET', '')).strip().strip('"').strip("'")
+    if not client_id or not client_secret:
+        return jsonify({'error': 'Discord login is not configured on this server'}), 503
+    return_to = _extract_login_return_to()
+    state = oauth_service.make_state(return_to)
+    return redirect(oauth_service.discord_authorize_url(_oauth_redirect_uri('discord'), state))
+
+
+@app.route('/api/auth/discord/callback', methods=['GET'])
+def discord_oauth_callback():
+    state = request.args.get('state')
+    code = request.args.get('code')
+    if request.args.get('error'):
+        return _oauth_error_redirect(request.args['error'], state)
+
+    if not oauth_service.verify_state(state) or not code:
+        return _oauth_error_redirect('invalid_state', state)
+
+    try:
+        profile = oauth_service.discord_fetch_profile(code, _oauth_redirect_uri('discord'))
+        user_id, token = _resolve_oauth_user('discord', profile)
+    except Exception as e:
+        logger.error(f"Discord OAuth callback failed: {e}", exc_info=True)
+        return _oauth_error_redirect('login_failed', state)
+
+    return _oauth_success_redirect(user_id, token, state)
 
 
 @app.route('/api/auth/discord/login', methods=['GET'])
@@ -2734,6 +2864,8 @@ def get_conversations():
         # Format for frontend
         formatted = []
         for conv in conversations:
+            if not conv:
+                continue
             formatted.append({
                 'id': conv['id'],
                 'title': conv['title'],
@@ -2841,16 +2973,15 @@ Assistant: {ai_response[:200]}"""
         from groq import Groq
         client = Groq(api_key=config.GROQ_API_KEY)
         
-        response = client.messages.create(
+        response = client.chat.completions.create(
             model=config.GROQ_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=50
         )
         
-        summary = response.choices[0].message.content.strip()
-        # Clean up any quotes
-        summary = summary.replace('"', '').replace("'", '')
+        content = response.choices[0].message.content or "New Chat"
+        summary = content.strip().replace('"', '').replace("'", '')
         
         logger.info(f"Chat summary: {summary}")
         return jsonify({'summary': summary}), 200

@@ -11,6 +11,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 import urllib.parse
+import xml.etree.ElementTree as ET
 
 import requests
 
@@ -170,9 +171,9 @@ class GoogleNewsRssSearchProvider(WebSearchProvider):
                 link_elem = item.find("link")
                 desc_elem = item.find("description")
 
-                title = sanitize_web_text(title_elem.text if title_elem is not None else "")
-                link = link_elem.text if link_elem is not None else ""
-                snippet = sanitize_web_text(desc_elem.text if desc_elem is not None else "")
+                title = sanitize_web_text((title_elem.text if title_elem is not None else "") or "")
+                link = (link_elem.text if link_elem is not None else "") or ""
+                snippet = sanitize_web_text((desc_elem.text if desc_elem is not None else "") or "")
 
                 if title:
                     results.append({

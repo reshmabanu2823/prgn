@@ -4,7 +4,10 @@ import logging
 import secrets
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import request, jsonify
+from typing import Any
+from flask import jsonify
+from flask import request as _flask_request
+request: Any = _flask_request
 from database import db
 import hashlib
 

@@ -7,7 +7,7 @@ Uses Postgres (via database.db pool) when DATABASE_URL is configured, or local S
 import logging
 import re
 from contextlib import contextmanager
-from typing import List, Dict, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import config
 from database import db
@@ -190,12 +190,13 @@ def get_user_profile_facts(user_id: str) -> Dict[str, str]:
         rows = cur.fetchall()
     res = {}
     for r in rows:
+        if not r:
+            continue
         try:
             if isinstance(r, dict):
                 k, v = r.get("fact_key"), r.get("fact_value")
             elif hasattr(r, "keys"):
-                d = dict(r)
-                k, v = d.get("fact_key"), d.get("fact_value")
+                k, v = r["fact_key"], r["fact_value"]
             elif isinstance(r, (tuple, list)):
                 k, v = r[0], r[1]
             else:
@@ -241,7 +242,7 @@ def get_user_profile_summary(user_id: str) -> str:
     return "\n".join(lines)
 
 
-def get_history(user_id: str, max_messages: int = None, use_smart_pruning: bool = True) -> List[Dict[str, str]]:
+def get_history(user_id: str, max_messages: Optional[int] = None, use_smart_pruning: bool = True) -> List[Dict[str, str]]:
     """Return conversation history for a user."""
     init_db()
     
@@ -251,7 +252,7 @@ def get_history(user_id: str, max_messages: int = None, use_smart_pruning: bool 
     limit = max_messages * 2 if max_messages and max_messages > 0 else 0
     param = '?' if db.is_sqlite else '%s'
     query = f"SELECT role, content FROM memory_messages WHERE user_id = {param} ORDER BY id ASC"
-    params = [user_id]
+    params: List[Any] = [user_id]
     if limit:
         query += f" LIMIT {param}"
         params.append(limit)
@@ -263,6 +264,8 @@ def get_history(user_id: str, max_messages: int = None, use_smart_pruning: bool 
     
     messages = []
     for r in rows:
+        if not r:
+            continue
         if isinstance(r, dict):
             messages.append({"role": r.get("role", ""), "content": r.get("content", "")})
         else:
@@ -288,7 +291,7 @@ def get_history(user_id: str, max_messages: int = None, use_smart_pruning: bool 
     return messages
 
 
-def add_message(user_id: str, role: str, content: str, max_messages: int = None) -> Tuple[bool, Dict]:
+def add_message(user_id: str, role: str, content: str, max_messages: Optional[int] = None) -> Tuple[bool, Dict]:
     """Add a message and intelligently prune old history beyond limits."""
     init_db()
     
@@ -322,6 +325,8 @@ def add_message(user_id: str, role: str, content: str, max_messages: int = None)
         
         messages_list = []
         for r in all_rows:
+            if not r:
+                continue
             if isinstance(r, dict):
                 messages_list.append({"role": r.get("role", ""), "content": r.get("content", "")})
             else:
@@ -339,6 +344,8 @@ def add_message(user_id: str, role: str, content: str, max_messages: int = None)
             msg_content_to_keep = {msg['content'] for msg in pruned_messages}
             
             for r in all_rows:
+                if not r:
+                    continue
                 if isinstance(r, dict):
                     row_id, r_content = r.get('id'), r.get('content')
                 else:
@@ -348,7 +355,7 @@ def add_message(user_id: str, role: str, content: str, max_messages: int = None)
             
             if ids_to_keep:
                 placeholders = ','.join([param] * len(ids_to_keep))
-                cur.execute(
+                cast(Any, cur).execute(
                     f"DELETE FROM memory_messages WHERE user_id = {param} AND id NOT IN ({placeholders})",
                     [user_id] + list(ids_to_keep)
                 )

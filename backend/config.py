@@ -34,12 +34,11 @@ CORS_ALLOWED_ORIGINS = (
 # Frontend origin used to build links embedded in emails (e.g. the password
 # reset link). Falls back to localhost for local dev - set explicitly in
 # production so reset emails point at the real deployed frontend.
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5180').rstrip('/')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://etherx-frontend-r7l3.onrender.com').rstrip('/')
 
 # Backend's own public origin, used to build the OAuth redirect_uri sent to
-# Google/GitHub (must exactly match a URI registered on the provider's app).
-# Falls back to localhost for local dev - set explicitly in production.
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5001').rstrip('/')
+# Google/GitHub/Discord (must exactly match a URI registered on the provider's app).
+BACKEND_URL = os.getenv('BACKEND_URL', 'https://etherx-backend-jygo.onrender.com').rstrip('/')
 
 # Google OAuth (console.cloud.google.com -> APIs & Services -> Credentials).
 # Authorized redirect URI to register: {BACKEND_URL}/api/auth/google/callback
@@ -51,15 +50,9 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '').strip().strip('"').
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip().strip('"').strip("'")
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip().strip('"').strip("'")
 
-# Discord OAuth (discord.com/developers/applications -> OAuth2).
 # Authorization callback URL to register: {BACKEND_URL}/api/auth/discord/callback
 DISCORD_CLIENT_ID = os.getenv('DISCORD_CLIENT_ID', '').strip().strip('"').strip("'")
 DISCORD_CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET', '').strip().strip('"').strip("'")
-
-print(f"[CONFIG DEBUG] GOOGLE_CLIENT_ID present: {bool(GOOGLE_CLIENT_ID)}, length: {len(GOOGLE_CLIENT_ID)}")
-print(f"[CONFIG DEBUG] GOOGLE_CLIENT_SECRET present: {bool(GOOGLE_CLIENT_SECRET)}, length: {len(GOOGLE_CLIENT_SECRET)}")
-print(f"[CONFIG DEBUG] GITHUB_CLIENT_ID present: {bool(GITHUB_CLIENT_ID)}, length: {len(GITHUB_CLIENT_ID)}")
-print(f"[CONFIG DEBUG] DISCORD_CLIENT_ID present: {bool(DISCORD_CLIENT_ID)}, length: {len(DISCORD_CLIENT_ID)}")
 
 
 
@@ -172,8 +165,24 @@ if _raw_provider == 'ollama_only':
 else:
     LLM_PROVIDER = _raw_provider
 
+# Only needed when OLLAMA_API_URL points at Ollama's hosted cloud API
+# (https://ollama.com) instead of a self-hosted daemon - authenticates
+# requests to :cloud-tagged models. Unused for local/self-hosted Ollama.
+OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', '')
+OLLAMA_API_KEYS = [
+    k for k in [
+        OLLAMA_API_KEY,
+        os.getenv('OLLAMA_API_KEY_2', ''),
+        os.getenv('OLLAMA_API_KEY_3', ''),
+        os.getenv('OLLAMA_API_KEY_4', ''),
+        os.getenv('OLLAMA_API_KEY_5', ''),
+        os.getenv('OLLAMA_API_KEY_6', ''),
+        os.getenv('OLLAMA_API_KEY_7', ''),
+    ] if k
+]
+
 # Validate that at least one API key is configured for production
-_has_valid_api = bool(GROQ_API_KEY or _clean_key(os.getenv('OPENAI_API_KEY', '')) or (OLLAMA_ENABLED and ('localhost' in OLLAMA_API_URL or '127.0.0.1' in OLLAMA_API_URL or OLLAMA_API_KEY)))
+_has_valid_api = bool(GROQ_API_KEY or _clean_key(os.getenv('OPENAI_API_KEY', '')) or (OLLAMA_ENABLED and ('localhost' in OLLAMA_API_URL or '127.0.0.1' in OLLAMA_API_URL or OLLAMA_API_KEY or OLLAMA_API_KEYS)))
 if not _has_valid_api and not DEVELOPMENT_MODE:
     DEVELOPMENT_MODE = True
     import logging

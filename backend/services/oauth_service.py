@@ -23,11 +23,13 @@ STATE_MAX_AGE_SECONDS = 600  # 10 minutes is plenty for a login redirect round t
 _serializer = URLSafeTimedSerializer(config.JWT_SECRET, salt='oauth-state')
 
 
-def make_state():
-    """A random nonce, signed so /callback can trust it wasn't forged - it
-    embeds no data, just proves this request round-tripped through our own
-    /login redirect rather than being a CSRF'd callback hit directly."""
-    return _serializer.dumps(secrets.token_urlsafe(16))
+def make_state(frontend_url=None):
+    """A random nonce and optional frontend_url, signed so /callback can trust it wasn't forged."""
+    payload = {
+        'nonce': secrets.token_urlsafe(16),
+        'frontend_url': (frontend_url or '').strip()
+    }
+    return _serializer.dumps(payload)
 
 
 def verify_state(state):
@@ -40,6 +42,21 @@ def verify_state(state):
         return True
     except (BadSignature, SignatureExpired):
         return False
+
+
+def get_state_frontend_url(state):
+    """Extract and return the frontend_url embedded in state if valid, else None."""
+    if not state:
+        return None
+    try:
+        data = _serializer.loads(state, max_age=STATE_MAX_AGE_SECONDS)
+        if isinstance(data, dict):
+            url = (data.get('frontend_url') or '').strip()
+            if url.startswith(('http://', 'https://')):
+                return url.rstrip('/')
+    except Exception:
+        pass
+    return None
 
 
 def sanitize_username(raw):
@@ -212,9 +229,7 @@ def github_fetch_profile(code, redirect_uri):
     }
 
 
-# ── Discord ──────────────────────────────────────────────────────────────
-
-DISCORD_AUTHORIZE_URL = 'https://discord.com/api/oauth2/authorize'
+DISCORD_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize'
 DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token'
 DISCORD_USER_URL = 'https://discord.com/api/users/@me'
 
@@ -232,7 +247,7 @@ def discord_authorize_url(redirect_uri, state):
 
 
 def discord_fetch_profile(code, redirect_uri):
-    """Exchange an auth code for a Discord profile. Returns
+    """Exchange a Discord auth code for a user profile. Returns
     {'email', 'username_hint', 'oauth_id'}, or raises RuntimeError."""
     token_res = requests.post(
         DISCORD_TOKEN_URL,

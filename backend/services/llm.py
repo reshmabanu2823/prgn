@@ -177,6 +177,34 @@ def _request_completion(messages: List[Dict[str, str]], model_key: Optional[str]
     if request_cfg["provider"] == "ollama":
         payload["think"] = True if extended_thinking else False
     headers = {"Content-Type": "application/json"}
+    
+    # Support multiple Ollama keys rotation / failover
+    ollama_keys = getattr(config, "OLLAMA_API_KEYS", [])
+    if request_cfg["provider"] == "ollama" and len(ollama_keys) > 1:
+        last_err = None
+        for candidate_key in ollama_keys:
+            headers["Authorization"] = f"Bearer {candidate_key}"
+            try:
+                response = requests.post(
+                    request_cfg["endpoint"],
+                    headers=headers,
+                    json=payload,
+                    timeout=request_cfg["timeout"],
+                )
+                if response.status_code in (401, 429):
+                    logger.warning(f"Ollama key {candidate_key[:10]}... failed ({response.status_code}), trying next key")
+                    last_err = f"[{response.status_code}] Ollama key failed"
+                    continue
+                response.raise_for_status()
+                data = response.json()
+                return (data["choices"][0]["message"].get("content") or "").strip()
+            except requests.RequestException as req_err:
+                logger.warning(f"Ollama key {candidate_key[:10]}... request error: {req_err}")
+                last_err = req_err
+                continue
+        if last_err:
+            raise RuntimeError(f"All Ollama API keys failed. Last error: {last_err}")
+
     if request_cfg["api_key"]:
         headers["Authorization"] = f"Bearer {request_cfg['api_key']}"
 
