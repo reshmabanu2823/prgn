@@ -682,67 +682,6 @@ ${turns}
             </div>
           ) : (
             <>
-              {/* New Folder */}
-              <div style={{ padding: '0 10px 8px 10px' }}>
-                {newFolderDialogOpen ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    placeholder="Folder name"
-                    style={{
-                      width: '100%',
-                      padding: '6px 10px',
-                      border: '1px solid var(--pragna-border)',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      background: 'var(--pragna-surface-2)',
-                      color: 'var(--pragna-text)',
-                    }}
-                    onBlur={() => {
-                      if (newFolderName.trim()) createFolder(newFolderName)
-                      setNewFolderName('')
-                      setNewFolderDialogOpen(false)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newFolderName.trim()) {
-                        createFolder(newFolderName)
-                        setNewFolderName('')
-                        setNewFolderDialogOpen(false)
-                      } else if (e.key === 'Escape') {
-                        setNewFolderName('')
-                        setNewFolderDialogOpen(false)
-                      }
-                    }}
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setNewFolderDialogOpen(true)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '7px 10px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: 'transparent',
-                      color: 'var(--pragna-text-muted)',
-                      fontSize: '12.5px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                    }}
-                    className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
-                  >
-                    <FolderPlusIcon size={14} />
-                    <span>New Folder</span>
-                  </button>
-                )}
-              </div>
-
               {/* Folder sections */}
               {folders.map((folder) => {
                 const folderChats = filteredChats.filter((c) => c.folderId === folder.id)
