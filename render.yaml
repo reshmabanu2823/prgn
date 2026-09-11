@@ -86,9 +86,9 @@ services:
                      # https://etherx-frontend.onrender.com). Defaults to "*"
                      # (any origin) if left unset.
       - key: FRONTEND_URL
-        value: https://etherx-frontend.onrender.com
+        value: https://etherx-frontend-r7l3.onrender.com
       - key: BACKEND_URL
-        value: https://etherx-backend.onrender.com
+        value: https://etherx-backend-jygo.onrender.com
       - key: JWT_SECRET
         generateValue: true
       - key: GOOGLE_CLIENT_ID
@@ -200,4 +200,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://etherx-backend.onrender.com
+        value: https://etherx-backend-jygo.onrender.com

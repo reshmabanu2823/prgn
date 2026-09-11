@@ -2452,7 +2452,7 @@ def _get_target_frontend_url(state_or_target=None):
         parsed = urllib.parse.urlparse(ref)
         if parsed.scheme and parsed.netloc and 'localhost' not in parsed.netloc:
             return f"{parsed.scheme}://{parsed.netloc}"
-    return configured or 'https://etherx-frontend.onrender.com'
+    return configured or 'https://etherx-frontend-r7l3.onrender.com'
 
 
 def _oauth_redirect_uri(provider):
@@ -2466,7 +2466,7 @@ def _oauth_redirect_uri(provider):
     if configured and 'localhost' not in configured:
         return f"{configured}/api/auth/{provider}/callback"
 
-    return f"https://etherx-backend.onrender.com/api/auth/{provider}/callback"
+    return f"https://etherx-backend-jygo.onrender.com/api/auth/{provider}/callback"
 
 
 def _oauth_error_redirect(reason, state=None):
