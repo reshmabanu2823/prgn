@@ -2452,18 +2452,21 @@ def _get_target_frontend_url(state_or_target=None):
         parsed = urllib.parse.urlparse(ref)
         if parsed.scheme and parsed.netloc and 'localhost' not in parsed.netloc:
             return f"{parsed.scheme}://{parsed.netloc}"
-    return configured or 'https://etherx-frontend.onrender.com'
+    return configured or 'https://etherx-frontend-r7l3.onrender.com'
 
 
 def _oauth_redirect_uri(provider):
-    configured = (os.getenv('BACKEND_URL') or getattr(config, 'BACKEND_URL', '')).strip().rstrip('/')
-    if configured and 'localhost' not in configured:
-        return f"{configured}/api/auth/{provider}/callback"
+    # If incoming request is through a live public domain (e.g. on Render), use that exact host
     host = request.headers.get('X-Forwarded-Host') or request.host
     proto = request.headers.get('X-Forwarded-Proto') or request.scheme or 'https'
     if host and 'localhost' not in host and '127.0.0.1' not in host:
         return f"{proto}://{host}/api/auth/{provider}/callback"
-    return f"{configured or 'https://etherx-backend.onrender.com'}/api/auth/{provider}/callback"
+
+    configured = (os.getenv('BACKEND_URL') or getattr(config, 'BACKEND_URL', '')).strip().rstrip('/')
+    if configured and 'localhost' not in configured:
+        return f"{configured}/api/auth/{provider}/callback"
+
+    return f"https://etherx-backend-jygo.onrender.com/api/auth/{provider}/callback"
 
 
 def _oauth_error_redirect(reason, state=None):

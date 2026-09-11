@@ -740,3 +740,8 @@ body {
   }
 }
 
+textarea::placeholder {
+  color: rgba(255, 253, 247, 0.45);
+  line-height: inherit;
+}
+
