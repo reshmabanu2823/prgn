@@ -431,8 +431,8 @@ export function ChatProvider({ children }) {
           personaSystemPrompt: activePersona?.system_prompt,
           extendedThinking,
           signal: controller.signal,
-          onToken: (token) => {
-            accumulated += token;
+          onChunk: (chunk) => {
+            accumulated += chunk;
             setChats((prev) =>
               prev.map((c) =>
                 c.id === targetChatId
@@ -464,6 +464,8 @@ export function ChatProvider({ children }) {
               : c
           )
         );
+
+        return accumulated;
       } catch (err) {
         console.error("Voice chat stream error:", err);
         setChats((prev) =>
@@ -484,6 +486,7 @@ export function ChatProvider({ children }) {
               : c
           )
         );
+        return null;
       } finally {
         setIsLoading(false);
       }
