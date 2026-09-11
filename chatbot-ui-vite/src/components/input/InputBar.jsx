@@ -13,6 +13,7 @@ import {
   ThinkIcon,
   FileTextIcon,
   CloseIcon,
+  SoundwaveIcon,
 } from "../icons/PragnaIcon";
 
 // BCP-47 tags for SpeechRecognition
@@ -115,6 +116,7 @@ export default function InputBar() {
     personas, activePersonaId, setActivePersonaId,
     newChat, setLanguage, abortControllerRef, stopGeneration, openArtifact,
     extendedThinking, toggleExtendedThinking,
+    setIsVoiceAssistantOpen,
   } = useContext(ChatContext);
 
 
@@ -1055,6 +1057,30 @@ export default function InputBar() {
                 className={recording ? 'animate-pulse' : 'hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.1)]'}
               >
                 {recording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
+              </button>
+
+              {/* ChatGPT-style Voice Mode Button */}
+              <button
+                type="button"
+                onClick={() => setIsVoiceAssistantOpen(true)}
+                title="Voice Assistant Mode"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  flexShrink: 0,
+                  borderRadius: '50%',
+                  border: '1px solid rgba(212, 175, 55, 0.35)',
+                  background: 'rgba(212, 175, 55, 0.1)',
+                  color: 'var(--pragna-gold-soft, #d4af37)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+                className="hover:scale-110 hover:bg-[rgba(212,175,55,0.22)] active:scale-95"
+              >
+                <SoundwaveIcon size={16} />
               </button>
 
               {/* Extended Thinking Toggle */}
