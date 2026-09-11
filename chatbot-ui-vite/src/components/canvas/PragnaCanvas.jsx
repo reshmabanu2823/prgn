@@ -148,7 +148,6 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
         <AutopilotProgressCard
           isStreaming={false}
           onMakeItReal={() => setIsModalOpen(true)}
-          onExpand={() => setIsModalOpen(true)}
           onEdit={() => onSendPrompt?.(`Update and refine the ${title} visualization: `)}
         />
       )}

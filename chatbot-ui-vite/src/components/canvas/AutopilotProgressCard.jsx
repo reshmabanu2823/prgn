@@ -1,6 +1,6 @@
-import { Sparkles, CheckCircle2, CircleDot, Circle, ArrowRight, Wand2, Maximize2, Pencil } from 'lucide-react'
+import { Sparkles, CheckCircle2, CircleDot, Circle, ArrowRight, Wand2, Pencil } from 'lucide-react'
 
-export default function AutopilotProgressCard({ isStreaming = false, onExpand, onEdit, onMakeItReal }) {
+export default function AutopilotProgressCard({ isStreaming = false, onEdit, onMakeItReal }) {
   const steps = [
     { label: 'Understanding request', state: 'done' },
     { label: 'Identifying structure', state: 'done' },
@@ -61,15 +61,6 @@ export default function AutopilotProgressCard({ isStreaming = false, onExpand, o
             >
               <Sparkles className="w-3 h-3 text-[#F2D06B]" />
               <span>✦ MAKE IT REAL</span>
-            </button>
-          )}
-          {onExpand && (
-            <button
-              onClick={onExpand}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] text-white/80 hover:text-white transition-colors"
-            >
-              <Maximize2 className="w-3 h-3" />
-              <span>Expand</span>
             </button>
           )}
           {onEdit && (
