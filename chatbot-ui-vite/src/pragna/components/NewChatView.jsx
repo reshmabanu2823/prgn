@@ -83,35 +83,35 @@ const CHAT_MODES = [
 const QUICK_ACTIONS = [
   {
     id: 'explain',
-    label: 'Explain',
+    label: 'Explain concepts',
     icon: BookOpenIcon,
     mode: 'explain_concepts',
     promptPrefix: 'Explain how ',
   },
   {
     id: 'write',
-    label: 'Write',
+    label: 'Draft content',
     icon: PenLineIcon,
     mode: 'write_content',
     promptPrefix: 'Help me write ',
   },
   {
     id: 'research',
-    label: 'Research',
+    label: 'Research topics',
     icon: SearchIcon,
     mode: 'general',
     promptPrefix: 'Research and analyze ',
   },
   {
     id: 'brainstorm',
-    label: 'Brainstorm',
+    label: 'Brainstorm ideas',
     icon: LightbulbIcon,
     mode: 'generate_ideas',
     promptPrefix: 'Brainstorm ideas for ',
   },
   {
     id: 'code',
-    label: 'Code',
+    label: 'Write code',
     icon: CodeIcon,
     mode: 'code_assistance',
     promptPrefix: 'Write code to ',
@@ -262,7 +262,6 @@ export default function NewChatView({ onNavigateToImages }) {
 
       if ((!promptText && promptAttachments.length === 0) || isLoading) return
 
-      // Create new chat or use existing active chat
       let targetChatId = activeChatId
       let currentChat = chats.find((c) => c.id === activeChatId)
 
@@ -302,7 +301,6 @@ export default function NewChatView({ onNavigateToImages }) {
       const normalizedLanguage = normalizeLanguageCode(language)
 
       try {
-        // Document generation check
         const docRequest = promptAttachments.length === 0 ? extractDocumentRequest(promptText) : null
         if (docRequest) {
           const docResult = await generateDocument({
@@ -341,7 +339,6 @@ export default function NewChatView({ onNavigateToImages }) {
           return
         }
 
-        // Image generation check
         const isImageRequest = IMAGE_REQUEST_RE.test(promptText) && promptAttachments.length === 0
         if (isImageRequest) {
           const imagePrompt = extractImagePrompt(promptText)
@@ -362,13 +359,13 @@ export default function NewChatView({ onNavigateToImages }) {
                       idx === c.messages.length - 1
                         ? {
                             ...m,
-                            text: 'Generated image ready.',
+                            text: `Generated image for "${imagePrompt}":`,
                             isStreaming: false,
                             attachments: [
                               {
-                                name: `generated-${Date.now()}.png`,
+                                name: `${imagePrompt.slice(0, 24)}.png`,
                                 type: 'image',
-                                previewUrl: imageResult.image,
+                                previewUrl: imageResult?.image_url || imageResult?.url,
                               },
                             ],
                           }
@@ -381,103 +378,99 @@ export default function NewChatView({ onNavigateToImages }) {
           return
         }
 
-        // Upload attachment handling
+        const activePersona = personas?.find((p) => p.id === activePersonaId)
+        const systemPrompt = activePersona?.systemPrompt || ''
+
         if (promptAttachments.length > 0) {
-          let data
-          try {
-            data = await sendOrchestratedUploadMessage(
-              promptText,
-              normalizedLanguage,
-              targetChatId,
-              chatMode,
-              promptAttachments,
-              extendedThinking
-            )
-          } catch (uploadErr) {
-            console.warn('Upload analysis failed, falling back to standard orchestrator:', uploadErr)
-            const fallbackText = `${promptText}\n[Note: Attachment parsing endpoint unavailable.]`
-            data = await sendOrchestratedMessage(fallbackText, normalizedLanguage, targetChatId, chatMode, extendedThinking)
-          }
-          setIsLoading(false)
-
-          if (data && data.response) {
-            const responseText = data.response
-            const sources = data.web_search_sources || []
-            const thinking = data.thinking
-
-            setChats((prev) =>
-              prev.map((c) =>
-                c.id === targetChatId
-                  ? {
-                      ...c,
-                      messages: c.messages.map((m, idx) =>
-                        idx === c.messages.length - 1
-                          ? { ...m, text: responseText, isStreaming: false, sources, thinking }
-                          : m
-                      ),
-                    }
-                  : c
-              )
-            )
-          } else {
-            throw new Error('Invalid response from server')
-          }
-        } else {
-          // Standard streaming LLM response
-          const activePersona = personas.find((p) => p.id === activePersonaId)
-          let sawResponse = false
-
-          await sendOrchestratedMessageStream({
-            text: promptText,
+          const res = await sendOrchestratedUploadMessage({
+            files: promptAttachments.map((a) => a.file).filter(Boolean),
+            message: promptText,
             language: normalizedLanguage,
-            user_id: targetChatId,
             chatMode,
-            personaSystemPrompt: activePersona?.system_prompt,
+            systemPrompt,
+          })
+
+          setIsLoading(false)
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1
+                        ? {
+                            ...m,
+                            text: res.reply || res.text || 'Response received.',
+                            isStreaming: false,
+                            sources: res.sources || [],
+                          }
+                        : m
+                    ),
+                  }
+                : c
+            )
+          )
+          return
+        }
+
+        let accumulatedText = ''
+        let streamSources = []
+        let streamThinking = ''
+
+        await sendOrchestratedMessageStream(
+          {
+            message: promptText,
+            language: normalizedLanguage,
+            chatMode,
+            systemPrompt,
             extendedThinking,
-            onThinking: (thinking) => {
+          },
+          (chunk) => {
+            if (chunk.type === 'token') {
+              accumulatedText += chunk.token || ''
               setChats((prev) =>
                 prev.map((c) =>
                   c.id === targetChatId
                     ? {
                         ...c,
                         messages: c.messages.map((m, idx) =>
-                          idx === c.messages.length - 1 ? { ...m, thinking } : m
+                          idx === c.messages.length - 1
+                            ? {
+                                ...m,
+                                text: accumulatedText,
+                                thinking: streamThinking,
+                                isStreaming: true,
+                              }
+                            : m
                         ),
                       }
                     : c
                 )
               )
-            },
-            onChunk: (chunk) => {
-              sawResponse = true
+            } else if (chunk.type === 'thinking') {
+              streamThinking += chunk.token || ''
               setChats((prev) =>
                 prev.map((c) =>
                   c.id === targetChatId
                     ? {
                         ...c,
                         messages: c.messages.map((m, idx) =>
-                          idx === c.messages.length - 1 ? { ...m, text: (m.text || '') + chunk } : m
+                          idx === c.messages.length - 1
+                            ? {
+                                ...m,
+                                text: accumulatedText,
+                                thinking: streamThinking,
+                                isStreaming: true,
+                              }
+                            : m
                         ),
                       }
                     : c
                 )
               )
-            },
-            onSources: (sources) => {
-              setChats((prev) =>
-                prev.map((c) =>
-                  c.id === targetChatId
-                    ? {
-                        ...c,
-                        messages: c.messages.map((m, idx) =>
-                          idx === c.messages.length - 1 ? { ...m, sources } : m
-                        ),
-                      }
-                    : c
-                )
-              )
-            },
-            onDone: () => {
+            } else if (chunk.type === 'sources') {
+              streamSources = chunk.sources || []
+            } else if (chunk.type === 'done') {
               setIsLoading(false)
               setChats((prev) =>
                 prev.map((c) =>
@@ -485,19 +478,23 @@ export default function NewChatView({ onNavigateToImages }) {
                     ? {
                         ...c,
                         messages: c.messages.map((m, idx) =>
-                          idx === c.messages.length - 1 ? { ...m, isStreaming: false } : m
+                          idx === c.messages.length - 1
+                            ? {
+                                ...m,
+                                text: accumulatedText,
+                                thinking: streamThinking,
+                                sources: streamSources,
+                                isStreaming: false,
+                              }
+                            : m
                         ),
                       }
                     : c
                 )
               )
-            },
-          })
-
-          if (!sawResponse) {
-            throw new Error('Invalid response from server')
+            }
           }
-        }
+        )
       } catch (err) {
         console.error('Error submitting prompt in NewChatView:', err)
         setIsLoading(false)
@@ -535,6 +532,7 @@ export default function NewChatView({ onNavigateToImages }) {
       chatMode,
       personas,
       activePersonaId,
+      extendedThinking,
     ]
   )
 
@@ -578,7 +576,6 @@ export default function NewChatView({ onNavigateToImages }) {
 
   const currentModeObj = CHAT_MODES.find((m) => m.id === chatMode) || CHAT_MODES[0]
   const CurrentModeIcon = currentModeObj.icon
-
   const hasContent = inputVal.trim().length > 0 || attachments.length > 0
 
   return (
@@ -590,129 +587,30 @@ export default function NewChatView({ onNavigateToImages }) {
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
-        background: 'var(--pragna-bg)',
+        background: 'var(--pragna-bg, #09090b)',
         overflowY: 'auto',
         overflowX: 'hidden',
+        fontFamily: 'var(--font-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif)',
       }}
       className="custom-scrollbar"
     >
-      {/* Subtle ambient warm gold radial glow */}
+      {/* Subtle Apple Ambient Glow */}
       <div
         style={{
           position: 'absolute',
-          top: '-100px',
-          right: '-80px',
-          width: '600px',
-          height: '600px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.09) 0%, rgba(212, 175, 55, 0.02) 45%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '30%',
+          top: '20%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: '750px',
-          height: '450px',
+          width: '600px',
+          height: '340px',
           borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(212, 175, 55, 0.04) 0%, transparent 75%)',
+          background: 'radial-gradient(ellipse, rgba(212, 175, 55, 0.05) 0%, transparent 70%)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
       />
 
-      {/* Celestial Golden Horizon Arc Graphic (Bottom Right) */}
-      <svg
-        style={{
-          position: 'absolute',
-          right: 0,
-          bottom: 0,
-          width: isMobile ? '280px' : '520px',
-          height: isMobile ? '220px' : '380px',
-          pointerEvents: 'none',
-          zIndex: 0,
-          overflow: 'visible',
-        }}
-        viewBox="0 0 520 380"
-        fill="none"
-      >
-        <defs>
-          <linearGradient id="celestialArcGrad" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#f5ebd9" stopOpacity="0.85" />
-            <stop offset="35%" stopColor="#e5c76b" stopOpacity="0.65" />
-            <stop offset="70%" stopColor="#d4af37" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#b8860b" stopOpacity="0.0" />
-          </linearGradient>
-          <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="30%" stopColor="#f5ebd9" stopOpacity="0.8" />
-            <stop offset="70%" stopColor="#d4af37" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#d4af37" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        {/* Outer subtle glow arc */}
-        <path
-          d="M 520 80 Q 320 180 180 380"
-          stroke="#d4af37"
-          strokeWidth="6"
-          strokeOpacity="0.08"
-          fill="none"
-        />
-        {/* Main luminous arc */}
-        <path
-          d="M 520 80 Q 320 180 180 380"
-          stroke="url(#celestialArcGrad)"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          fill="none"
-        />
-        {/* Secondary inner contour arc */}
-        <path
-          d="M 520 120 Q 360 210 240 380"
-          stroke="url(#celestialArcGrad)"
-          strokeWidth="0.8"
-          strokeOpacity="0.35"
-          fill="none"
-        />
-        {/* Bright celestial star dot */}
-        <circle cx="370" cy="158" r="8" fill="url(#starGlow)" />
-        <circle cx="370" cy="158" r="2.5" fill="#ffffff" />
-      </svg>
-
-      {/* Top Header tracking phrase */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          padding: isMobile ? '16px 20px 0 20px' : '22px 40px 0 40px',
-          zIndex: 2,
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              fontSize: isMobile ? '9.5px' : '11px',
-              letterSpacing: isMobile ? '2px' : '3.2px',
-              fontWeight: 600,
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.75,
-              textTransform: 'uppercase',
-              userSelect: 'none',
-            }}
-          >
-            EXPLORE &nbsp; LEARN &nbsp; CREATE &nbsp; EVOLVE
-          </span>
-          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
-        </div>
-      </div>
-
-      {/* Center Main Content Container */}
+      {/* Main Center Content Container */}
       <div
         style={{
           flex: 1,
@@ -720,19 +618,19 @@ export default function NewChatView({ onNavigateToImages }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: isMobile ? '20px 16px 32px 16px' : '36px 24px 44px 24px',
+          padding: isMobile ? '24px 16px' : '40px 24px',
           zIndex: 1,
           width: '100%',
-          maxWidth: '880px',
+          maxWidth: '820px',
           margin: '0 auto',
           boxSizing: 'border-box',
-          animation: 'fadeUp 0.35s ease',
+          animation: 'fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Shield Logo Mark */}
+        {/* Minimal Shield Logo Mark */}
         <div
           style={{
-            marginBottom: '16px',
+            marginBottom: '14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -742,98 +640,68 @@ export default function NewChatView({ onNavigateToImages }) {
             src={pragnaShield}
             alt="Pragna"
             style={{
-              width: isMobile ? '46px' : '54px',
-              height: isMobile ? '46px' : '54px',
+              width: isMobile ? '42px' : '48px',
+              height: isMobile ? '42px' : '48px',
               objectFit: 'contain',
-              filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.35))',
-              transition: 'transform 0.25s ease',
+              filter: 'drop-shadow(0 2px 14px rgba(212, 175, 55, 0.25))',
             }}
-            className="hover:scale-105"
           />
         </div>
 
-        {/* Eyebrow */}
-        <div
-          style={{
-            fontSize: isMobile ? '10.5px' : '11.5px',
-            letterSpacing: '3px',
-            fontWeight: 600,
-            color: 'var(--pragna-gold-soft)',
-            opacity: 0.85,
-            textTransform: 'uppercase',
-            marginBottom: '10px',
-            textAlign: 'center',
-            userSelect: 'none',
-          }}
-        >
-          A NEW CONVERSATION
-        </div>
-
-        {/* Main Heading */}
+        {/* Clean Apple Heading */}
         <h1
           style={{
-            margin: '0 0 10px 0',
-            fontSize: isMobile ? '26px' : isTablet ? '32px' : '38px',
+            margin: '0 0 8px 0',
+            fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px',
             fontWeight: 650,
-            color: 'var(--pragna-text)',
+            color: 'var(--pragna-text, #f5f5f7)',
             textAlign: 'center',
-            lineHeight: 1.22,
-            letterSpacing: '-0.5px',
+            lineHeight: 1.2,
+            letterSpacing: '-0.02em',
           }}
         >
-          How can Pragna help you{' '}
-          <span
-            style={{
-              background: 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              display: 'inline',
-            }}
-          >
-            today?
-          </span>
+          How can I help you today?
         </h1>
 
-        {/* Supporting Subtitle */}
+        {/* Quiet Subtitle */}
         <p
           style={{
             margin: '0 0 28px 0',
-            fontSize: isMobile ? '13.5px' : '15px',
-            color: 'var(--pragna-text-muted)',
+            fontSize: isMobile ? '13px' : '14px',
+            color: 'var(--pragna-text-muted, #8e8e93)',
             textAlign: 'center',
-            maxWidth: '520px',
-            lineHeight: 1.5,
+            maxWidth: '480px',
+            lineHeight: 1.4,
           }}
         >
-          Ask, explore, create or dive into any topic.
+          Search, brainstorm, write, or analyze.
         </p>
 
-        {/* Glowing Capsule Prompt Input Box (Matching Approved Reference Design) */}
+        {/* Apple Frosted Composer Capsule */}
         <div
           style={{
             width: '100%',
-            maxWidth: '780px',
-            background: 'rgba(18, 16, 12, 0.85)',
+            maxWidth: '740px',
+            background: 'rgba(18, 18, 22, 0.88)',
             border: isFocused
-              ? '1.5px solid rgba(212, 175, 55, 0.7)'
-              : '1.5px solid rgba(212, 175, 55, 0.42)',
-            borderRadius: '9999px',
+              ? '1px solid rgba(212, 175, 55, 0.55)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '24px',
             boxShadow: isFocused
-              ? '0 0 35px rgba(212, 175, 55, 0.22), 0 12px 36px rgba(0, 0, 0, 0.65)'
-              : '0 0 24px rgba(212, 175, 55, 0.12), 0 8px 28px rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-            padding: isMobile ? '6px 10px 6px 14px' : '7px 10px 7px 18px',
+              ? '0 0 0 1.5px rgba(212, 175, 55, 0.2), 0 8px 32px rgba(0, 0, 0, 0.5)'
+              : '0 4px 24px rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(28px) saturate(190%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+            transition: 'all 0.16s cubic-bezier(0.16, 1, 0.3, 1)',
+            padding: isMobile ? '6px 10px 6px 14px' : '8px 12px 8px 16px',
             display: 'flex',
             alignItems: 'center',
             gap: isMobile ? '6px' : '10px',
             position: 'relative',
-            marginBottom: '24px',
+            marginBottom: '20px',
             boxSizing: 'border-box',
           }}
         >
-          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -843,30 +711,29 @@ export default function NewChatView({ onNavigateToImages }) {
             style={{ display: 'none' }}
           />
 
-          {/* Attachment Button (Leftmost) */}
+          {/* Attachment Button */}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            title="Attach document or image"
+            title="Attach file or image"
             style={{
               padding: '6px',
               borderRadius: '50%',
               border: 'none',
               background: 'transparent',
-              color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : '#c9bda2',
+              color: attachments.length > 0 ? 'var(--pragna-gold)' : 'var(--pragna-text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               flexShrink: 0,
-              transition: 'all 0.15s ease',
+              transition: 'all 0.12s ease',
             }}
-            className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.12)]"
           >
-            <PaperclipIcon size={19} strokeWidth={1.9} />
+            <PaperclipIcon size={18} strokeWidth={1.8} />
           </button>
 
-          {/* Attachment Chips (Floating preview if attached) */}
+          {/* Attachment Chips */}
           {attachments.length > 0 && (
             <div
               style={{
@@ -877,20 +744,20 @@ export default function NewChatView({ onNavigateToImages }) {
                 borderRadius: '999px',
                 background: 'rgba(212, 175, 55, 0.14)',
                 border: '1px solid rgba(212, 175, 55, 0.3)',
-                fontSize: '11.5px',
-                color: '#fffdf7',
-                maxWidth: '130px',
+                fontSize: '11px',
+                color: '#ffffff',
+                maxWidth: '120px',
                 flexShrink: 0,
               }}
             >
-              <FileTextIcon size={12} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
+              <FileTextIcon size={11} className="text-[var(--pragna-gold-soft)] flex-shrink-0" />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {attachments.length} file{attachments.length > 1 ? 's' : ''}
               </span>
               <button
                 type="button"
                 onClick={() => setAttachments([])}
-                style={{ background: 'transparent', border: 'none', color: '#c9bda2', cursor: 'pointer', padding: 0, display: 'flex' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--pragna-text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
               >
                 <CloseIcon size={10} />
               </button>
@@ -913,25 +780,24 @@ export default function NewChatView({ onNavigateToImages }) {
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: '#fffdf7',
-              caretColor: 'var(--pragna-gold)',
-              fontSize: isMobile ? '14px' : '15px',
+              color: 'var(--pragna-text, #f5f5f7)',
+              caretColor: 'var(--pragna-gold, #d4af37)',
+              fontSize: isMobile ? '13.5px' : '14.5px',
               fontFamily: 'inherit',
               lineHeight: '22px',
               resize: 'none',
-              padding: isMobile ? '7px 4px' : '7px 8px',
-              minHeight: '36px',
-              height: '36px',
+              padding: '6px 4px',
+              minHeight: '34px',
+              height: '34px',
               margin: 0,
               boxSizing: 'border-box',
               maxHeight: '120px',
-              verticalAlign: 'middle',
             }}
           />
 
           {/* Right Action Group */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '7px', flexShrink: 0 }}>
-            {/* Mode selector dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '6px', flexShrink: 0 }}>
+            {/* Mode selector */}
             <div style={{ position: 'relative' }} ref={modeDropdownRef}>
               <button
                 type="button"
@@ -940,26 +806,24 @@ export default function NewChatView({ onNavigateToImages }) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  padding: '5px 10px',
+                  padding: '4px 9px',
                   borderRadius: '999px',
-                  background: 'rgba(212, 175, 55, 0.08)',
-                  border: '1px solid rgba(212, 175, 55, 0.22)',
-                  color: 'var(--pragna-gold-soft)',
-                  fontSize: '12.5px',
-                  fontWeight: 600,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.09)',
+                  color: 'var(--pragna-text-muted, #8e8e93)',
+                  fontSize: '11.5px',
+                  fontWeight: 500,
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  letterSpacing: '0.2px',
+                  transition: 'all 0.12s ease',
                 }}
-                className="hover:bg-[rgba(212,175,55,0.16)] hover:border-accent-500/40"
               >
                 <span>{currentModeObj.label}</span>
                 <ChevronDownIcon
-                  size={12}
+                  size={11}
                   style={{
                     transform: modeDropdownOpen ? 'rotate(180deg)' : 'none',
                     transition: 'transform 0.15s ease',
-                    opacity: 0.8,
+                    opacity: 0.7,
                   }}
                 />
               </button>
@@ -972,31 +836,19 @@ export default function NewChatView({ onNavigateToImages }) {
                     top: 'calc(100% + 8px)',
                     right: '0',
                     zIndex: 40,
-                    width: '180px',
-                    borderRadius: '14px',
-                    background: 'var(--pragna-surface)',
-                    border: '1px solid rgba(212, 175, 55, 0.28)',
-                    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65), 0 0 16px rgba(212, 175, 55, 0.12)',
-                    backdropFilter: 'blur(14px)',
-                    padding: '6px',
+                    width: '160px',
+                    borderRadius: '12px',
+                    background: 'rgba(20, 20, 24, 0.96)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65)',
+                    backdropFilter: 'blur(20px)',
+                    padding: '5px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
-                    animation: 'fadeUp 0.15s ease',
+                    animation: 'fadeUp 0.14s ease',
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      letterSpacing: '1.2px',
-                      color: 'var(--pragna-text-muted)',
-                      textTransform: 'uppercase',
-                      padding: '6px 10px 4px 10px',
-                    }}
-                  >
-                    Select Chat Mode
-                  </div>
                   {CHAT_MODES.map((mode) => {
                     const active = chatMode === mode.id
                     const ModeIcon = mode.icon
@@ -1013,25 +865,24 @@ export default function NewChatView({ onNavigateToImages }) {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '8px',
-                          padding: '7px 10px',
-                          borderRadius: '8px',
+                          gap: '6px',
+                          padding: '6px 9px',
+                          borderRadius: '7px',
                           border: 'none',
                           background: active ? 'rgba(212, 175, 55, 0.14)' : 'transparent',
-                          color: active ? 'var(--pragna-gold-soft)' : 'var(--pragna-text)',
-                          fontSize: '12.5px',
-                          fontWeight: active ? 650 : 500,
+                          color: active ? 'var(--pragna-gold)' : 'var(--pragna-text)',
+                          fontSize: '12px',
+                          fontWeight: active ? 600 : 400,
                           cursor: 'pointer',
                           textAlign: 'left',
-                          transition: 'all 0.12s ease',
+                          transition: 'all 0.1s ease',
                         }}
-                        className="hover:bg-[rgba(212,175,55,0.1)] hover:text-[var(--pragna-gold-soft)]"
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <ModeIcon size={13} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                          <ModeIcon size={12} />
                           <span>{mode.label}</span>
                         </div>
-                        {active && <CheckIcon size={12} className="text-[var(--pragna-gold-soft)]" />}
+                        {active && <CheckIcon size={11} className="text-[var(--pragna-gold)]" />}
                       </button>
                     )
                   })}
@@ -1047,18 +898,14 @@ export default function NewChatView({ onNavigateToImages }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                padding: '5px 8px',
+                padding: '5px 7px',
                 borderRadius: '999px',
-                background: extendedThinking ? 'rgba(212, 175, 55, 0.16)' : 'transparent',
-                border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.45)' : '1px solid transparent',
-                color: extendedThinking ? 'var(--pragna-gold-soft)' : '#c9bda2',
-                fontSize: '11.5px',
-                fontWeight: 600,
+                background: extendedThinking ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                border: extendedThinking ? '1px solid rgba(212, 175, 55, 0.4)' : '1px solid transparent',
+                color: extendedThinking ? 'var(--pragna-gold)' : 'var(--pragna-text-muted)',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.12s ease',
               }}
-              className="hover:text-[var(--pragna-gold-soft)]"
             >
               <ThinkIcon size={14} />
             </button>
@@ -1069,68 +916,61 @@ export default function NewChatView({ onNavigateToImages }) {
               onClick={toggleSpeechRecognition}
               title={isRecording ? 'Stop recording' : 'Voice input'}
               style={{
-                width: '32px',
-                height: '32px',
+                width: '30px',
+                height: '30px',
                 borderRadius: '50%',
                 border: isRecording ? '1px solid rgba(239, 68, 68, 0.6)' : 'none',
-                background: isRecording ? 'rgba(239, 68, 68, 0.18)' : 'transparent',
-                color: isRecording ? '#ef4444' : '#c9bda2',
+                background: isRecording ? 'rgba(239, 68, 68, 0.16)' : 'transparent',
+                color: isRecording ? '#ef4444' : 'var(--pragna-text-muted)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.12s ease',
               }}
-              className={isRecording ? 'animate-pulse' : 'hover:text-[var(--pragna-gold-soft)]'}
             >
-              {isRecording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
+              {isRecording ? <MicOffIcon size={15} /> : <MicIcon size={15} />}
             </button>
 
-            {/* Send Button (Solid Gold Circular Pill matching Reference Design) */}
+            {/* Send Button */}
             <button
               type="button"
               onClick={() => handleSubmit()}
               disabled={!hasContent || isLoading}
               title="Send message"
               style={{
-                width: isMobile ? '36px' : '40px',
-                height: isMobile ? '36px' : '40px',
+                width: isMobile ? '34px' : '36px',
+                height: isMobile ? '34px' : '36px',
                 borderRadius: '50%',
                 border: 'none',
                 background: hasContent
-                  ? 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)'
-                  : 'linear-gradient(135deg, #f5ebd9 0%, #e5c76b 50%, #d4af37 100%)',
-                color: '#14120c',
+                  ? 'var(--pragna-gold, #d4af37)'
+                  : 'rgba(255, 255, 255, 0.08)',
+                color: hasContent ? '#0a0800' : 'var(--pragna-text-muted)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: hasContent && !isLoading ? 'pointer' : 'default',
-                opacity: hasContent && !isLoading ? 1 : 0.65,
-                boxShadow: '0 2px 14px rgba(212, 175, 55, 0.45)',
-                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                transform: hasContent && !isLoading ? 'scale(1.02)' : 'scale(1)',
+                opacity: hasContent && !isLoading ? 1 : 0.5,
+                boxShadow: hasContent ? '0 2px 10px rgba(212, 175, 55, 0.35)' : 'none',
+                transition: 'all 0.14s cubic-bezier(0.16, 1, 0.3, 1)',
               }}
-              className={
-                hasContent && !isLoading
-                  ? 'hover:scale-108 active:scale-95 hover:shadow-[0_4px_18px_rgba(212,175,55,0.6)]'
-                  : ''
-              }
             >
-              <SendIcon size={17} strokeWidth={2.4} />
+              <SendIcon size={15} strokeWidth={2.2} />
             </button>
           </div>
         </div>
 
-        {/* Quick Action Chips (6 Pill Capsules matching Reference Design) */}
+        {/* Apple Quick Action Pills */}
         <div
           style={{
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: isMobile ? '8px' : '10px',
+            gap: isMobile ? '6px' : '8px',
             width: '100%',
-            maxWidth: '780px',
+            maxWidth: '740px',
           }}
         >
           {QUICK_ACTIONS.map((action) => {
@@ -1143,69 +983,35 @@ export default function NewChatView({ onNavigateToImages }) {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '7px',
-                  padding: isMobile ? '7px 14px' : '9px 18px',
+                  gap: '6px',
+                  padding: isMobile ? '6px 12px' : '7px 14px',
                   borderRadius: '999px',
-                  background: 'rgba(22, 19, 14, 0.65)',
-                  border: '1px solid rgba(212, 175, 55, 0.22)',
-                  color: 'var(--pragna-text-soft)',
-                  fontSize: isMobile ? '12.5px' : '13.5px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: 'var(--pragna-text-muted, #8e8e93)',
+                  fontSize: isMobile ? '12px' : '12.5px',
                   fontWeight: 500,
                   cursor: 'pointer',
-                  transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+                  transition: 'all 0.14s cubic-bezier(0.16, 1, 0.3, 1)',
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
-                  backdropFilter: 'blur(8px)',
                 }}
-                className="hover:border-accent-500/60 hover:bg-[rgba(212,175,55,0.12)] hover:text-[var(--pragna-gold-soft)] hover:shadow-[0_0_12px_rgba(212,175,55,0.25)] hover:-translate-y-0.5"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.4)';
+                  e.currentTarget.style.color = 'var(--pragna-text, #f5f5f7)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.color = 'var(--pragna-text-muted, #8e8e93)';
+                }}
               >
-                <IconComponent size={14} className="opacity-90 text-[var(--pragna-gold-soft)]" />
+                <IconComponent size={13} style={{ opacity: 0.8 }} />
                 <span>{action.label}</span>
               </button>
             )
           })}
-        </div>
-      </div>
-
-      {/* Bottom Left Tagline (Matching Reference Design) */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-          padding: isMobile ? '16px 20px 20px 20px' : '20px 40px 28px 40px',
-          flexShrink: 0,
-          zIndex: 1,
-          userSelect: 'none',
-        }}
-      >
-        <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.6, fontSize: '14px', lineHeight: 1 }}>—</span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              letterSpacing: '2.4px',
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.75,
-              textTransform: 'uppercase',
-            }}
-          >
-            SAME CURIOSITY.
-          </span>
-          <span
-            style={{
-              fontSize: '9.5px',
-              letterSpacing: '2px',
-              fontWeight: 600,
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.55,
-              textTransform: 'uppercase',
-            }}
-          >
-            A BRIGHTER TOMORROW.
-          </span>
         </div>
       </div>
     </div>
