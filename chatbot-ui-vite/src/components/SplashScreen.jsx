@@ -207,28 +207,38 @@ export default function SplashScreen({ visible = true }) {
         )}
 
         {frame.kind === "pragna" && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", width: "100%", maxWidth: "586px" }}>
+          <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: "clamp(240px, 85vw, 586px)" }}>
             <img
               src={pragnaLogoFull}
               alt="Pragna-1 A"
               style={{
                 width: "100%",
-                maxWidth: "clamp(240px, 85vw, 586px)",
                 objectFit: "contain",
                 filter: "drop-shadow(0 0 24px rgba(212, 175, 55, 0.3))",
               }}
             />
-            <span
+            <div
               style={{
-                fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-                fontWeight: 700,
-                fontSize: "clamp(13px, 1.8vw, 24px)",
-                color: "#fff",
+                width: "100%",
+                paddingLeft: "33.5%",
                 marginTop: "-16px",
+                display: "flex",
+                justifyContent: "center",
+                boxSizing: "border-box",
               }}
             >
-              A regional chatbot
-            </span>
+              <span
+                style={{
+                  fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+                  fontWeight: 700,
+                  fontSize: "clamp(13px, 1.8vw, 24px)",
+                  color: "#fff",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                A regional chatbot
+              </span>
+            </div>
           </div>
         )}
 
