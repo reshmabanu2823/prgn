@@ -96,7 +96,7 @@ def get_world_news(max_items: int = 12) -> str:
         if entry["summary"]:
             report_lines.append(entry["summary"])
         if entry["link"]:
-            report_lines.append(f"Link: {entry['link']}")
+            report_lines.append(f"[Read full article]({entry['link']})")
         report_lines.append("")
 
     return "\n".join(report_lines).strip()

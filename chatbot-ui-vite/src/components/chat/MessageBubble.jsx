@@ -175,7 +175,7 @@ const renderInlineText = (text) => {
     if (linkText && linkUrl) {
       elements.push(
         <a
-          key={matchIndex}
+          key={`link-${matchIndex}`}
           href={linkUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -183,25 +183,30 @@ const renderInlineText = (text) => {
             color: "var(--pragna-gold-soft, #F3C96A)",
             textDecoration: "underline",
             textUnderlineOffset: "3px",
-            fontWeight: 600,
+            fontWeight: 650,
             transition: "all 0.15s ease",
             wordBreak: "break-word",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "2px",
           }}
-          className="hover:text-[#FFE082] hover:opacity-90"
+          className="hover:text-[#FFE082] hover:opacity-95"
           onClick={(e) => e.stopPropagation()}
         >
-          {linkText}
+          <span>{linkText}</span>
+          <span style={{ fontSize: "11px", opacity: 0.8 }}>↗</span>
         </a>
       );
     } else if (rawUrl) {
       let displayUrl = rawUrl;
       try {
         const u = new URL(rawUrl);
-        displayUrl = u.hostname + (u.pathname.length > 22 ? u.pathname.slice(0, 20) + "…" : u.pathname);
+        displayUrl = u.hostname + (u.pathname.length > 25 ? u.pathname.slice(0, 22) + "…" : u.pathname);
       } catch {}
       elements.push(
         <a
-          key={matchIndex}
+          key={`rawurl-${matchIndex}`}
           href={rawUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -209,14 +214,19 @@ const renderInlineText = (text) => {
             color: "var(--pragna-gold-soft, #F3C96A)",
             textDecoration: "underline",
             textUnderlineOffset: "3px",
-            fontWeight: 600,
+            fontWeight: 650,
             transition: "all 0.15s ease",
             wordBreak: "break-word",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "2px",
           }}
-          className="hover:text-[#FFE082] hover:opacity-90"
+          className="hover:text-[#FFE082] hover:opacity-95"
           onClick={(e) => e.stopPropagation()}
         >
-          {displayUrl}
+          <span>{displayUrl}</span>
+          <span style={{ fontSize: "11px", opacity: 0.8 }}>↗</span>
         </a>
       );
     } else if (codeText) {
@@ -420,6 +430,42 @@ const renderMarkdownContent = (rawText, isStreaming, isLast) => {
         listType = "ol";
       }
       listItems.push(olMatch[1]);
+      return;
+    }
+
+    // Dedicated link line: "Link: https://..." or "Source: https://..."
+    const linkLineMatch = trimmed.match(/^(?:Link|Source|Reference|URL):\s*(https?:\/\/\S+)$/i);
+    if (linkLineMatch) {
+      flushList(index);
+      const url = linkLineMatch[1].replace(/[.,;:]+$/, "");
+      nodes.push(
+        <div key={`link-${index}`} style={{ margin: "4px 0 10px 0" }}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              padding: "4px 11px",
+              borderRadius: "7px",
+              background: "rgba(212, 175, 55, 0.12)",
+              border: "1px solid rgba(212, 175, 55, 0.35)",
+              color: "var(--pragna-gold-soft, #F3C96A)",
+              fontSize: "12.5px",
+              fontWeight: 650,
+              textDecoration: "none",
+              transition: "all 0.15s ease",
+            }}
+            className="hover:bg-[rgba(212,175,55,0.22)] hover:border-[var(--pragna-gold-soft)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>🔗 Read full article</span>
+            <span style={{ fontSize: "10.5px", opacity: 0.75 }}>↗</span>
+          </a>
+        </div>
+      );
       return;
     }
 
