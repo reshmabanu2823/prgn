@@ -164,6 +164,17 @@ OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', 120))
 # (https://ollama.com) instead of a self-hosted daemon - authenticates
 # requests to :cloud-tagged models. Unused for local/self-hosted Ollama.
 OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', '')
+OLLAMA_API_KEYS = [
+    k for k in [
+        OLLAMA_API_KEY,
+        os.getenv('OLLAMA_API_KEY_2', ''),
+        os.getenv('OLLAMA_API_KEY_3', ''),
+        os.getenv('OLLAMA_API_KEY_4', ''),
+        os.getenv('OLLAMA_API_KEY_5', ''),
+        os.getenv('OLLAMA_API_KEY_6', ''),
+        os.getenv('OLLAMA_API_KEY_7', ''),
+    ] if k
+]
 
 # ── DeepSeek Local (HuggingFace Transformers) ──────────────────────────────
 # Used when LLM_PROVIDER = 'deepseek_local'.  The model is downloaded once
