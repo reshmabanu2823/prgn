@@ -225,33 +225,38 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
     logger.info(f"📋 Using demo response in {LANGUAGE_NAMES.get(language, 'English')} ({language}), mode: {chat_mode}")
     
     # Normalize language code
-    language = language.lower() if language else "en"
-    if language not in SUPPORTED_LANGUAGES:
+    language = _normalize_language_code(language)
+    if language not in GREETINGS:
         language = "en"
     
     message_lower = user_message.lower()
+
+    # 1. Autopilot Intent Check (Creates real actionable structured visualizations)
+    from services import autopilot_service
+    is_ap, vtype, is_followup = autopilot_service.detect_autopilot_intent(user_message)
+    if is_ap:
+        logger.info(f"✦ Autopilot intent identified in demo handler: vtype={vtype}")
+        payload = autopilot_service.generate_structured_autopilot_payload(
+            user_message, vtype=vtype or "tree", is_followup=is_followup, language=language
+        )
+        return autopilot_service.format_autopilot_response(payload)
     
-    # Check for greetings
+    # 2. Check for greetings
     greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy", 
                  "नमस्ते", "हेलो", "வணக்கம்", "హలో", "ನಮಸ್ಕಾರ", "നമസ്കാരം", "नमस्कार", "સ્વાગત", "ਸਤਿ", "नमस्कार", "السلام"]
     
     if any(greeting.lower() in message_lower for greeting in greetings) and len(user_message) < 50:
         logger.debug(f"✅ Greeting detected, returning greeting for language={language}")
-        # Return greeting in selected language WITH mode formatting applied
         greeting_response = random.choice(GREETINGS.get(language, GREETINGS["en"]))
-        logger.debug(f"📝 Selected greeting: '{greeting_response[:50]}...'")
-        # Apply mode formatting to greeting
-        greeting_response = _format_response_for_mode(greeting_response, chat_mode, language)
-        logger.debug(f"✨ After formatting: '{greeting_response[:50]}...'")
-        return greeting_response
+        return _format_response_for_mode(greeting_response, chat_mode, language)
     
-    # Check for specific topics
+    # 3. Check for specific topics
     topic_keywords = {
         "blockchain": ["blockchain", "bitcoin", "crypto", "distributed ledger", "ethereum", "smart contract", "web3"],
         "artificial_intelligence": ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt"],
         "cloud_computing": ["cloud", "aws", "azure", "google cloud", "iaas", "paas", "saas"],
         "cybersecurity": ["cybersecurity", "security", "hack", "breach", "firewall", "encryption", "malware", "phishing"],
-        "data_science": ["data science", "data analytics", "machine learning", "predictive", "analysis", "statistics", "dataset"],
+        "data_science": ["data science", "data analytics", "data analysis", "predictive", "analysis", "statistics", "dataset"],
         "web_development": ["web development", "website", "html", "css", "javascript", "frontend", "backend", "full-stack"],
     }
     
@@ -260,37 +265,25 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
         if any(keyword in message_lower for keyword in keywords):
             logger.debug(f"✅ Topic detected: {topic}")
             response = random.choice(DEMO_KNOWLEDGE_BASE[topic])
-            logger.debug(f"📝 Base response: '{response[:50]}...'")
-            # Format based on chat mode
-            response = _format_response_for_mode(response, chat_mode, language)
-            logger.debug(f"✨ After formatting: '{response[:50]}...'")
-            
-            # Add demo note
-            if language == "en":
-                response += "\n\n*Note: This is a demo response. For live, current information and AI-powered analysis, please configure a valid Groq API key.*"
-            elif language == "hi":
-                response += "\n\n*नोट: यह एक डेमो प्रतिक्रिया है। लाइव, वर्तमान जानकारी और एआई-संचालित विश्लेषण के लिए, कृपया एक वैध Groq API कुंजी कॉन्फ़िगर करें।*"
-            elif language == "ta":
-                response += "\n\n*குறிப்பு: இது ஒரு டெமோ பதிலாகும். நேரடி, தற்போதைய தகவல் மற்றும் AI-வளா பகுப்பாய்விற்கு, தயவுசெய்து ஒரு செல்லுபடியாகும் Groq API விசையை உள்ளமைக்கவும்.*"
-            
-            return response
+            return _format_response_for_mode(response, chat_mode, language)
     
-    # Default general response
-    logger.debug(f"⚠️ No topic matched, using default response for language={language}")
-    if language == "en":
-        response = random.choice(GENERAL_RESPONSES)
-    else:
-        response = f"I appreciate your question about '{user_message}'. While I'm in demo mode, I can try to help. For better responses, please set up a valid Groq API key."
-    
-    logger.debug(f"📝 Default response: '{response[:50]}...'")
-    # Format based on chat mode
-    response = _format_response_for_mode(response, chat_mode, language)
-    logger.debug(f"✨ After formatting: '{response[:50]}...'")
-    
-    if language == "en":
-        response += f"\n\nTo enable full AI responses, please:\n1. Visit https://console.groq.com\n2. Get your API key\n3. Update backend/.env with GROQ_API_KEY=your_key\n4. Restart the server"
-    
-    return response
+    # 4. Contextual explanation for definition queries (e.g. "what is a family tree")
+    if "family tree" in message_lower or "genealogy" in message_lower:
+        return (
+            "A **family tree** (genealogical chart) is a visual representation of family relationships in a tree structure. "
+            "It maps out generations showing ancestors, parents, siblings, children, and extended relatives.\n\n"
+            "- **Roots / Top**: Represents earlier generations (grandparents or ancestors).\n"
+            "- **Branches**: Connect married couples and sibling groups.\n"
+            "- **Leaves / Bottom**: Represents the newest generation of children.\n\n"
+            "If you would like me to build an interactive family tree diagram, just ask: *\"Create a simple family tree for me\"*."
+        )
+
+    # General clean informative fallback
+    return (
+        f"Here is information regarding **{user_message.strip()}**:\n\n"
+        f"Pragna provides comprehensive assistance for concepts, system designs, project roadmaps, and step-by-step procedures. "
+        f"Feel free to ask specific questions or request interactive diagrams, roadmaps, and comparison tables."
+    )
 
 def is_demo_mode_available() -> bool:
     """Check if demo mode is enabled"""

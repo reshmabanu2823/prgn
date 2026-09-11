@@ -2233,8 +2233,10 @@ def process_text():
         
         logger.info(f"Received text request: {user_message[:50]}... (language: {language})")
         
-        # Get AI response with correct language (now returns tuple)
-        ai_response, search_sources, *rest = llm.get_response(user_message, language, user_id)
+        # Get orchestrated AI response
+        orch_result = orchestrator.handle_query(user_message, language=language, user_id=user_id)
+        ai_response = orch_result.get('response', '')
+        search_sources = orch_result.get('web_search_sources', [])
         
         # Generate TTS audio using gTTS
         from gtts import gTTS
@@ -2244,10 +2246,9 @@ def process_text():
             # Map language codes
             lang_map = {'en': 'en', 'hi': 'hi', 'kn': 'kn', 'te': 'te', 'ta': 'ta',
                         'ml': 'ml', 'mr': 'mr', 'bn': 'bn', 'gu': 'gu', 'pa': 'hi', 'ur': 'ur'}
-            tts_lang = lang_map.get(language, 'en')
-            
-            # Generate TTS
-            tts = gTTS(text=ai_response, lang=tts_lang, slow=False, timeout=5)
+            # Generate TTS from clean conversational text (stripping code/canvas blocks)
+            clean_tts = re.sub(r'```[\s\S]*?```', '', ai_response).replace('#', '').replace('*', '').strip()[:200]
+            tts = gTTS(text=clean_tts or "Here is your response", lang=tts_lang, slow=False, timeout=3)
             audio_fp = io.BytesIO()
             tts.write_to_fp(audio_fp)
             audio_fp.seek(0)

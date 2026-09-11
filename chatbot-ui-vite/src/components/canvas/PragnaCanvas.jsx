@@ -35,6 +35,7 @@ import ERDiagramRenderer from './renderers/ERDiagramRenderer'
 import ArchitectureRenderer from './renderers/ArchitectureRenderer'
 import RoadmapRenderer from './renderers/RoadmapRenderer'
 import PragnaCanvasModal from './PragnaCanvasModal'
+import AutopilotProgressCard from './AutopilotProgressCard'
 
 export default function PragnaCanvas({ canvasData, onSendPrompt }) {
   const [zoom, setZoom] = useState(1)
@@ -139,8 +140,20 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
     }
   }
 
+  const isAutopilot = parsed.autopilot || parsed.mode === 'autopilot'
+
   return (
-    <div className="w-full my-3.5 rounded-2xl border border-[#D4AF37]/35 bg-gradient-to-b from-[#18181B]/95 to-[#0B0B0C]/95 text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-md overflow-hidden transition-all duration-300 hover:border-[#D4AF37]/60">
+    <div className="w-full flex flex-col">
+      {isAutopilot && (
+        <AutopilotProgressCard
+          isStreaming={false}
+          onMakeItReal={() => setIsModalOpen(true)}
+          onExpand={() => setIsModalOpen(true)}
+          onEdit={() => onSendPrompt?.(`Update and refine the ${title} visualization: `)}
+        />
+      )}
+
+      <div className="w-full my-3.5 rounded-2xl border border-[#D4AF37]/35 bg-gradient-to-b from-[#18181B]/95 to-[#0B0B0C]/95 text-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-md overflow-hidden transition-all duration-300 hover:border-[#D4AF37]/60">
       {/* Canvas Top Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-3 bg-gradient-to-r from-[#D4AF37]/15 via-[#D4AF37]/5 to-transparent border-b border-[#D4AF37]/25">
         {/* Title & Badge */}
@@ -295,6 +308,7 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
         parsed={parsed}
         onSendPrompt={onSendPrompt}
       />
+      </div>
     </div>
   )
 }
