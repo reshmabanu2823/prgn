@@ -2,9 +2,7 @@ import { useState, useRef, useEffect, useContext } from 'react'
 import {
   PlusIcon,
   ChatsIcon,
-  ModesIcon,
   ImagesIcon,
-  GptsIcon,
   StarredIcon,
   SearchIcon,
   SettingsIcon,
@@ -353,12 +351,8 @@ ${turns}
     switch (name) {
       case 'chats':
         return <ChatsIcon size={18} />
-      case 'modes':
-        return <ModesIcon size={18} />
       case 'images':
         return <ImagesIcon size={18} />
-      case 'gpts':
-        return <GptsIcon size={18} />
       case 'starred':
         return <StarredIcon size={18} />
       default:
@@ -379,9 +373,7 @@ ${turns}
 
   const navItemsList = [
     { id: 'chats', label: 'Chats' },
-    { id: 'modes', label: 'Modes' },
     { id: 'images', label: 'Images' },
-    { id: 'gpts', label: 'GPTs' },
     { id: 'starred', label: 'Starred requests' },
   ]
 

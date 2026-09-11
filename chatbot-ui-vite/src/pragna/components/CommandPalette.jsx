@@ -15,9 +15,7 @@ const CHAT_MODES = [
 
 const NAV_VIEWS = [
   { id: 'chats', label: 'Chats' },
-  { id: 'modes', label: 'Modes' },
   { id: 'images', label: 'Images' },
-  { id: 'gpts', label: 'GPTs' },
   { id: 'starred', label: 'Starred requests' },
 ]
 
