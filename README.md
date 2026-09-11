@@ -97,6 +97,20 @@ Auto-fallback chain ensures images are generated even when one provider is unava
 
 ---
 
+### 🔐 OAuth & Social Authentication
+
+Pragna supports seamless social authentication across major identity providers:
+
+| Provider | Features | Callback Route |
+|---|---|---|
+| **Google** | One-click OAuth 2.0 login & signup | `/api/auth/google/callback` |
+| **GitHub** | Developer-friendly authentication | `/api/auth/github/callback` |
+| **Discord** | Community login with profile sync | `/api/auth/discord/callback` |
+
+Session tokens are signed with secure JWTs, with dynamic redirect routing for both local development and multi-cloud deployments.
+
+---
+
 ### 🤖 Agentic Coding Assistant
 
 Two surfaces — **web panel** and **standalone CLI** — for AI-powered coding:
