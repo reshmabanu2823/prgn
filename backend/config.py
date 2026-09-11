@@ -51,9 +51,11 @@ GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '').strip().strip('"').
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip().strip('"').strip("'")
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip().strip('"').strip("'")
 
-print(f"[CONFIG DEBUG] GOOGLE_CLIENT_ID present: {bool(GOOGLE_CLIENT_ID)}, length: {len(GOOGLE_CLIENT_ID)}")
-print(f"[CONFIG DEBUG] GOOGLE_CLIENT_SECRET present: {bool(GOOGLE_CLIENT_SECRET)}, length: {len(GOOGLE_CLIENT_SECRET)}")
-print(f"[CONFIG DEBUG] GITHUB_CLIENT_ID present: {bool(GITHUB_CLIENT_ID)}, length: {len(GITHUB_CLIENT_ID)}")
+# Discord OAuth (discord.com/developers/applications -> OAuth2).
+# Redirect URL to register: {BACKEND_URL}/api/auth/discord/callback
+DISCORD_CLIENT_ID = os.getenv('DISCORD_CLIENT_ID', '').strip().strip('"').strip("'")
+DISCORD_CLIENT_SECRET = os.getenv('DISCORD_CLIENT_SECRET', '').strip().strip('"').strip("'")
+
 
 
 
