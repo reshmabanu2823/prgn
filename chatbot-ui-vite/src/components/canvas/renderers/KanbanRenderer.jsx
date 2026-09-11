@@ -14,30 +14,30 @@ export default function KanbanRenderer({ data }) {
     switch (priority?.toLowerCase()) {
       case 'high':
       case 'urgent':
-        return 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+        return 'bg-rose-950/40 border-rose-500/30 text-rose-300/90'
       case 'medium':
-        return 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+        return 'bg-amber-950/40 border-amber-500/30 text-amber-300/90'
       default:
-        return 'bg-[#D4AF37]/15 border-[#D4AF37]/30 text-[#F2D06B]'
+        return 'bg-[#d4af37]/15 border-[#d4af37]/35 text-[#e5c76b]'
     }
   }
 
   return (
-    <div className="w-full flex gap-3 overflow-x-auto pb-2 p-3 bg-black/40 rounded-xl border border-[#D4AF37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+    <div className="w-full flex gap-3 overflow-x-auto pb-2 p-3 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
       {columns.map((col, idx) => {
         const tasks = Array.isArray(col.tasks) ? col.tasks : []
 
         return (
           <div
             key={col.id || idx}
-            className="flex-1 min-w-[220px] max-w-[300px] flex flex-col rounded-xl bg-black/60 border border-[#D4AF37]/25 overflow-hidden"
+            className="flex-1 min-w-[220px] max-w-[300px] flex flex-col rounded-xl bg-[#121215]/95 border border-[#d4af37]/25 overflow-hidden shadow-md"
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between p-3 bg-[#D4AF37]/10 border-b border-[#D4AF37]/20">
-              <span className="text-xs font-bold text-[#F2D06B] tracking-wide">
+            <div className="flex items-center justify-between p-3 bg-[#d4af37]/10 border-b border-[#d4af37]/20">
+              <span className="text-xs font-bold text-[#f0e6d3] tracking-wide">
                 {col.title || col.name || `Column ${idx + 1}`}
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-mono rounded-full bg-black/60 border border-[#D4AF37]/30 text-[#F2D06B]">
+              <span className="px-2 py-0.5 text-[10px] font-mono rounded-full bg-[#0a0a0c]/80 border border-[#d4af37]/30 text-[#e5c76b]">
                 {tasks.length}
               </span>
             </div>
@@ -53,11 +53,11 @@ export default function KanbanRenderer({ data }) {
                 return (
                   <div
                     key={tIdx}
-                    className="p-3 rounded-lg bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/5 transition-all duration-150 flex flex-col gap-1.5"
+                    className="p-3 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-[#d4af37]/45 hover:bg-[#d4af37]/5 transition-all duration-150 flex flex-col gap-1.5"
                   >
-                    <span className="text-xs font-medium text-white/90 leading-snug">{title}</span>
+                    <span className="text-xs font-medium text-[#f0e6d3] leading-snug">{title}</span>
 
-                    {desc && <p className="text-[11px] text-white/50 line-clamp-2">{desc}</p>}
+                    {desc && <p className="text-[11px] text-[#a89878] line-clamp-2">{desc}</p>}
 
                     <div className="flex flex-wrap items-center gap-1.5 mt-1">
                       {priority && (
@@ -71,7 +71,7 @@ export default function KanbanRenderer({ data }) {
                       )}
 
                       {tag && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/40 border border-white/15 text-white/60">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#0a0a0c]/80 border border-white/[0.1] text-[#c9bda2]">
                           #{tag}
                         </span>
                       )}
@@ -81,7 +81,7 @@ export default function KanbanRenderer({ data }) {
               })}
 
               {tasks.length === 0 && (
-                <div className="h-full flex items-center justify-center text-[11px] text-white/30 italic py-6">
+                <div className="h-full flex items-center justify-center text-[11px] text-[#a89878]/50 italic py-6">
                   No tasks
                 </div>
               )}

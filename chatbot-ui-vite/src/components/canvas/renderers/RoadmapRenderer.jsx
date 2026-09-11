@@ -13,28 +13,28 @@ export default function RoadmapRenderer({ data }) {
       case 'done':
         return {
           icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
-          pill: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
+          pill: 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300/90',
           dot: 'bg-emerald-400',
         }
       case 'current':
       case 'in_progress':
       case 'active':
         return {
-          icon: <Clock className="w-4 h-4 text-[#F2D06B]" />,
-          pill: 'bg-[#D4AF37]/20 border-[#D4AF37]/40 text-[#F2D06B]',
-          dot: 'bg-[#F2D06B] animate-pulse',
+          icon: <Clock className="w-4 h-4 text-[#e5c76b]" />,
+          pill: 'bg-[#d4af37]/15 border-[#d4af37]/35 text-[#e5c76b]',
+          dot: 'bg-[#e5c76b] animate-pulse',
         }
       default:
         return {
-          icon: <CircleDot className="w-4 h-4 text-white/40" />,
-          pill: 'bg-white/5 border-white/10 text-white/60',
+          icon: <CircleDot className="w-4 h-4 text-[#a89878]/60" />,
+          pill: 'bg-white/[0.04] border-white/[0.08] text-[#a89878]',
           dot: 'bg-white/30',
         }
     }
   }
 
   return (
-    <div className="w-full flex flex-col gap-4 p-4 bg-black/40 rounded-xl border border-[#D4AF37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+    <div className="w-full flex flex-col gap-4 p-4 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
       <div className="flex flex-col gap-3">
         {stages.map((stage, idx) => {
           const status = stage.status || 'upcoming'
@@ -48,18 +48,18 @@ export default function RoadmapRenderer({ data }) {
           return (
             <div
               key={idx}
-              className="flex flex-col rounded-xl border border-[#D4AF37]/30 bg-black/60 overflow-hidden hover:border-[#D4AF37]/60 transition-all duration-200"
+              className="flex flex-col rounded-xl border border-[#d4af37]/25 bg-[#121215]/95 overflow-hidden hover:border-[#d4af37]/50 shadow-md transition-all duration-200"
             >
               {/* Stage Header */}
-              <div className="flex flex-wrap items-center justify-between gap-2 p-3.5 bg-gradient-to-r from-[#D4AF37]/15 via-[#D4AF37]/5 to-transparent border-b border-[#D4AF37]/20">
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3.5 bg-gradient-to-r from-[#d4af37]/15 via-[#d4af37]/5 to-transparent border-b border-[#d4af37]/20">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-6 h-6 rounded-lg bg-[#D4AF37]/20 border border-[#D4AF37]/40 flex items-center justify-center text-xs font-bold text-[#F2D06B]">
+                  <div className="w-6 h-6 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/35 flex items-center justify-center text-xs font-bold text-[#e5c76b]">
                     {stage.stage || idx + 1}
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white/95">{stage.title || `Stage ${idx + 1}`}</h4>
+                    <h4 className="text-xs font-bold text-[#f0e6d3]">{stage.title || `Stage ${idx + 1}`}</h4>
                     {stage.duration && (
-                      <span className="text-[11px] text-[#F2D06B]/80 font-mono">
+                      <span className="text-[11px] text-[#e5c76b]/80 font-mono">
                         ⏱ {stage.duration}
                       </span>
                     )}
@@ -84,10 +84,10 @@ export default function RoadmapRenderer({ data }) {
                     return (
                       <div
                         key={mIdx}
-                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-white/85"
+                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-[#d4af37]/30 text-xs text-[#c9bda2] transition-colors"
                       >
-                        <ChevronRight className="w-3.5 h-3.5 text-[#D4AF37]" />
-                        <span className={isDone ? 'line-through text-white/40' : 'text-white/90 font-medium'}>
+                        <ChevronRight className="w-3.5 h-3.5 text-[#d4af37]" />
+                        <span className={isDone ? 'line-through text-[#a89878]/50' : 'text-[#f0e6d3] font-medium'}>
                           {label}
                         </span>
                       </div>

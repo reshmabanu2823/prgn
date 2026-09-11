@@ -18,18 +18,18 @@ export default function ChartRenderer({ data }) {
 
   // Color palette: Obsidian Gold variants
   const palette = [
-    '#F2D06B', // Vibrant Gold
-    '#D4AF37', // Metallic Gold
-    '#A3862C', // Deep Antique Gold
-    '#E5B84B', // Warm Amber Gold
-    '#C49A32', // Muted Gold
+    '#e5c76b', // Soft Gold
+    '#d4af37', // Metallic Gold
+    '#b8860b', // Deep Antique Gold
+    '#e5b84b', // Warm Amber Gold
+    '#c49a32', // Muted Gold
   ]
 
   // Render Bar Chart
   const renderBarChart = () => {
     return (
       <div className="w-full flex flex-col gap-4">
-        <div className="flex items-end gap-3 h-48 pt-6 pb-2 px-3 border-b border-l border-[#D4AF37]/30 bg-black/40 rounded-lg">
+        <div className="flex items-end gap-3 h-48 pt-6 pb-2 px-3 border-b border-l border-[#d4af37]/25 bg-[#0a0a0c]/80 rounded-lg">
           {labels.map((label, idx) => {
             const firstSet = datasets[0]
             const val = firstSet?.values?.[idx] ?? 0
@@ -45,7 +45,7 @@ export default function ChartRenderer({ data }) {
               >
                 {/* Tooltip */}
                 {isHovered && (
-                  <div className="absolute -top-9 px-2 py-1 bg-black/90 border border-[#D4AF37] rounded text-[11px] text-[#F2D06B] font-mono shadow-lg whitespace-nowrap z-10 animate-fadeIn">
+                  <div className="absolute -top-9 px-2 py-1 bg-[#121215] border border-[#d4af37]/50 rounded text-[11px] text-[#e5c76b] font-mono shadow-lg whitespace-nowrap z-10 animate-fadeIn">
                     {firstSet?.label ? `${firstSet.label}: ` : ''}{val}
                   </div>
                 )}
@@ -55,8 +55,8 @@ export default function ChartRenderer({ data }) {
                   style={{ height: `${heightPercent}%` }}
                   className={`w-full max-w-[40px] rounded-t-md transition-all duration-300 ${
                     isHovered
-                      ? 'bg-gradient-to-t from-[#D4AF37] to-[#F2D06B] shadow-[0_0_15px_rgba(212,175,55,0.4)] scale-y-105'
-                      : 'bg-gradient-to-t from-[#A3862C]/60 to-[#D4AF37]/80 hover:brightness-125'
+                      ? 'bg-gradient-to-t from-[#d4af37] to-[#e5c76b] shadow-[0_0_15px_rgba(212,175,55,0.4)] scale-y-105'
+                      : 'bg-gradient-to-t from-[#a3862c]/60 to-[#d4af37]/80 hover:brightness-125'
                   }`}
                 />
               </div>
@@ -65,11 +65,11 @@ export default function ChartRenderer({ data }) {
         </div>
 
         {/* X-Axis Labels */}
-        <div className="flex justify-between px-3 text-[11px] text-white/60 font-medium">
+        <div className="flex justify-between px-3 text-[11px] text-[#a89878] font-medium">
           {labels.map((label, idx) => (
             <div
               key={idx}
-              className={`flex-1 text-center truncate ${activeIdx === idx ? 'text-[#F2D06B] font-bold' : ''}`}
+              className={`flex-1 text-center truncate ${activeIdx === idx ? 'text-[#e5c76b] font-bold' : ''}`}
             >
               {label}
             </div>
@@ -120,8 +120,8 @@ export default function ChartRenderer({ data }) {
             })}
           </svg>
           <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xs text-white/50">Total</span>
-            <span className="text-sm font-bold text-[#F2D06B]">{total}</span>
+            <span className="text-xs text-[#a89878]">Total</span>
+            <span className="text-sm font-bold text-[#e5c76b]">{total}</span>
           </div>
         </div>
 
@@ -138,15 +138,15 @@ export default function ChartRenderer({ data }) {
                 onMouseEnter={() => setActiveIdx(idx)}
                 onMouseLeave={() => setActiveIdx(null)}
                 className={`flex items-center gap-2.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-                  isHovered ? 'bg-[#D4AF37]/15' : 'hover:bg-white/5'
+                  isHovered ? 'bg-[#d4af37]/15' : 'hover:bg-white/[0.04]'
                 }`}
               >
                 <span
                   className="w-3 h-3 rounded-sm flex-shrink-0"
                   style={{ backgroundColor: palette[idx % palette.length] }}
                 />
-                <span className="text-xs text-white/80 font-medium">{label}</span>
-                <span className="text-xs font-mono text-[#F2D06B] ml-auto font-semibold">
+                <span className="text-xs text-[#f0e6d3] font-medium">{label}</span>
+                <span className="text-xs font-mono text-[#e5c76b] ml-auto font-semibold">
                   {val} ({pct}%)
                 </span>
               </div>
@@ -174,17 +174,17 @@ export default function ChartRenderer({ data }) {
 
     return (
       <div className="w-full flex flex-col gap-3">
-        <div className="w-full bg-black/40 rounded-lg p-2 border border-[#D4AF37]/20">
+        <div className="w-full bg-[#0a0a0c]/80 rounded-lg p-2 border border-[#d4af37]/25">
           <svg viewBox="0 0 300 110" className="w-full h-44 overflow-visible">
             {/* Grid lines */}
-            <line x1="20" y1="15" x2="280" y2="15" stroke="rgba(212,175,55,0.15)" strokeDasharray="3 3" />
-            <line x1="20" y1="52" x2="280" y2="52" stroke="rgba(212,175,55,0.15)" strokeDasharray="3 3" />
-            <line x1="20" y1="90" x2="280" y2="90" stroke="rgba(212,175,55,0.3)" />
+            <line x1="20" y1="15" x2="280" y2="15" stroke="rgba(212,175,55,0.12)" strokeDasharray="3 3" />
+            <line x1="20" y1="52" x2="280" y2="52" stroke="rgba(212,175,55,0.12)" strokeDasharray="3 3" />
+            <line x1="20" y1="90" x2="280" y2="90" stroke="rgba(212,175,55,0.25)" />
 
             {/* Polyline */}
             <polyline
               fill="none"
-              stroke="#D4AF37"
+              stroke="#d4af37"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -203,13 +203,13 @@ export default function ChartRenderer({ data }) {
                     cx={x}
                     cy={y}
                     r={isHovered ? 5.5 : 3.5}
-                    fill="#F2D06B"
-                    stroke="#0B0B0C"
+                    fill="#e5c76b"
+                    stroke="#0b0b0e"
                     strokeWidth="2"
                     className="transition-all"
                   />
                   {isHovered && (
-                    <text x={x} y={y - 8} textAnchor="middle" fill="#F2D06B" fontSize="9" fontWeight="bold">
+                    <text x={x} y={y - 8} textAnchor="middle" fill="#e5c76b" fontSize="9" fontWeight="bold">
                       {v}
                     </text>
                   )}
@@ -220,9 +220,9 @@ export default function ChartRenderer({ data }) {
         </div>
 
         {/* Labels */}
-        <div className="flex justify-between px-4 text-[11px] text-white/60">
+        <div className="flex justify-between px-4 text-[11px] text-[#a89878]">
           {labels.map((l, idx) => (
-            <span key={idx} className={activeIdx === idx ? 'text-[#F2D06B] font-bold' : ''}>
+            <span key={idx} className={activeIdx === idx ? 'text-[#e5c76b] font-bold' : ''}>
               {l}
             </span>
           ))}
@@ -232,7 +232,7 @@ export default function ChartRenderer({ data }) {
   }
 
   return (
-    <div className="w-full flex flex-col gap-3 p-4 bg-black/40 rounded-xl border border-[#D4AF37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+    <div className="w-full flex flex-col gap-3 p-4 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
       {chartType === 'donut' || chartType === 'pie'
         ? renderDonutChart()
         : chartType === 'line'

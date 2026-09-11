@@ -13,13 +13,13 @@ export default function MindmapRenderer({ data }) {
   }
 
   return (
-    <div className="w-full flex flex-col gap-6 p-5 bg-black/40 rounded-xl border border-[#D4AF37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+    <div className="w-full flex flex-col gap-6 p-5 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
       {/* Central Core Concept Node */}
       <div className="flex justify-center">
-        <div className="relative group px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#D4AF37]/30 via-[#D4AF37]/15 to-black/80 border border-[#D4AF37]/60 shadow-[0_0_25px_rgba(212,175,55,0.25)] text-center">
+        <div className="relative group px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#d4af37]/25 via-[#d4af37]/12 to-[#121215]/95 border border-[#d4af37]/50 shadow-[0_0_25px_rgba(212,175,55,0.2)] text-center">
           <div className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#F2D06B]" />
-            <h4 className="text-sm font-bold text-[#F2D06B] tracking-wide">{center}</h4>
+            <Sparkles className="w-4 h-4 text-[#e5c76b]" />
+            <h4 className="text-sm font-bold text-[#f0e6d3] tracking-wide">{center}</h4>
           </div>
         </div>
       </div>
@@ -37,20 +37,20 @@ export default function MindmapRenderer({ data }) {
           return (
             <div
               key={idx}
-              className="flex flex-col rounded-xl border border-[#D4AF37]/30 bg-black/60 overflow-hidden hover:border-[#D4AF37]/60 transition-all duration-200 shadow-md"
+              className="flex flex-col rounded-xl border border-[#d4af37]/25 bg-[#121215]/95 overflow-hidden hover:border-[#d4af37]/50 shadow-md transition-all duration-200"
             >
               {/* Branch Header */}
               <div
                 onClick={() => toggleBranch(idx)}
-                className="flex items-center justify-between p-3 bg-[#D4AF37]/10 border-b border-[#D4AF37]/20 cursor-pointer select-none hover:bg-[#D4AF37]/15 transition-colors"
+                className="flex items-center justify-between p-3 bg-[#d4af37]/10 border-b border-[#d4af37]/20 cursor-pointer select-none hover:bg-[#d4af37]/15 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#F2D06B]" />
-                  <span className="text-xs font-semibold text-[#F2D06B]">
+                  <Layers className="w-4 h-4 text-[#e5c76b]" />
+                  <span className="text-xs font-semibold text-[#f0e6d3]">
                     {branch.label || branch.title || `Branch ${idx + 1}`}
                   </span>
                 </div>
-                <button type="button" className="text-[#D4AF37]">
+                <button type="button" className="text-[#d4af37]">
                   {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </button>
               </div>
@@ -65,18 +65,18 @@ export default function MindmapRenderer({ data }) {
                     return (
                       <div
                         key={sIdx}
-                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/85 text-xs hover:border-[#D4AF37]/40 transition-colors"
+                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[#c9bda2] text-xs hover:border-[#d4af37]/35 transition-colors"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] mt-1.5 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] mt-1.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <span className="font-medium text-white/90">{label}</span>
-                          {desc && <p className="text-[11px] text-white/50 mt-0.5">{desc}</p>}
+                          <span className="font-medium text-[#f0e6d3]">{label}</span>
+                          {desc && <p className="text-[11px] text-[#a89878] mt-0.5">{desc}</p>}
                         </div>
                       </div>
                     )
                   })}
                   {subnodes.length === 0 && (
-                    <span className="text-[11px] text-white/40 italic px-1">No subnodes</span>
+                    <span className="text-[11px] text-[#a89878]/50 italic px-1">No subnodes</span>
                   )}
                 </div>
               )}
