@@ -424,32 +424,43 @@ export default function Login({ onLoginSuccess }) {
 
             <div className="auth-divider">or</div>
 
-            <div className="auth-oauth-row">
+            <div className="auth-oauth-container">
+              <div className="auth-oauth-row">
+                <button
+                  type="button"
+                  className="auth-oauth-btn"
+                  disabled={loading}
+                  onClick={() => {
+                    const returnTo = encodeURIComponent(window.location.origin);
+                    window.location.href = `${API_BASE}/api/auth/google/login?return_to=${returnTo}`;
+                  }}
+                  title="Sign in with Google"
+                >
+                  <GoogleIcon />
+                  Google
+                </button>
+                <button
+                  type="button"
+                  className="auth-oauth-btn"
+                  disabled={loading}
+                  onClick={() => {
+                    const returnTo = encodeURIComponent(window.location.origin);
+                    window.location.href = `${API_BASE}/api/auth/github/login?return_to=${returnTo}`;
+                  }}
+                  title="Sign in with GitHub"
+                >
+                  <GitHubIcon />
+                  GitHub
+                </button>
+              </div>
               <button
                 type="button"
-                className="auth-oauth-btn"
+                className="auth-oauth-btn auth-oauth-btn-discord"
                 disabled={loading}
-                onClick={() => { window.location.href = `${API_BASE}/api/auth/google/login`; }}
-                title="Sign in with Google"
-              >
-                <GoogleIcon />
-                Google
-              </button>
-              <button
-                type="button"
-                className="auth-oauth-btn"
-                disabled={loading}
-                onClick={() => { window.location.href = `${API_BASE}/api/auth/github/login`; }}
-                title="Sign in with GitHub"
-              >
-                <GitHubIcon />
-                GitHub
-              </button>
-              <button
-                type="button"
-                className="auth-oauth-btn"
-                disabled={loading}
-                onClick={() => { window.location.href = `${API_BASE}/api/auth/discord/login`; }}
+                onClick={() => {
+                  const returnTo = encodeURIComponent(window.location.origin);
+                  window.location.href = `${API_BASE}/api/auth/discord/login?return_to=${returnTo}`;
+                }}
                 title="Sign in with Discord"
               >
                 <DiscordIcon />

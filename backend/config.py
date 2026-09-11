@@ -34,12 +34,11 @@ CORS_ALLOWED_ORIGINS = (
 # Frontend origin used to build links embedded in emails (e.g. the password
 # reset link). Falls back to localhost for local dev - set explicitly in
 # production so reset emails point at the real deployed frontend.
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5180').rstrip('/')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://etherx-frontend.onrender.com').rstrip('/')
 
 # Backend's own public origin, used to build the OAuth redirect_uri sent to
-# Google/GitHub (must exactly match a URI registered on the provider's app).
-# Falls back to localhost for local dev - set explicitly in production.
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5001').rstrip('/')
+# Google/GitHub/Discord (must exactly match a URI registered on the provider's app).
+BACKEND_URL = os.getenv('BACKEND_URL', 'https://etherx-backend.onrender.com').rstrip('/')
 
 # Google OAuth (console.cloud.google.com -> APIs & Services -> Credentials).
 # Authorized redirect URI to register: {BACKEND_URL}/api/auth/google/callback

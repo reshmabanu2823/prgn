@@ -2437,17 +2437,41 @@ def _resolve_oauth_user(provider, profile):
     return user_id, auth_service.generate_token(user_id)
 
 
+def _get_target_frontend_url(state_or_target=None):
+    if state_or_target and isinstance(state_or_target, str) and state_or_target.startswith(('http://', 'https://')):
+        return state_or_target.rstrip('/')
+    if state_or_target:
+        extracted = oauth_service.get_state_frontend_url(state_or_target)
+        if extracted:
+            return extracted.rstrip('/')
+    configured = (os.getenv('FRONTEND_URL') or getattr(config, 'FRONTEND_URL', '')).strip().rstrip('/')
+    if configured and 'localhost' not in configured:
+        return configured
+    ref = request.headers.get('Referer') or request.headers.get('Origin')
+    if ref:
+        parsed = urllib.parse.urlparse(ref)
+        if parsed.scheme and parsed.netloc and 'localhost' not in parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    return configured or 'https://etherx-frontend.onrender.com'
+
+
 def _oauth_redirect_uri(provider):
-    backend_url = (os.getenv('BACKEND_URL') or getattr(config, 'BACKEND_URL', 'http://localhost:5001')).strip().rstrip('/')
-    return f"{backend_url}/api/auth/{provider}/callback"
+    configured = (os.getenv('BACKEND_URL') or getattr(config, 'BACKEND_URL', '')).strip().rstrip('/')
+    if configured and 'localhost' not in configured:
+        return f"{configured}/api/auth/{provider}/callback"
+    host = request.headers.get('X-Forwarded-Host') or request.host
+    proto = request.headers.get('X-Forwarded-Proto') or request.scheme or 'https'
+    if host and 'localhost' not in host and '127.0.0.1' not in host:
+        return f"{proto}://{host}/api/auth/{provider}/callback"
+    return f"{configured or 'https://etherx-backend.onrender.com'}/api/auth/{provider}/callback"
 
 
+def _oauth_error_redirect(reason, state=None):
+    target_frontend = _get_target_frontend_url(state)
+    return redirect(f"{target_frontend}/?oauth_error={urllib.parse.quote(reason)}")
 
-def _oauth_error_redirect(reason):
-    return redirect(f"{config.FRONTEND_URL}/?oauth_error={urllib.parse.quote(reason)}")
 
-
-def _oauth_success_redirect(user_id, token):
+def _oauth_success_redirect(user_id, token, state=None):
     user_row = db.get_user_by_id(user_id)
     params = urllib.parse.urlencode({
         'oauth_token': token,
@@ -2455,7 +2479,20 @@ def _oauth_success_redirect(user_id, token):
         'username': (user_row or {}).get('username', ''),
         'email': (user_row or {}).get('email', ''),
     })
-    return redirect(f"{config.FRONTEND_URL}/?{params}")
+    target_frontend = _get_target_frontend_url(state)
+    return redirect(f"{target_frontend}/?{params}")
+
+
+def _extract_login_return_to():
+    return_to = request.args.get('return_to')
+    if return_to and return_to.startswith(('http://', 'https://')):
+        return return_to.rstrip('/')
+    ref = request.headers.get('Referer') or request.headers.get('Origin')
+    if ref:
+        parsed = urllib.parse.urlparse(ref)
+        if parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    return None
 
 
 @app.route('/api/auth/google/login', methods=['GET'])
@@ -2465,29 +2502,30 @@ def google_oauth_login():
     logger.info(f"Google login attempt: client_id_len={len(client_id)}, client_secret_len={len(client_secret)}")
     if not client_id or not client_secret:
         return jsonify({'error': 'Google login is not configured on this server'}), 503
-    state = oauth_service.make_state()
+    return_to = _extract_login_return_to()
+    state = oauth_service.make_state(return_to)
     return redirect(oauth_service.google_authorize_url(_oauth_redirect_uri('google'), state))
 
 
 
 @app.route('/api/auth/google/callback', methods=['GET'])
 def google_oauth_callback():
-    if request.args.get('error'):
-        return _oauth_error_redirect(request.args['error'])
-
     state = request.args.get('state')
     code = request.args.get('code')
+    if request.args.get('error'):
+        return _oauth_error_redirect(request.args['error'], state)
+
     if not oauth_service.verify_state(state) or not code:
-        return _oauth_error_redirect('invalid_state')
+        return _oauth_error_redirect('invalid_state', state)
 
     try:
         profile = oauth_service.google_fetch_profile(code, _oauth_redirect_uri('google'))
         user_id, token = _resolve_oauth_user('google', profile)
     except Exception as e:
         logger.error(f"Google OAuth callback failed: {e}", exc_info=True)
-        return _oauth_error_redirect('login_failed')
+        return _oauth_error_redirect('login_failed', state)
 
-    return _oauth_success_redirect(user_id, token)
+    return _oauth_success_redirect(user_id, token, state)
 
 
 @app.route('/api/auth/github/login', methods=['GET'])
@@ -2496,7 +2534,8 @@ def github_oauth_login():
     client_secret = (getattr(config, 'GITHUB_CLIENT_SECRET', '') or os.getenv('GITHUB_CLIENT_SECRET', '')).strip().strip('"').strip("'")
     if not client_id or not client_secret:
         return jsonify({'error': 'GitHub login is not configured on this server'}), 503
-    state = oauth_service.make_state()
+    return_to = _extract_login_return_to()
+    state = oauth_service.make_state(return_to)
     return redirect(oauth_service.github_authorize_url(_oauth_redirect_uri('github'), state))
 
 
@@ -2504,22 +2543,22 @@ def github_oauth_login():
 
 @app.route('/api/auth/github/callback', methods=['GET'])
 def github_oauth_callback():
-    if request.args.get('error'):
-        return _oauth_error_redirect(request.args['error'])
-
     state = request.args.get('state')
     code = request.args.get('code')
+    if request.args.get('error'):
+        return _oauth_error_redirect(request.args['error'], state)
+
     if not oauth_service.verify_state(state) or not code:
-        return _oauth_error_redirect('invalid_state')
+        return _oauth_error_redirect('invalid_state', state)
 
     try:
         profile = oauth_service.github_fetch_profile(code, _oauth_redirect_uri('github'))
         user_id, token = _resolve_oauth_user('github', profile)
     except Exception as e:
         logger.error(f"GitHub OAuth callback failed: {e}", exc_info=True)
-        return _oauth_error_redirect('login_failed')
+        return _oauth_error_redirect('login_failed', state)
 
-    return _oauth_success_redirect(user_id, token)
+    return _oauth_success_redirect(user_id, token, state)
 
 
 @app.route('/api/auth/discord/login', methods=['GET'])
@@ -2528,28 +2567,29 @@ def discord_oauth_login():
     client_secret = (getattr(config, 'DISCORD_CLIENT_SECRET', '') or os.getenv('DISCORD_CLIENT_SECRET', '')).strip().strip('"').strip("'")
     if not client_id or not client_secret:
         return jsonify({'error': 'Discord login is not configured on this server'}), 503
-    state = oauth_service.make_state()
+    return_to = _extract_login_return_to()
+    state = oauth_service.make_state(return_to)
     return redirect(oauth_service.discord_authorize_url(_oauth_redirect_uri('discord'), state))
 
 
 @app.route('/api/auth/discord/callback', methods=['GET'])
 def discord_oauth_callback():
-    if request.args.get('error'):
-        return _oauth_error_redirect(request.args['error'])
-
     state = request.args.get('state')
     code = request.args.get('code')
+    if request.args.get('error'):
+        return _oauth_error_redirect(request.args['error'], state)
+
     if not oauth_service.verify_state(state) or not code:
-        return _oauth_error_redirect('invalid_state')
+        return _oauth_error_redirect('invalid_state', state)
 
     try:
         profile = oauth_service.discord_fetch_profile(code, _oauth_redirect_uri('discord'))
         user_id, token = _resolve_oauth_user('discord', profile)
     except Exception as e:
         logger.error(f"Discord OAuth callback failed: {e}", exc_info=True)
-        return _oauth_error_redirect('login_failed')
+        return _oauth_error_redirect('login_failed', state)
 
-    return _oauth_success_redirect(user_id, token)
+    return _oauth_success_redirect(user_id, token, state)
 
 
 @app.route('/api/auth/verify', methods=['GET'])
