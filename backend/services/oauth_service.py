@@ -73,6 +73,14 @@ def _get_github_client_secret():
     import os
     return (os.getenv('GITHUB_CLIENT_SECRET') or getattr(config, 'GITHUB_CLIENT_SECRET', '')).strip().strip('"').strip("'")
 
+def _get_discord_client_id():
+    import os
+    return (os.getenv('DISCORD_CLIENT_ID') or getattr(config, 'DISCORD_CLIENT_ID', '')).strip().strip('"').strip("'")
+
+def _get_discord_client_secret():
+    import os
+    return (os.getenv('DISCORD_CLIENT_SECRET') or getattr(config, 'DISCORD_CLIENT_SECRET', '')).strip().strip('"').strip("'")
+
 
 def google_authorize_url(redirect_uri, state):
     params = {
@@ -202,3 +210,71 @@ def github_fetch_profile(code, redirect_uri):
         'username_hint': sanitize_username(user.get('login') or email.split('@')[0]),
         'oauth_id': str(oauth_id),
     }
+
+
+# ── Discord ──────────────────────────────────────────────────────────────
+
+DISCORD_AUTHORIZE_URL = 'https://discord.com/api/oauth2/authorize'
+DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token'
+DISCORD_USER_URL = 'https://discord.com/api/users/@me'
+
+
+def discord_authorize_url(redirect_uri, state):
+    params = {
+        'client_id': _get_discord_client_id(),
+        'redirect_uri': redirect_uri,
+        'response_type': 'code',
+        'scope': 'identify email',
+        'state': state,
+        'prompt': 'consent',
+    }
+    return f"{DISCORD_AUTHORIZE_URL}?{urlencode(params)}"
+
+
+def discord_fetch_profile(code, redirect_uri):
+    """Exchange an auth code for a Discord profile. Returns
+    {'email', 'username_hint', 'oauth_id'}, or raises RuntimeError."""
+    token_res = requests.post(
+        DISCORD_TOKEN_URL,
+        data={
+            'client_id': _get_discord_client_id(),
+            'client_secret': _get_discord_client_secret(),
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': redirect_uri,
+        },
+        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+        timeout=10,
+    )
+
+    if token_res.status_code >= 400:
+        raise RuntimeError(f"Discord token exchange failed ({token_res.status_code}): {token_res.text[:300]}")
+
+    token_data = token_res.json()
+    access_token = token_data.get('access_token')
+    if not access_token:
+        raise RuntimeError(f"Discord token response missing access_token: {token_data.get('error_description', token_data)}")
+
+    headers = {'Authorization': f'Bearer {access_token}'}
+    user_res = requests.get(DISCORD_USER_URL, headers=headers, timeout=10)
+    if user_res.status_code >= 400:
+        raise RuntimeError(f"Discord user fetch failed ({user_res.status_code}): {user_res.text[:300]}")
+    user = user_res.json()
+
+    email = user.get('email')
+    if not email:
+        raise RuntimeError('Discord account has no email on file')
+    if user.get('verified') is False:
+        raise RuntimeError('Discord email is not verified')
+
+    oauth_id = user.get('id')
+    if not oauth_id:
+        raise RuntimeError('Discord profile response missing id')
+
+    username_source = user.get('global_name') or user.get('username') or email.split('@')[0]
+    return {
+        'email': email,
+        'username_hint': sanitize_username(username_source),
+        'oauth_id': str(oauth_id),
+    }
+

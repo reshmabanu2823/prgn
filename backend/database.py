@@ -6,6 +6,7 @@ import os
 import secrets
 import sqlite3
 import threading
+import uuid
 import bcrypt
 from datetime import datetime, timedelta, timezone
 
@@ -262,6 +263,22 @@ class Database:
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
+                c.execute('''
+                    CREATE TABLE IF NOT EXISTS image_generations (
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        prompt TEXT NOT NULL,
+                        effective_prompt TEXT,
+                        style TEXT,
+                        quality TEXT,
+                        size TEXT,
+                        provider TEXT,
+                        model TEXT,
+                        image_url TEXT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                c.execute('CREATE INDEX IF NOT EXISTS idx_image_generations_user ON image_generations(user_id, created_at)')
                 conn.commit()
             else:
                 conn.execute('''
@@ -353,6 +370,20 @@ class Database:
                         UNIQUE(user_id, fact_key)
                     );
                     CREATE INDEX IF NOT EXISTS idx_user_facts_user ON user_facts(user_id);
+                    CREATE TABLE IF NOT EXISTS image_generations (
+                        id VARCHAR(255) PRIMARY KEY,
+                        user_id VARCHAR(255) NOT NULL,
+                        prompt TEXT NOT NULL,
+                        effective_prompt TEXT,
+                        style VARCHAR(50),
+                        quality VARCHAR(50),
+                        size VARCHAR(50),
+                        provider VARCHAR(50),
+                        model VARCHAR(100),
+                        image_url TEXT NOT NULL,
+                        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_image_generations_user ON image_generations(user_id, created_at DESC);
                 ''')
                 conn.commit()
         finally:
@@ -1145,5 +1176,75 @@ class Database:
             return True
         finally:
             self.release_connection(conn)
+
+    # IMAGE GENERATION HISTORY
+    def save_image_generation(self, user_id, prompt, image_url, effective_prompt=None, style='cinematic', quality='hd', size='1024x1024', provider='auto', model='dall-e-3'):
+        image_id = str(uuid.uuid4())
+        conn = self.get_connection()
+        try:
+            param = '?' if self.is_sqlite else '%s'
+            conn.execute(f'''
+                INSERT INTO image_generations (id, user_id, prompt, effective_prompt, style, quality, size, provider, model, image_url)
+                VALUES ({param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param}, {param})
+            ''', (image_id, str(user_id or 'default'), prompt, effective_prompt or prompt, style, quality, size, provider, model, image_url))
+            conn.commit()
+            return image_id
+        except Exception as exc:
+            logger.warning(f"save_image_generation failed: {exc}")
+            return None
+        finally:
+            self.release_connection(conn)
+
+    def get_user_image_history(self, user_id, limit=50, offset=0):
+        conn = self.get_connection()
+        try:
+            c = conn.cursor()
+            param = '?' if self.is_sqlite else '%s'
+            c.execute(f'''
+                SELECT * FROM image_generations
+                WHERE user_id = {param}
+                ORDER BY created_at DESC
+                LIMIT {param} OFFSET {param}
+            ''', (str(user_id or 'default'), limit, offset))
+            rows = c.fetchall()
+            return [_row_to_dict(c, r) for r in rows]
+        except Exception as exc:
+            logger.warning(f"get_user_image_history failed: {exc}")
+            return []
+        finally:
+            self.release_connection(conn)
+
+    def delete_image_generation(self, image_id, user_id):
+        conn = self.get_connection()
+        try:
+            param = '?' if self.is_sqlite else '%s'
+            c = conn.cursor()
+            c.execute(f'''
+                DELETE FROM image_generations WHERE id = {param} AND user_id = {param}
+            ''', (str(image_id), str(user_id or 'default')))
+            conn.commit()
+            return getattr(c, 'rowcount', 0) > 0
+        except Exception as exc:
+            logger.warning(f"delete_image_generation failed: {exc}")
+            return False
+        finally:
+            self.release_connection(conn)
+
+    def clear_user_image_history(self, user_id):
+        conn = self.get_connection()
+        try:
+            param = '?' if self.is_sqlite else '%s'
+            c = conn.cursor()
+            c.execute(f'''
+                DELETE FROM image_generations WHERE user_id = {param}
+            ''', (str(user_id or 'default'),))
+            conn.commit()
+            return True
+        except Exception as exc:
+            logger.warning(f"clear_user_image_history failed: {exc}")
+            return False
+        finally:
+            self.release_connection(conn)
+
 
 db = Database()

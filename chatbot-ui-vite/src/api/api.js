@@ -382,16 +382,70 @@ export const getImageStudioConfig = async () => {
   }
 };
 
-export const generateAIImage = async ({ prompt, style = "cinematic", quality = "hd", size = "1024x1024" }) => {
+export const getImageHistory = async (limit = 50, offset = 0) => {
+  try {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const userId = localStorage.getItem('userId') || '';
+    const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (userId) query.append('user_id', userId);
 
+    const response = await fetch(`${API_BASE}/api/images/history?${query.toString()}`, { headers });
+    if (!response.ok) return { history: [], count: 0 };
+    return await response.json();
+  } catch {
+    return { history: [], count: 0 };
+  }
+};
+
+export const deleteImageHistoryItem = async (imageId) => {
+  try {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const userId = localStorage.getItem('userId') || '';
+    const query = userId ? `?user_id=${encodeURIComponent(userId)}` : '';
+
+    const response = await fetch(`${API_BASE}/api/images/history/${encodeURIComponent(imageId)}${query}`, {
+      method: "DELETE",
+      headers,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+export const clearImageHistory = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const userId = localStorage.getItem('userId') || '';
+    const query = userId ? `?user_id=${encodeURIComponent(userId)}` : '';
+
+    const response = await fetch(`${API_BASE}/api/images/history${query}`, {
+      method: "DELETE",
+      headers,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+export const generateAIImage = async ({ prompt, style = "cinematic", quality = "hd", size = "1024x1024" }) => {
   let response;
+  const token = localStorage.getItem('authToken');
+  const userId = localStorage.getItem('userId') || '';
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
   try {
     response = await fetch(`${API_BASE}/api/images/generate`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt, style, quality, size }),
+      headers,
+      body: JSON.stringify({ prompt, style, quality, size, user_id: userId }),
     });
   } catch (err) {
     throw new Error("Cannot reach backend. Start/restart backend server on port 5001.");
