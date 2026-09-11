@@ -137,17 +137,14 @@ def style_system_message(profile: Dict[str, str], language: str = 'en', chat_mod
     # Mode-specific prefix instructions
     mode_prefixes = {
         "general": "",
-        "explain_concepts": "START your response with: '**Explanation Mode**: Breaking down the concept into clear, simple parts:'. ",
-        "generate_ideas": "START your response with: '**Creative Ideas Mode**: Brainstorming interesting ideas:'. ",
-        "write_content": "START your response with: '**Content Writing Mode**: Creating engaging content:'. ",
-        "code_assistance": "START your response with: '**Code Mode**: Providing code examples:'. ",
-        "ask_questions": "START your response with: '**Question Mode**: Asking probing questions:'. ",
-        "creative_writing": "START your response with: '**Creative Writing Mode**: Crafting a narrative:'. ",
+        "explain_concepts": "",
+        "generate_ideas": "",
+        "write_content": "",
+        "code_assistance": "",
+        "ask_questions": "",
+        "creative_writing": "",
     }
     mode_prefix_instruction = mode_prefixes.get(chat_mode, "")
-    import sys
-    sys.stderr.write(f"🔴 [STYLE] chat_mode={chat_mode}, has_prefix={'YES' if mode_prefix_instruction else 'NO'}\n")
-    sys.stderr.flush()
     
     # Tone-specific personality instructions
     tone_instructions = ""

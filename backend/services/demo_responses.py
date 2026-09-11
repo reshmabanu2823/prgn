@@ -154,66 +154,20 @@ GREETING_RESPONSES = [
     "Welcome! I'm happy to chat with you. Ask me anything - whether it's about technology, concepts, or just having a conversation!",
 ]
 
-def _format_response_for_mode(content: str, chat_mode: str, language: str) -> str:
+def _format_response_for_mode(content: str, chat_mode: str = "general", language: str = "en") -> str:
     """
-    Format the response based on the selected chat mode.
+    Format a demo response for a specific chat mode and language.
     
     Args:
         content: The base response content
-        chat_mode: The chat mode (general, explain_concepts, generate_ideas, code_assistance, etc.)
-        language: The language code
+        chat_mode: The chat mode (general, explain_concepts, generate_ideas, etc.)
+        language: Language code
         
     Returns:
         Formatted response string
     """
-    import sys
-    sys.stderr.write(f"🔴 DEMO FMT: mode={chat_mode} lang={language}\n")
-    sys.stderr.flush()
-    mode_instructions = {
-        "explain_concepts": {
-            "en": "**Explanation Mode**: Breaking down the concept into clear, simple parts:\n\n",
-            "hi": "**व्याख्या मोड**: अवधारणा को स्पष्ट, सरल भागों में तोड़ना:\n\n",
-            "ta": "**விளக்கம் பயன்முறை**: கருத்தை தெளிவான, எளிய பகுதிகளாக பிரிப்பது:\n\n",
-            "te": "**వివరణ మోడ్**: కన్సెప్ట్‌ను స్పష్టమైన, సరళ భాగాలుగా విభజించడం:\n\n",
-            "kn": "**ವಿವರಣೆ ಮೋಡ್**: ಪರಿಕಲ್ಪನೆಯನ್ನು ಸ್ಪಷ್ಟ, ಸರಳ ಭಾಗಗಳಾಗಿ ವಿಭಜಿಸುವುದು:\n\n",
-        },
-        "generate_ideas": {
-            "en": "**Creative Ideas Mode**: Brainstorming interesting ideas:\n\n",
-            "hi": "**रचनात्मक विचार मोड**: दिलचस्प विचारों पर विचार-विमर्श:\n\n",
-            "ta": "**படைப்பு ধারণা பயன்முறை**: சுவாரஸ்யமான ধारணைகளை ஆலோசனை செய்வது:\n\n",
-            "te": "**సృజనాత్మక ఆइడియాస్ మోడ్**: ఆసక్తికరమైన ఆలోచనలు:\n\n",
-            "kn": "**ಸೃಜನಶೀಲ ಆಲೋಚನೆ ಮೋಡ್**: ಆಸಕ್ತಿದಾಯಕ ಆಲೋಚನೆಗಳ ಮೇಲೆ ಚಿಂತನೆ:\n\n",
-        },
-        "code_assistance": {
-            "en": "**Code Mode**: Providing code examples:\n\n",
-            "hi": "**कोड मोड**: कोड उदाहरण प्रदान करना:\n\n",
-            "ta": "**குறியீடு பயன்முறை**: குறியீடு உதாரணங்கள் வழங்குதல்:\n\n",
-            "te": "**కోడ్ మోడ్**: కోడ్ ఉదాహరణలను అందించడం:\n\n",
-            "kn": "**ಕೋಡ್ ಮೋಡ್**: ಕೋಡ್ ಉದಾಹರಣೆಗಳನ್ನು ಒದಗಿಸುವುದು:\n\n",
-        },
-        "creative_writing": {
-            "en": "**Creative Writing Mode**: Crafting a narrative:\n\n",
-            "hi": "**रचनात्मक लेखन मोड**: एक आख्यान बनाना:\n\n",
-            "ta": "**உண்மையான எழுत்து பயன்முறை**: ஒரு கதை உருவாக்குதல்:\n\n",
-            "te": "**క్రియేటివ్ రైటింగ్ మోడ్**: ఒక కథ రూపొందించడం:\n\n",
-            "kn": "**ಸೃಜನಶೀಲ ಬರವಣಿಗೆ ಮೋಡ್**: ಒಂದು ಕಥೆ ರಚಿಸುವುದು:\n\n",
-        }
-    }
-    
-    # DEBUG: Log formatting attempt
     logger.debug(f"🎨 _format_response_for_mode() called: chat_mode={chat_mode}, language={language}")
-    
-    # Get mode prefix if available
-    if chat_mode in mode_instructions and language in mode_instructions[chat_mode]:
-        prefix = mode_instructions[chat_mode][language]
-        logger.debug(f"✅ Mode prefix found: {prefix[:50]}...")
-    else:
-        prefix = ""
-        logger.debug(f"⚠️ No prefix for mode={chat_mode}, language={language}")
-    
-    formatted = prefix + content
-    logger.debug(f"📖 Formatted response length: {len(formatted)} chars")
-    return formatted
+    return content
 
 def get_demo_response(user_message: str, language: str = "en", chat_mode: str = "general") -> str:
     """
