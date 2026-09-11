@@ -3,7 +3,7 @@ import './voice.css';
 
 // Language tags for SpeechRecognition and SpeechSynthesis
 const LANG_VOICE_MAP = {
-  en: { tag: 'en-IN', fallback: 'en-US', name: 'English' },
+  en: { tag: 'en-IN', fallback: 'en', name: 'English' },
   hi: { tag: 'hi-IN', fallback: 'hi', name: 'Hindi' },
   kn: { tag: 'kn-IN', fallback: 'kn', name: 'Kannada' },
   te: { tag: 'te-IN', fallback: 'te', name: 'Telugu' },
@@ -16,8 +16,145 @@ const LANG_VOICE_MAP = {
   ur: { tag: 'ur-IN', fallback: 'ur', name: 'Urdu' },
 };
 
+const FEMALE_VOICE_KEYWORDS = [
+  'female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'veena',
+  'priya', 'aditi', 'swara', 'neerja', 'heera', 'tessa', 'fiona', 'ava',
+  'serena', 'jenny', 'moira', 'clara', 'amelia', 'cathy', 'alice', 'shelley',
+  'natural'
+];
+
+const MALE_VOICE_KEYWORDS = [
+  'male', 'man', 'david', 'mark', 'george', 'guy', 'ravi', 'madhav',
+  'alex', 'daniel', 'fred', 'rishi', 'tom', 'oliver', 'arthur'
+];
+
 /**
- * Clean markdown for natural text-to-speech pronunciation
+ * Filter and select the most natural female voice for the active language
+ */
+function selectBestFemaleVoice(voices, langTag, fallbackTag) {
+  if (!voices || voices.length === 0) return null;
+  const targetTag = (langTag || 'en-IN').toLowerCase();
+  const baseTag = (fallbackTag || 'en').toLowerCase();
+
+  // 1. Language match + explicitly female
+  const exactFemale = voices.find((v) => {
+    const vLang = v.lang.toLowerCase();
+    const vName = v.name.toLowerCase();
+    const isLang = vLang === targetTag || vLang.startsWith(targetTag);
+    const isFemale = FEMALE_VOICE_KEYWORDS.some((kw) => vName.includes(kw)) &&
+                    !MALE_VOICE_KEYWORDS.some((kw) => vName.includes(kw));
+    return isLang && isFemale;
+  });
+  if (exactFemale) return exactFemale;
+
+  // 2. Base language match + explicitly female
+  const baseFemale = voices.find((v) => {
+    const vLang = v.lang.toLowerCase();
+    const vName = v.name.toLowerCase();
+    const isLang = vLang.startsWith(baseTag);
+    const isFemale = FEMALE_VOICE_KEYWORDS.some((kw) => vName.includes(kw)) &&
+                    !MALE_VOICE_KEYWORDS.some((kw) => vName.includes(kw));
+    return isLang && isFemale;
+  });
+  if (baseFemale) return baseFemale;
+
+  // 3. High quality English female voice fallback (e.g. Google UK English Female, Zira, Samantha)
+  const englishFemale = voices.find((v) => {
+    const vLang = v.lang.toLowerCase();
+    const vName = v.name.toLowerCase();
+    return vLang.includes('en') &&
+      FEMALE_VOICE_KEYWORDS.some((kw) => vName.includes(kw)) &&
+      !MALE_VOICE_KEYWORDS.some((kw) => vName.includes(kw));
+  });
+  if (englishFemale) return englishFemale;
+
+  // 4. Any voice that does not contain male keywords
+  const nonMale = voices.find((v) => {
+    const vLang = v.lang.toLowerCase();
+    const vName = v.name.toLowerCase();
+    return (vLang === targetTag || vLang.startsWith(baseTag)) &&
+      !MALE_VOICE_KEYWORDS.some((kw) => vName.includes(kw));
+  });
+  if (nonMale) return nonMale;
+
+  return voices[0];
+}
+
+/**
+ * Analyze emotional sentiment, vibe, and rhythm of a sentence to adjust
+ * female vocal pitch, cadence rate, and post-sentence breathing pauses
+ */
+function analyzeSentenceEmotion(sentence) {
+  const text = (sentence || '').toLowerCase().trim();
+
+  // Joy / Excitement / High Energy
+  const excitementWords = [
+    'great', 'awesome', 'amazing', 'wonderful', 'incredible', 'yay', 'fantastic',
+    'excellent', 'love', 'congratulations', 'super', 'brilliant', 'delighted', 'happy',
+    'wow', 'thrilled', 'fascinating'
+  ];
+  const hasExclamation = sentence.includes('!');
+  const isExcited = excitementWords.some((w) => text.includes(w)) || (hasExclamation && !text.includes('warn') && !text.includes('error'));
+  if (isExcited) {
+    return {
+      type: 'excited',
+      pitch: 1.14,    // Bright, uplifting, enthusiastic pitch
+      rate: 1.05,     // Energetic, lively pace
+      pauseAfter: 160,
+    };
+  }
+
+  // Questioning / Curiosity / Inquisitive
+  const isQuestion = sentence.includes('?');
+  const curiosityWords = ['why', 'how', 'what if', 'wonder', 'perhaps', 'curious', 'could it be', 'tell me'];
+  if (isQuestion || curiosityWords.some((w) => text.includes(w))) {
+    return {
+      type: 'curious',
+      pitch: 1.08,    // Inquisitive melodic inflection
+      rate: 0.98,     // Thoughtful, inviting cadence
+      pauseAfter: 200,
+    };
+  }
+
+  // Empathy / Warmth / Soothing / Gentle
+  const empathyWords = [
+    'sorry', 'understand', 'apologize', 'no worries', 'relax', 'gentle',
+    'peaceful', 'calm', 'comfort', 'take your time', 'here for you', 'care', 'soft'
+  ];
+  if (empathyWords.some((w) => text.includes(w))) {
+    return {
+      type: 'empathetic',
+      pitch: 0.96,    // Warm, grounded, tender tone
+      rate: 0.92,     // Softer, relaxed breathing pace
+      pauseAfter: 240,
+    };
+  }
+
+  // Contemplative / Serious / Analytical
+  const analyticalWords = [
+    'however', 'therefore', 'furthermore', 'specifically', 'technically',
+    'important', 'crucial', 'essential', 'on the other hand', 'interestingly'
+  ];
+  if (analyticalWords.some((w) => text.includes(w))) {
+    return {
+      type: 'thoughtful',
+      pitch: 1.0,     // Measured, composed
+      rate: 0.96,     // Articulate, precise
+      pauseAfter: 200,
+    };
+  }
+
+  // Natural Conversational Friendly Register
+  return {
+    type: 'neutral',
+    pitch: 1.04,      // Clear, warm, natural female register
+    rate: 1.0,       // Natural human speaking cadence
+    pauseAfter: 160,
+  };
+}
+
+/**
+ * Clean markdown for natural, articulate text-to-speech pronunciation
  */
 function cleanTextForSpeech(text) {
   if (!text) return '';
@@ -27,7 +164,7 @@ function cleanTextForSpeech(text) {
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/[*_~#>]/g, '')
     .replace(/•|\d+\.\s+/g, '')
-    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -41,6 +178,7 @@ export default function VoiceAssistantModal({
 }) {
   // States: 'idle' | 'listening' | 'thinking' | 'speaking'
   const [voiceState, setVoiceState] = useState('idle');
+  const [currentEmotion, setCurrentEmotion] = useState('neutral');
   const [userTranscript, setUserTranscript] = useState('');
   const [aiSpeechText, setAiSpeechText] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -52,11 +190,26 @@ export default function VoiceAssistantModal({
   const micStreamRef = useRef(null);
   const animationFrameRef = useRef(null);
   const recognitionRef = useRef(null);
-  const currentUtteranceRef = useRef(null);
   const isListeningRef = useRef(false);
   const volumeRef = useRef(0);
+  const speechQueueRef = useRef([]);
+  const speechTimerRef = useRef(null);
+  const isSpeakingRef = useRef(false);
 
   const langConfig = LANG_VOICE_MAP[currentLanguage] || LANG_VOICE_MAP.en;
+
+  // Pre-fetch browser speech synthesis voices
+  useEffect(() => {
+    const loadVoices = () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.getVoices();
+      }
+    };
+    loadVoices();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
 
   // Initialize Web Audio API Analyser for interactive visualizer
   const initAudioAnalyser = useCallback(async () => {
@@ -88,6 +241,12 @@ export default function VoiceAssistantModal({
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+    speechQueueRef.current = [];
+    isSpeakingRef.current = false;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -108,7 +267,55 @@ export default function VoiceAssistantModal({
     isListeningRef.current = false;
   }, []);
 
-  // Speak AI response with browser SpeechSynthesis
+  // Play next emotional sentence from queue
+  const playNextSentence = useCallback(() => {
+    if (!isOpen || isMuted) {
+      setVoiceState('idle');
+      isSpeakingRef.current = false;
+      return;
+    }
+
+    if (speechQueueRef.current.length === 0) {
+      setVoiceState('idle');
+      setCurrentEmotion('neutral');
+      isSpeakingRef.current = false;
+      // Auto resume listening for seamless hands-free loop
+      if (isOpen && !isMuted) {
+        setTimeout(() => startListening(), 350);
+      }
+      return;
+    }
+
+    const { sentence, emotion } = speechQueueRef.current.shift();
+    setCurrentEmotion(emotion.type);
+
+    const utterance = new SpeechSynthesisUtterance(sentence);
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = selectBestFemaleVoice(voices, langConfig.tag, langConfig.fallback);
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+
+    // Apply accurate emotional cadence and register
+    utterance.pitch = emotion.pitch;
+    utterance.rate = emotion.rate;
+
+    utterance.onend = () => {
+      // Natural breath pause between thoughts
+      speechTimerRef.current = setTimeout(() => {
+        playNextSentence();
+      }, emotion.pauseAfter);
+    };
+
+    utterance.onerror = (e) => {
+      console.warn("Utterance error:", e);
+      playNextSentence();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [isOpen, isMuted, langConfig]);
+
+  // Speak AI response with emotional sentence analysis and female voice
   const speakResponse = useCallback((text) => {
     if (!('speechSynthesis' in window) || !text) {
       setVoiceState('idle');
@@ -116,6 +323,11 @@ export default function VoiceAssistantModal({
     }
 
     window.speechSynthesis.cancel();
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+
     const clean = cleanTextForSpeech(text);
     if (!clean) {
       setVoiceState('idle');
@@ -124,49 +336,20 @@ export default function VoiceAssistantModal({
 
     setAiSpeechText(clean);
     setVoiceState('speaking');
+    isSpeakingRef.current = true;
 
-    const utterance = new SpeechSynthesisUtterance(clean);
-    currentUtteranceRef.current = utterance;
+    // Split text into coherent sentence clauses for dynamic emotional inflection
+    const rawSentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+    speechQueueRef.current = rawSentences
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((sentence) => ({
+        sentence,
+        emotion: analyzeSentenceEmotion(sentence),
+      }));
 
-    // Pick best regional voice
-    const voices = window.speechSynthesis.getVoices();
-    const targetTag = langConfig.tag.toLowerCase();
-    const fallbackTag = langConfig.fallback.toLowerCase();
-
-    let matchedVoice = voices.find((v) => v.lang.toLowerCase() === targetTag);
-    if (!matchedVoice) {
-      matchedVoice = voices.find((v) => v.lang.toLowerCase().startsWith(fallbackTag));
-    }
-    if (!matchedVoice) {
-      matchedVoice = voices.find((v) => v.lang.toLowerCase().includes('en') || v.default);
-    }
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
-    }
-
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-
-    utterance.onend = () => {
-      setVoiceState('idle');
-      currentUtteranceRef.current = null;
-      // Auto resume listening for hands-free loop
-      if (!isMuted && isOpen) {
-        setTimeout(() => startListening(), 400);
-      }
-    };
-
-    utterance.onerror = (e) => {
-      console.warn("SpeechSynthesis error:", e);
-      setVoiceState('idle');
-      currentUtteranceRef.current = null;
-      if (!isMuted && isOpen) {
-        setTimeout(() => startListening(), 400);
-      }
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }, [langConfig, isMuted, isOpen]);
+    playNextSentence();
+  }, [playNextSentence]);
 
   // Start Speech Recognition
   const startListening = useCallback(() => {
@@ -182,6 +365,11 @@ export default function VoiceAssistantModal({
     if (window.speechSynthesis && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
     }
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+    }
+    speechQueueRef.current = [];
+    isSpeakingRef.current = false;
 
     try {
       if (recognitionRef.current) {
@@ -201,6 +389,7 @@ export default function VoiceAssistantModal({
     recognition.onstart = () => {
       isListeningRef.current = true;
       setVoiceState('listening');
+      setCurrentEmotion('neutral');
       setUserTranscript('');
     };
 
@@ -257,11 +446,18 @@ export default function VoiceAssistantModal({
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+    speechQueueRef.current = [];
+    isSpeakingRef.current = false;
     setVoiceState('idle');
+    setCurrentEmotion('neutral');
     setTimeout(() => startListening(), 250);
   }, [startListening]);
 
-  // When assistant finishes generating response, speak it aloud
+  // When assistant finishes generating response, speak it aloud with emotions
   useEffect(() => {
     if (isOpen && !isGenerating && lastAssistantMessage && voiceState === 'thinking') {
       speakResponse(lastAssistantMessage);
@@ -284,7 +480,7 @@ export default function VoiceAssistantModal({
     }
   }, [isOpen, initAudioAnalyser, startListening, cleanupAudio]);
 
-  // 60fps Canvas Animation for the Interactive Glowing Orb
+  // 60fps Canvas Animation for the Interactive Glowing Orb (emotion reactive)
   useEffect(() => {
     if (!isOpen || !canvasRef.current) return;
 
@@ -309,8 +505,10 @@ export default function VoiceAssistantModal({
         }
         audioVolume = sum / dataArray.length / 255;
       } else if (voiceState === 'speaking') {
-        // Simulated vocal modulation cadence
-        audioVolume = 0.35 + Math.sin(phase * 4) * 0.25 + Math.cos(phase * 7) * 0.15;
+        // Emotional vocal modulation
+        const baseSpeed = currentEmotion === 'excited' ? 5 : currentEmotion === 'empathetic' ? 2.5 : 3.8;
+        const baseAmp = currentEmotion === 'excited' ? 0.45 : currentEmotion === 'empathetic' ? 0.22 : 0.32;
+        audioVolume = baseAmp + Math.sin(phase * baseSpeed) * 0.2 + Math.cos(phase * (baseSpeed * 1.5)) * 0.12;
       } else if (voiceState === 'thinking') {
         audioVolume = 0.2 + Math.sin(phase * 6) * 0.15;
       } else {
@@ -327,9 +525,10 @@ export default function VoiceAssistantModal({
       const centerY = height / 2;
       const baseRadius = Math.min(width, height) * 0.26;
 
-      // Color scheme based on state
+      // Color scheme based on state & emotion
       let primaryColor = 'rgba(212, 175, 55, 1)'; // Pragna Gold
       let glowColor = 'rgba(212, 175, 55, 0.4)';
+
       if (voiceState === 'listening') {
         primaryColor = 'rgba(56, 189, 248, 1)'; // Sky Blue
         glowColor = 'rgba(56, 189, 248, 0.45)';
@@ -337,8 +536,19 @@ export default function VoiceAssistantModal({
         primaryColor = 'rgba(245, 158, 11, 1)'; // Amber
         glowColor = 'rgba(245, 158, 11, 0.45)';
       } else if (voiceState === 'speaking') {
-        primaryColor = 'rgba(229, 193, 88, 1)'; // Bright Radiant Gold
-        glowColor = 'rgba(229, 193, 88, 0.5)';
+        if (currentEmotion === 'excited') {
+          primaryColor = 'rgba(251, 191, 36, 1)'; // Bright Radiant Gold Flare
+          glowColor = 'rgba(251, 191, 36, 0.55)';
+        } else if (currentEmotion === 'empathetic') {
+          primaryColor = 'rgba(244, 114, 182, 1)'; // Soft Warm Rose-Gold
+          glowColor = 'rgba(244, 114, 182, 0.45)';
+        } else if (currentEmotion === 'curious') {
+          primaryColor = 'rgba(129, 140, 248, 1)'; // Inquisitive Indigo-Violet
+          glowColor = 'rgba(129, 140, 248, 0.45)';
+        } else {
+          primaryColor = 'rgba(229, 193, 88, 1)'; // Classic Radiant Gold
+          glowColor = 'rgba(229, 193, 88, 0.5)';
+        }
       }
 
       // Outer ambient glowing aura
@@ -364,7 +574,7 @@ export default function VoiceAssistantModal({
       for (let layer = 0; layer < waveLayers; layer++) {
         ctx.beginPath();
         const layerOffset = (layer * Math.PI) / 3;
-        const speedMultiplier = voiceState === 'thinking' ? 2.5 : 1.2;
+        const speedMultiplier = voiceState === 'thinking' ? 2.5 : currentEmotion === 'excited' ? 1.8 : 1.2;
 
         for (let angle = 0; angle <= Math.PI * 2; angle += 0.08) {
           const wave =
@@ -417,7 +627,7 @@ export default function VoiceAssistantModal({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isOpen, voiceState]);
+  }, [isOpen, voiceState, currentEmotion]);
 
   if (!isOpen) return null;
 
@@ -429,7 +639,12 @@ export default function VoiceAssistantModal({
           <span className={`pragna-voice-dot ${voiceState}`} />
           {voiceState === 'listening' && 'Listening...'}
           {voiceState === 'thinking' && 'Pragna is thinking...'}
-          {voiceState === 'speaking' && 'Pragna is speaking...'}
+          {voiceState === 'speaking' && (
+            currentEmotion === 'excited' ? 'Pragna is enthusiastic' :
+            currentEmotion === 'curious' ? 'Pragna is curious' :
+            currentEmotion === 'empathetic' ? 'Pragna is empathetic' :
+            'Pragna is speaking'
+          )}
           {voiceState === 'idle' && (isMuted ? 'Muted' : 'Ready to talk')}
         </div>
 
