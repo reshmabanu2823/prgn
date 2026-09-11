@@ -248,7 +248,15 @@ export default function SplashScreen({ visible = true }) {
                 )}
 
                 {slide.kind === "pragna" && (
-                  <>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      width: "fit-content",
+                      gap: "6px",
+                    }}
+                  >
                     <img
                       src={pragnaWordmark}
                       alt="PRAGNA-1 A"
@@ -267,12 +275,14 @@ export default function SplashScreen({ visible = true }) {
                         fontSize: "clamp(13px, 1.8vw, 22px)",
                         color: "#fff",
                         whiteSpace: "nowrap",
-                        letterSpacing: "0.3px",
+                        letterSpacing: "0.5px",
+                        textAlign: "center",
+                        width: "100%",
                       }}
                     >
                       A regional chatbot
                     </span>
-                  </>
+                  </div>
                 )}
 
                 {slide.kind === "tagline" && (
