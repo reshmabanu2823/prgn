@@ -12,6 +12,15 @@ import {
   CloseIcon,
   SearchIcon,
   ChevronDownIcon,
+  InfoIcon,
+  SparklesIcon,
+  BotIcon,
+  GlobeIcon,
+  SoundwaveIcon,
+  CompareIcon,
+  ZapIcon,
+  ImagesIcon,
+  CheckCircleIcon,
 } from './PragnaIcon'
 
 const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
@@ -209,6 +218,8 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
         return <ShieldIcon size={16} />
       case 'download':
         return <DownloadIcon size={16} />
+      case 'info':
+        return <InfoIcon size={16} />
       default:
         return null
     }
@@ -219,6 +230,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
     { label: 'Preferences', icon: 'sun' },
     { label: 'Account', icon: 'shield' },
     { label: 'Data', icon: 'download' },
+    { label: 'About Pragna', icon: 'info' },
   ]
 
   return (
@@ -578,6 +590,452 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ABOUT PRAGNA TAB */}
+          {activeTab === 'About Pragna' && (
+            <div style={{ animation: 'fadeUp 0.15s ease' }}>
+              {/* Top Banner */}
+              <div
+                style={{
+                  padding: isMobile ? '16px' : '22px 24px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, rgba(212,175,55,0.14) 0%, rgba(26,24,18,0.7) 60%, rgba(15,15,17,0.85) 100%)',
+                  border: '1px solid rgba(212,175,55,0.28)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+                  marginBottom: '24px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#121008',
+                        fontWeight: 900,
+                        fontSize: '20px',
+                        boxShadow: '0 4px 16px rgba(212,175,55,0.35)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      P
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--pragna-gold-soft)', letterSpacing: '0.4px', lineHeight: 1.2 }}>
+                        PRAGNA AI
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--pragna-text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                        Regional Indian Intelligence & Intelligent Visual Artifact Engine
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                      padding: '5px 12px',
+                      borderRadius: '999px',
+                      background: 'rgba(34,197,94,0.12)',
+                      border: '1px solid rgba(34,197,94,0.32)',
+                      fontSize: '11.5px',
+                      fontWeight: 650,
+                      color: '#4ade80',
+                    }}
+                  >
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }}></span>
+                    v1.0.0 Production • Active
+                  </div>
+                </div>
+
+                <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.65, color: 'var(--pragna-text-soft)' }}>
+                  Pragna is a sovereign multilingual AI platform purpose-engineered with native Indian language comprehension, autonomous visual artifact synthesis via Pragna Canvas, real-time web awareness, and ambient hands-free voice intelligence.
+                </p>
+              </div>
+
+              {/* Section Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--pragna-text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <SparklesIcon size={16} color="var(--pragna-gold-soft)" />
+                  <span>Working Features & Core Modules</span>
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--pragna-gold-soft)', fontWeight: 600 }}>
+                  8 Active Subsystems
+                </span>
+              </div>
+
+              {/* Feature Cards Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '14px', marginBottom: '24px' }}>
+                
+                {/* 1. Pragna Canvas */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <SparklesIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Pragna Canvas & Artifacts
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      Automatically converts explanations, roadmaps, and comparisons into 10+ interactive visual structures with split-view zoom, pan, and high-res export.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['10+ Renderers', 'Live Zoom/Pan', 'Make It Real Sandbox', 'PDF/PNG/SVG'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Pragna Autopilot */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <ZapIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Pragna Autopilot Engine
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      Zero-shot visual creation pipeline. Detects actionable requests, coordinates 4-phase reasoning steps, and builds structured node models in real time.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['Intent Detection', '4-Phase Pipeline', 'Live Progress Tracker', 'Auto-Morphing'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Indic Multilingual Cognition */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <GlobeIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Indic Multilingual AI
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      Native conversational depth across 11 Indian languages with dynamic per-message script switching, nuanced idioms, and authentic script synthesis.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['11 Languages', 'Per-Message Switch', 'Native Scripts', 'Cultural Context'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Dual Inference Architecture */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <BotIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Dual Inference & Local AI
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      High-throughput Ollama cloud/local orchestration with auto-failover, alongside local DeepSeek-R1 Distill for private offline neural reasoning.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['Ollama Acceleration', 'DeepSeek-R1 Distill', 'Multi-Key Failover', 'Offline Knowledge'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 5. Voice Assistant & Audio AI */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <SoundwaveIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Voice Assistant & TTS
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      ChatGPT-style ambient voice assistant with 3D glowing particle orb, hands-free turn taking, and emotion-reactive multilingual speech synthesis.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['3D Glowing Orb', 'Hands-Free VAD', 'Emotion Cadence', 'Streaming Audio'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 6. Live Web Search */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <SearchIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Live Web Grounding
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      Integrated web search tool grounding responses with real-time facts, current news, live financial data, and clickable live source citations.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['Real-Time Queries', 'Factual Grounding', 'Live Citations', 'News Routing'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 7. Image Studio */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <ImagesIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Creative Image Studio
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      Text-to-image synthesis studio with prompt refinement, aspect ratio configuration, rate limit handling, and one-click image export.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['Text-to-Image', 'Aspect Ratios', 'History Gallery', 'High-Res Download'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 8. Enterprise Auth & Data Sovereignty */}
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: 'var(--pragna-surface-2)',
+                    border: '1px solid rgba(212,175,55,0.16)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '9px', marginBottom: '6px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                        <ShieldIcon size={15} />
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)' }}>
+                        Security & Data Privacy
+                      </div>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                      Multi-provider OAuth (Google, GitHub, Discord) + bcrypt encrypted local authentication, 1-click JSON chat backups, and complete account erasure.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                    {['OAuth 2.0 Auth', 'Bcrypt Security', 'JSON Chat Export', 'Data Erasure'].map((t) => (
+                      <span key={t} style={{ fontSize: '11px', padding: '3px 7px', borderRadius: '6px', background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.16)', color: 'var(--pragna-gold-soft)', fontWeight: 550 }}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Supported Indic Languages Badges */}
+              <div
+                style={{
+                  padding: '16px 18px',
+                  borderRadius: '14px',
+                  background: 'var(--pragna-surface-2)',
+                  border: '1px solid var(--pragna-border)',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--pragna-gold-soft)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                  <GlobeIcon size={15} />
+                  <span>11 Supported Regional & Indic Languages</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                  {[
+                    { code: 'en', label: 'English' },
+                    { code: 'hi', label: 'हिंदी (Hindi)' },
+                    { code: 'ta', label: 'தமிழ் (Tamil)' },
+                    { code: 'te', label: 'తెలుగు (Telugu)' },
+                    { code: 'kn', label: 'ಕನ್ನಡ (Kannada)' },
+                    { code: 'ml', label: 'മലയാളം (Malayalam)' },
+                    { code: 'mr', label: 'मराठी (Marathi)' },
+                    { code: 'gu', label: 'ગુજરાતી (Gujarati)' },
+                    { code: 'pa', label: 'ਪੰਜਾਬੀ (Punjabi)' },
+                    { code: 'bn', label: 'বাংলা (Bengali)' },
+                    { code: 'ur', label: 'اردو (Urdu)' },
+                  ].map((l) => (
+                    <span
+                      key={l.code}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        background: 'rgba(212,175,55,0.06)',
+                        border: '1px solid rgba(212,175,55,0.18)',
+                        color: 'var(--pragna-text)',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {l.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Technical Specifications / Build Footer */}
+              <div
+                style={{
+                  padding: '14px 18px',
+                  borderRadius: '12px',
+                  background: 'rgba(0,0,0,0.28)',
+                  border: '1px solid var(--pragna-border)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  fontSize: '12px',
+                  color: 'var(--pragna-text-muted)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: 'var(--pragna-gold-soft)', fontWeight: 650 }}>Stack:</span>
+                  <span>React 19 • Vite • Flask • PostgreSQL • Ollama & DeepSeek-R1</span>
+                </div>
+                <div>
+                  © 2026 PRAGNA AI. All rights reserved.
+                </div>
               </div>
             </div>
           )}
