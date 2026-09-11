@@ -8,13 +8,13 @@ function TreeNode({ node, depth = 0, defaultExpanded = true, isHorizontal = fals
   const getDepthStyle = (d) => {
     switch (d) {
       case 0:
-        return 'bg-gradient-to-r from-[#d4af37]/20 via-[#d4af37]/10 to-[#121215]/95 border-[#d4af37]/50 text-[#f0e6d3] font-bold shadow-[0_0_20px_rgba(212,175,55,0.18)]'
+        return 'bg-[#101014] border-[#d4af37]/40 text-[#f0e6d3] font-semibold shadow-[0_0_15px_rgba(212,175,55,0.12)]'
       case 1:
-        return 'bg-[#151518]/95 border-[#d4af37]/35 text-[#e5c76b] font-semibold shadow-md'
+        return 'bg-[#0e0e11] border-[#2d2a24] hover:border-[#d4af37]/35 text-[#f0e6d3] font-medium'
       case 2:
-        return 'bg-[#121215]/90 border-white/[0.1] text-[#f0e6d3] font-medium'
+        return 'bg-[#0a0a0c] border-[#2d2a24]/80 hover:border-[#d4af37]/30 text-[#f0e6d3]'
       default:
-        return 'bg-[#0e0e11]/80 border-white/[0.06] text-[#c9bda2] font-normal'
+        return 'bg-[#08080a] border-[#2d2a24]/60 text-[#c9bda2]'
     }
   }
 
@@ -93,19 +93,19 @@ export default function TreeRenderer({ data }) {
     (rootNode.children || []).some(c => (c.label || '').toLowerCase().includes('parent') || (c.label || '').toLowerCase().includes('uncle'))
 
   return (
-    <div className="w-full flex flex-col gap-3 p-4 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+    <div className="w-full flex flex-col gap-3 p-3 bg-[#0a0a0c]/40 rounded-xl">
       {/* View Switcher for Family Trees */}
       {isFamilyTree && (
-        <div className="flex items-center justify-between pb-2 border-b border-white/[0.08]">
-          <span className="text-[11px] uppercase font-bold text-[#e5c76b] tracking-wider flex items-center gap-1.5">
+        <div className="flex items-center justify-between pb-2 border-b border-[#2d2a24]">
+          <span className="text-[10px] uppercase font-semibold text-[#e5c76b] tracking-wider flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5" />
             <span>Family Lineage Architecture</span>
           </span>
-          <div className="flex items-center gap-1 bg-[#0e0e11] p-0.5 rounded-lg border border-white/[0.08] text-xs">
+          <div className="flex items-center gap-1 bg-[#101014] p-0.5 rounded-lg border border-[#2d2a24] text-xs">
             <button
               onClick={() => setViewMode('tree')}
-              className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${
-                viewMode === 'tree' ? 'bg-[#d4af37]/20 text-[#f0e6d3] font-bold border border-[#d4af37]/40' : 'text-[#a89878] hover:text-[#f0e6d3]'
+              className={`px-2 py-0.5 rounded-md transition-colors flex items-center gap-1 ${
+                viewMode === 'tree' ? 'bg-[#d4af37]/15 text-[#f0e6d3] font-medium border border-[#d4af37]/30' : 'text-[#a89878] hover:text-[#f0e6d3]'
               }`}
             >
               <ListTree className="w-3 h-3" />
@@ -113,8 +113,8 @@ export default function TreeRenderer({ data }) {
             </button>
             <button
               onClick={() => setViewMode('generation')}
-              className={`px-2 py-1 rounded-md transition-colors flex items-center gap-1 ${
-                viewMode === 'generation' ? 'bg-[#d4af37]/20 text-[#f0e6d3] font-bold border border-[#d4af37]/40' : 'text-[#a89878] hover:text-[#f0e6d3]'
+              className={`px-2 py-0.5 rounded-md transition-colors flex items-center gap-1 ${
+                viewMode === 'generation' ? 'bg-[#d4af37]/15 text-[#f0e6d3] font-medium border border-[#d4af37]/30' : 'text-[#a89878] hover:text-[#f0e6d3]'
               }`}
             >
               <LayoutGrid className="w-3 h-3" />
@@ -126,38 +126,38 @@ export default function TreeRenderer({ data }) {
 
       {viewMode === 'generation' && isFamilyTree ? (
         /* Generation Tier View */
-        <div className="flex flex-col gap-4 py-2">
+        <div className="flex flex-col gap-3 py-1">
           {/* Generation I */}
-          <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#d4af37]/20 via-[#d4af37]/10 to-[#121215]/90 border border-[#d4af37]/35 shadow-md">
-            <span className="text-[10px] uppercase font-bold text-[#e5c76b] tracking-widest">Generation I (Ancestors)</span>
-            <div className="mt-2 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#e5c76b]" />
-              <span className="text-sm font-bold text-[#f0e6d3]">{rootNode.label}</span>
+          <div className="p-3 rounded-xl bg-[#101014] border border-[#d4af37]/30">
+            <span className="text-[10px] uppercase font-semibold text-[#e5c76b] tracking-widest">Generation I (Ancestors)</span>
+            <div className="mt-1.5 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#e5c76b]" />
+              <span className="text-xs font-semibold text-[#f0e6d3]">{rootNode.label}</span>
             </div>
           </div>
 
-          <div className="flex justify-center text-[#d4af37]/60 -my-2 font-mono text-sm">
+          <div className="flex justify-center text-[#d4af37]/50 -my-1 font-mono text-xs">
             <span>↓</span>
           </div>
 
           {/* Generation II */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {(rootNode.children || []).map((branch, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl bg-[#121215]/95 border border-[#d4af37]/30 hover:border-[#d4af37]/50 shadow-md flex flex-col gap-2 transition-all">
-                <span className="text-[10px] uppercase font-bold text-[#e5c76b] tracking-wider">
+              <div key={idx} className="p-3 rounded-xl bg-[#0e0e11] border border-[#2d2a24] hover:border-[#d4af37]/30 flex flex-col gap-2 transition-all">
+                <span className="text-[10px] uppercase font-medium text-[#e5c76b] tracking-wider">
                   Generation II • {branch.tag || 'Branch'}
                 </span>
-                <span className="text-xs font-bold text-[#f0e6d3]">{branch.label}</span>
+                <span className="text-xs font-semibold text-[#f0e6d3]">{branch.label}</span>
 
                 {/* Generation III */}
                 {Array.isArray(branch.children) && branch.children.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-white/[0.08] flex flex-col gap-1.5">
-                    <span className="text-[9.5px] uppercase text-[#a89878] font-bold">Generation III (Offspring)</span>
+                  <div className="mt-1.5 pt-1.5 border-t border-[#2d2a24] flex flex-col gap-1.5">
+                    <span className="text-[9.5px] uppercase text-[#a89878] font-medium">Generation III (Offspring)</span>
                     <div className="flex flex-wrap gap-1.5">
                       {branch.children.map((child, cIdx) => (
                         <span
                           key={cIdx}
-                          className="px-2.5 py-1 rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/25 text-xs font-medium text-[#f0e6d3]"
+                          className="px-2 py-0.5 rounded-lg bg-[#141417] border border-[#2d2a24] text-xs text-[#f0e6d3]"
                         >
                           {child.label}
                         </span>

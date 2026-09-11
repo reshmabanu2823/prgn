@@ -13,19 +13,19 @@ export default function MindmapRenderer({ data }) {
   }
 
   return (
-    <div className="w-full flex flex-col gap-6 p-5 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+    <div className="w-full flex flex-col gap-4 p-3 bg-[#0a0a0c]/40 rounded-xl">
       {/* Central Core Concept Node */}
       <div className="flex justify-center">
-        <div className="relative group px-6 py-3.5 rounded-2xl bg-gradient-to-br from-[#d4af37]/25 via-[#d4af37]/12 to-[#121215]/95 border border-[#d4af37]/50 shadow-[0_0_25px_rgba(212,175,55,0.2)] text-center">
+        <div className="px-4 py-2 rounded-xl bg-[#101014] border border-[#d4af37]/40 shadow-[0_0_15px_rgba(212,175,55,0.12)] text-center">
           <div className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#e5c76b]" />
-            <h4 className="text-sm font-bold text-[#f0e6d3] tracking-wide">{center}</h4>
+            <Sparkles className="w-3.5 h-3.5 text-[#e5c76b]" />
+            <h4 className="text-xs font-semibold text-[#f0e6d3] tracking-wide">{center}</h4>
           </div>
         </div>
       </div>
 
       {/* Radiating Branches Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
         {branches.map((branch, idx) => {
           const isExpanded = !!expandedBranches[idx]
           const subnodes = Array.isArray(branch.subnodes)
@@ -37,27 +37,27 @@ export default function MindmapRenderer({ data }) {
           return (
             <div
               key={idx}
-              className="flex flex-col rounded-xl border border-[#d4af37]/25 bg-[#121215]/95 overflow-hidden hover:border-[#d4af37]/50 shadow-md transition-all duration-200"
+              className="flex flex-col rounded-xl border border-[#2d2a24] bg-[#0e0e11] overflow-hidden hover:border-[#d4af37]/35 transition-all duration-150"
             >
               {/* Branch Header */}
               <div
                 onClick={() => toggleBranch(idx)}
-                className="flex items-center justify-between p-3 bg-[#d4af37]/10 border-b border-[#d4af37]/20 cursor-pointer select-none hover:bg-[#d4af37]/15 transition-colors"
+                className="flex items-center justify-between p-2.5 bg-[#121216] border-b border-[#2d2a24] cursor-pointer select-none hover:bg-[#16161a] transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#e5c76b]" />
-                  <span className="text-xs font-semibold text-[#f0e6d3]">
+                  <Layers className="w-3.5 h-3.5 text-[#e5c76b]" />
+                  <span className="text-xs font-medium text-[#f0e6d3]">
                     {branch.label || branch.title || `Branch ${idx + 1}`}
                   </span>
                 </div>
-                <button type="button" className="text-[#d4af37]">
-                  {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                <button type="button" className="text-[#d4af37]/80">
+                  {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                 </button>
               </div>
 
               {/* Subnodes List */}
               {isExpanded && (
-                <div className="p-3 flex flex-col gap-1.5 animate-fadeIn">
+                <div className="p-2 flex flex-col gap-1">
                   {subnodes.map((sub, sIdx) => {
                     const label = typeof sub === 'string' ? sub : (sub.label || sub.name || JSON.stringify(sub))
                     const desc = typeof sub === 'object' ? sub.description : null
@@ -65,18 +65,18 @@ export default function MindmapRenderer({ data }) {
                     return (
                       <div
                         key={sIdx}
-                        className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[#c9bda2] text-xs hover:border-[#d4af37]/35 transition-colors"
+                        className="flex items-start gap-2 px-2 py-1 rounded-lg bg-[#141417] border border-[#2d2a24] text-[#c9bda2] text-xs hover:border-[#d4af37]/25 transition-colors"
                       >
                         <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] mt-1.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <span className="font-medium text-[#f0e6d3]">{label}</span>
-                          {desc && <p className="text-[11px] text-[#a89878] mt-0.5">{desc}</p>}
+                          <span className="font-normal text-[#f0e6d3]">{label}</span>
+                          {desc && <p className="text-[10.5px] text-[#a89878] mt-0.5">{desc}</p>}
                         </div>
                       </div>
                     )
                   })}
                   {subnodes.length === 0 && (
-                    <span className="text-[11px] text-[#a89878]/50 italic px-1">No subnodes</span>
+                    <span className="text-[11px] text-[#a89878]/40 italic px-1">No subnodes</span>
                   )}
                 </div>
               )}

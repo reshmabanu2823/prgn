@@ -34,8 +34,8 @@ export default function TimelineRenderer({ data }) {
   }
 
   return (
-    <div className="w-full flex flex-col p-4 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
-      <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gradient-to-b before:from-[#d4af37] before:via-[#d4af37]/40 before:to-transparent">
+    <div className="w-full flex flex-col p-3 bg-[#0a0a0c]/40 rounded-xl">
+      <div className="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#2d2a24]">
         {events.map((evt, idx) => {
           const badge = getStatusBadge(evt.status)
 
@@ -43,20 +43,20 @@ export default function TimelineRenderer({ data }) {
             <div key={idx} className="relative group">
               {/* Timeline Marker Dot */}
               <div
-                className={`absolute -left-[19.5px] top-1.5 w-3 h-3 rounded-full ring-4 ${badge.dot} transition-transform group-hover:scale-125`}
+                className="absolute -left-[16px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#d4af37]"
               />
 
               {/* Event Content Card */}
-              <div className="p-3.5 rounded-xl border border-[#d4af37]/25 bg-[#121215]/95 hover:border-[#d4af37]/50 shadow-md transition-all duration-200">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-1.5 text-[11px] font-mono font-medium text-[#e5c76b] bg-[#d4af37]/10 px-2 py-0.5 rounded-md border border-[#d4af37]/25">
-                    <Calendar className="w-3 h-3" />
+              <div className="p-3 rounded-xl border border-[#2d2a24] bg-[#0e0e11] hover:border-[#d4af37]/35 transition-colors">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-1.5 text-[10.5px] font-mono font-normal text-[#e5c76b] bg-[#141417] px-2 py-0.5 rounded border border-[#2d2a24]">
+                    <Calendar className="w-3 h-3 text-[#a89878]" />
                     <span>{evt.date || evt.time || evt.period || `Step ${idx + 1}`}</span>
                   </div>
 
                   {evt.status && (
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${badge.pill}`}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9.5px] font-medium uppercase tracking-wider border border-[#2d2a24] bg-[#141417] text-[#a89878]"
                     >
                       {badge.icon}
                       <span>{evt.status}</span>
@@ -64,14 +64,14 @@ export default function TimelineRenderer({ data }) {
                   )}
                 </div>
 
-                <h4 className="text-xs font-bold text-[#f0e6d3]">{evt.title || evt.name || 'Milestone'}</h4>
+                <h4 className="text-xs font-semibold text-[#f0e6d3]">{evt.title || evt.name || 'Milestone'}</h4>
 
                 {evt.description && (
-                  <p className="text-[12px] text-[#c9bda2] mt-1 leading-relaxed">{evt.description}</p>
+                  <p className="text-[11.5px] text-[#a89878] mt-1 leading-relaxed">{evt.description}</p>
                 )}
 
                 {Array.isArray(evt.highlights) && evt.highlights.length > 0 && (
-                  <ul className="mt-2 space-y-1">
+                  <ul className="mt-1.5 space-y-0.5">
                     {evt.highlights.map((h, hIdx) => (
                       <li key={hIdx} className="text-[11px] text-[#a89878] flex items-start gap-1.5">
                         <span className="text-[#d4af37] mt-0.5">•</span>

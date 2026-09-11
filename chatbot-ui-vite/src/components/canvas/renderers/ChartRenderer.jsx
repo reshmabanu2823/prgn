@@ -232,7 +232,7 @@ export default function ChartRenderer({ data }) {
   }
 
   return (
-    <div className="w-full flex flex-col gap-3 p-4 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+    <div className="w-full flex flex-col gap-3 p-3 bg-[#0a0a0c]/40 rounded-xl">
       {chartType === 'donut' || chartType === 'pie'
         ? renderDonutChart()
         : chartType === 'line'

@@ -152,21 +152,21 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
         />
       )}
 
-      <div className="w-full my-3.5 rounded-2xl border border-[#d4af37]/25 bg-gradient-to-b from-[#131316]/95 via-[#0f0f12]/95 to-[#0b0b0e]/98 text-[#f0e6d3] shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-md overflow-hidden transition-all duration-300 hover:border-[#d4af37]/45">
+      <div className="w-full my-3 rounded-2xl border border-[#2d2a24] bg-[#0c0c0e]/95 text-[#f0e6d3] shadow-[0_4px_24px_rgba(0,0,0,0.6)] backdrop-blur-md overflow-hidden transition-all duration-200 hover:border-[#d4af37]/35">
       {/* Canvas Top Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-3 bg-gradient-to-r from-[#d4af37]/12 via-[#d4af37]/5 to-transparent border-b border-[#d4af37]/20">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2.5 bg-[#101014]/90 border-b border-[#2d2a24]">
         {/* Title & Badge */}
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-1.5 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/30 flex-shrink-0 shadow-[0_0_10px_rgba(212,175,55,0.12)]">
+          <div className="p-1.5 rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/25 flex-shrink-0">
             {meta.icon}
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#e5c76b]">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#e5c76b]">
                 {meta.label}
               </span>
             </div>
-            <h3 className="text-sm font-bold text-[#f0e6d3] tracking-wide truncate">{title}</h3>
+            <h3 className="text-xs font-semibold text-[#f0e6d3] tracking-wide truncate">{title}</h3>
           </div>
         </div>
 
@@ -175,33 +175,33 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
           {/* MAKE IT REAL Action */}
           <button
             onClick={() => setIsModalOpen(true)}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#d4af37]/25 via-[#e5c76b]/20 to-[#d4af37]/25 hover:from-[#d4af37]/40 hover:to-[#e5c76b]/30 border border-[#d4af37]/50 text-xs font-bold text-[#f0e6d3] hover:text-white shadow-[0_0_14px_rgba(212,175,55,0.22)] hover:scale-[1.03] transition-all duration-200"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/35 hover:border-[#d4af37]/50 text-xs font-semibold text-[#f0e6d3] transition-all duration-150"
             title="Open Interactive Canvas Studio"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#e5c76b] group-hover:rotate-12 transition-transform" />
-            <span className="tracking-wide">✦ MAKE IT REAL</span>
+            <Sparkles className="w-3.5 h-3.5 text-[#e5c76b]" />
+            <span>✦ MAKE IT REAL</span>
           </button>
 
           {/* Zoom Controls for diagrams */}
           {['tree', 'mindmap', 'flowchart', 'architecture', 'er_diagram'].includes(type) && (
-            <div className="hidden sm:flex items-center gap-1 bg-[#0a0a0c]/80 border border-white/[0.08] rounded-lg p-0.5">
+            <div className="hidden sm:flex items-center gap-1 bg-[#141417] border border-[#2d2a24] rounded-lg p-0.5">
               <button
                 onClick={handleZoomOut}
-                className="p-1 text-[#a89878] hover:text-[#f0e6d3] hover:bg-white/[0.06] rounded transition-colors"
+                className="p-1 text-[#a89878] hover:text-[#f0e6d3] hover:bg-white/[0.04] rounded transition-colors"
                 title="Zoom Out"
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={handleResetZoom}
-                className="p-1 text-[#a89878] hover:text-[#f0e6d3] hover:bg-white/[0.06] rounded transition-colors"
+                className="p-1 text-[#a89878] hover:text-[#f0e6d3] hover:bg-white/[0.04] rounded transition-colors"
                 title="Reset Zoom"
               >
                 <RotateCcw className="w-3 h-3" />
               </button>
               <button
                 onClick={handleZoomIn}
-                className="p-1 text-[#a89878] hover:text-[#f0e6d3] hover:bg-white/[0.06] rounded transition-colors"
+                className="p-1 text-[#a89878] hover:text-[#f0e6d3] hover:bg-white/[0.04] rounded transition-colors"
                 title="Zoom In"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
@@ -213,7 +213,7 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
           <div className="relative">
             <button
               onClick={() => setShowMorphMenu(!showMorphMenu)}
-              className="flex items-center gap-1 p-1.5 rounded-lg bg-[#0a0a0c]/80 hover:bg-[#d4af37]/15 border border-white/[0.08] hover:border-[#d4af37]/35 text-[#c9bda2] hover:text-[#e5c76b] text-xs transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[#141417] hover:bg-[#1c1c20] border border-[#2d2a24] hover:border-[#d4af37]/30 text-[#c9bda2] hover:text-[#f0e6d3] text-xs transition-colors"
               title="AI Response Morphing"
             >
               <Wand2 className="w-3.5 h-3.5 text-[#e5c76b]" />
@@ -222,12 +222,12 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
 
             {/* Morph Dropdown */}
             {showMorphMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-56 rounded-xl bg-[#0e0e11]/98 border border-[#d4af37]/35 shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs animate-fadeIn backdrop-blur-xl">
+              <div className="absolute right-0 top-full mt-1.5 w-56 rounded-xl bg-[#0e0e11] border border-[#2d2a24] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs animate-fadeIn backdrop-blur-xl">
                 <button
                   onClick={() =>
                     handleMorph(`Make this ${title} visualization significantly more detailed with deeper sub-nodes and technical specifics.`)
                   }
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/15 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/10 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#e5c76b]" />
                   <span>Make more detailed</span>
@@ -236,7 +236,7 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
                   onClick={() =>
                     handleMorph(`Simplify this ${title} visualization to focus on high-level key essentials.`)
                   }
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/15 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/10 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#e5c76b]" />
                   <span>Make simpler</span>
@@ -245,7 +245,7 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
                   onClick={() =>
                     handleMorph(`Transform this ${title} structure into a clean comparison table.`)
                   }
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/15 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/10 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
                 >
                   <Table className="w-3.5 h-3.5 text-[#e5c76b]" />
                   <span>Turn into Table</span>
@@ -254,7 +254,7 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
                   onClick={() =>
                     handleMorph(`Transform this structure into a system architecture diagram.`)
                   }
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/15 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/10 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
                 >
                   <Server className="w-3.5 h-3.5 text-[#e5c76b]" />
                   <span>Show Technical Architecture</span>
@@ -263,7 +263,7 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
                   onClick={() =>
                     handleMorph(`Transform this structure into a step-by-step process flowchart.`)
                   }
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/15 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
+                  className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-[#d4af37]/10 text-[#f0e6d3] hover:text-[#e5c76b] transition-colors"
                 >
                   <Workflow className="w-3.5 h-3.5 text-[#e5c76b]" />
                   <span>Turn into Flowchart</span>
@@ -275,7 +275,7 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
           {/* Copy JSON */}
           <button
             onClick={handleCopyJSON}
-            className="p-1.5 rounded-lg bg-[#0a0a0c]/80 hover:bg-[#d4af37]/15 border border-white/[0.08] hover:border-[#d4af37]/35 text-[#c9bda2] hover:text-[#e5c76b] transition-colors"
+            className="p-1 rounded-lg bg-[#141417] hover:bg-[#1c1c20] border border-[#2d2a24] hover:border-[#d4af37]/30 text-[#c9bda2] hover:text-[#f0e6d3] transition-colors"
             title="Copy Canvas JSON"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

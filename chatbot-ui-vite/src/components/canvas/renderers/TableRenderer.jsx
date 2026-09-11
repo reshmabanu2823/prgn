@@ -80,24 +80,24 @@ export default function TableRenderer({ data, title }) {
   }
 
   return (
-    <div className="w-full flex flex-col gap-3">
+    <div className="w-full flex flex-col gap-2.5">
       {/* Table Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 px-1">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#d4af37]/60" />
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="relative flex-1 min-w-[160px] max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#a89878]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Filter table rows..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#0a0a0c]/80 border border-[#d4af37]/25 rounded-lg text-[#f0e6d3] placeholder-[#a89878]/40 focus:outline-none focus:border-[#d4af37]/60 transition-colors"
+            placeholder="Filter rows..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#0e0e11] border border-[#2d2a24] rounded-lg text-[#f0e6d3] placeholder-[#a89878]/40 focus:outline-none focus:border-[#d4af37]/50 transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={copyTSV}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-[#d4af37]/10 hover:bg-[#d4af37]/20 border border-[#d4af37]/25 rounded-lg text-[#e5c76b] transition-colors"
+            className="flex items-center gap-1 px-2 py-1 text-xs bg-[#141417] hover:bg-[#1c1c20] border border-[#2d2a24] hover:border-[#d4af37]/30 rounded-lg text-[#c9bda2] hover:text-[#f0e6d3] transition-colors"
             title="Copy as TSV"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -105,7 +105,7 @@ export default function TableRenderer({ data, title }) {
           </button>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-[#d4af37]/10 hover:bg-[#d4af37]/20 border border-[#d4af37]/25 rounded-lg text-[#e5c76b] transition-colors"
+            className="flex items-center gap-1 px-2 py-1 text-xs bg-[#141417] hover:bg-[#1c1c20] border border-[#2d2a24] hover:border-[#d4af37]/30 rounded-lg text-[#c9bda2] hover:text-[#f0e6d3] transition-colors"
             title="Export as CSV"
           >
             <Download className="w-3.5 h-3.5" />
@@ -115,38 +115,38 @@ export default function TableRenderer({ data, title }) {
       </div>
 
       {/* Table Container */}
-      <div className="overflow-x-auto rounded-xl border border-[#d4af37]/25 bg-[#121215]/95 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+      <div className="overflow-x-auto rounded-xl border border-[#2d2a24] bg-[#0e0e11]">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-gradient-to-r from-[#d4af37]/15 via-[#d4af37]/8 to-transparent border-b border-[#d4af37]/25">
+            <tr className="bg-[#121216] border-b border-[#2d2a24]">
               {columns.map((col, idx) => (
                 <th
                   key={idx}
                   onClick={() => handleSort(col)}
-                  className="px-4 py-3 font-semibold text-[#e5c76b] tracking-wider uppercase cursor-pointer select-none hover:text-white transition-colors"
+                  className="px-3.5 py-2.5 font-medium text-[#e5c76b] tracking-wider uppercase cursor-pointer select-none hover:text-[#f0e6d3] transition-colors"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>{col}</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === col ? 'text-[#e5c76b]' : 'opacity-40'}`} />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === col ? 'text-[#e5c76b]' : 'opacity-30'}`} />
                   </div>
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody className="divide-y divide-[#2d2a24]/60">
             {rows.length > 0 ? (
               rows.map((row, rIdx) => (
                 <tr
                   key={rIdx}
-                  className="hover:bg-[#d4af37]/5 transition-colors group"
+                  className="hover:bg-[#141417] transition-colors group"
                 >
                   {columns.map((col, cIdx) => (
                     <td
                       key={cIdx}
-                      className="px-4 py-2.5 text-[#c9bda2] group-hover:text-[#f0e6d3] transition-colors"
+                      className="px-3.5 py-2 text-[#c9bda2] group-hover:text-[#f0e6d3] transition-colors"
                     >
                       {typeof row[col] === 'boolean' ? (
-                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] ${row[col] ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/30' : 'bg-rose-950/40 text-rose-300 border border-rose-500/30'}`}>
+                        <span className={`inline-block px-1.5 py-0.2 rounded text-[10px] ${row[col] ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/30' : 'bg-rose-950/40 text-rose-300 border border-rose-500/30'}`}>
                           {row[col] ? 'Yes' : 'No'}
                         </span>
                       ) : (
@@ -158,7 +158,7 @@ export default function TableRenderer({ data, title }) {
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length || 1} className="px-4 py-8 text-center text-[#a89878]/50">
+                <td colSpan={columns.length || 1} className="px-3.5 py-6 text-center text-[#a89878]/50">
                   No matching records found.
                 </td>
               </tr>
@@ -166,7 +166,7 @@ export default function TableRenderer({ data, title }) {
           </tbody>
         </table>
       </div>
-      <div className="text-[11px] text-[#a89878]/60 px-1 flex justify-between items-center">
+      <div className="text-[10.5px] text-[#a89878]/50 px-1 flex justify-between items-center">
         <span>Showing {rows.length} row{rows.length !== 1 ? 's' : ''}</span>
         <span>Click column header to sort</span>
       </div>

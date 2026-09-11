@@ -17,7 +17,7 @@ export default function ArchitectureRenderer({ data }) {
   }
 
   return (
-    <div className="w-full flex flex-col items-center gap-3 p-4 bg-[#0a0a0c]/60 rounded-xl border border-[#d4af37]/20 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+    <div className="w-full flex flex-col items-center gap-2.5 p-3 bg-[#0a0a0c]/40 rounded-xl">
       {tiers.map((tier, idx) => {
         const components = Array.isArray(tier.components)
           ? tier.components
@@ -29,21 +29,21 @@ export default function ArchitectureRenderer({ data }) {
         return (
           <div key={idx} className="w-full flex flex-col items-center">
             {/* Tier Box */}
-            <div className="w-full p-4 rounded-xl border border-[#d4af37]/25 bg-[#121215]/95 shadow-md">
-              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/[0.08]">
+            <div className="w-full p-3 rounded-xl border border-[#2d2a24] bg-[#0e0e11] shadow-sm">
+              <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-[#2d2a24]">
                 {getTierIcon(idx, tier.name)}
-                <span className="text-xs font-bold text-[#f0e6d3] uppercase tracking-wider">
+                <span className="text-xs font-semibold text-[#f0e6d3] uppercase tracking-wider">
                   {tier.name || `Tier ${idx + 1}`}
                 </span>
                 {tier.protocol && (
-                  <span className="ml-auto text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-[#a89878]">
+                  <span className="ml-auto text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-[#141417] border border-[#2d2a24] text-[#a89878]">
                     {tier.protocol}
                   </span>
                 )}
               </div>
 
               {/* Components in Tier */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                 {components.map((comp, cIdx) => {
                   const name = typeof comp === 'string' ? comp : (comp.name || comp.title || 'Component')
                   const tech = typeof comp === 'object' ? comp.tech : null
@@ -52,20 +52,20 @@ export default function ArchitectureRenderer({ data }) {
                   return (
                     <div
                       key={cIdx}
-                      className="p-3 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:border-[#d4af37]/50 hover:bg-[#d4af37]/5 transition-all duration-150 flex flex-col gap-1"
+                      className="p-2.5 rounded-lg bg-[#141417] border border-[#2d2a24] hover:border-[#d4af37]/35 transition-colors flex flex-col gap-0.5"
                     >
                       <div className="flex items-center justify-between gap-1.5">
-                        <span className="text-xs font-semibold text-[#f0e6d3]">{name}</span>
+                        <span className="text-xs font-medium text-[#f0e6d3]">{name}</span>
                       </div>
 
                       {tech && (
-                        <span className="text-[10.5px] font-mono text-[#e5c76b] font-medium">
+                        <span className="text-[10px] font-mono text-[#e5c76b]">
                           {tech}
                         </span>
                       )}
 
                       {desc && (
-                        <p className="text-[11px] text-[#a89878] leading-relaxed mt-0.5">{desc}</p>
+                        <p className="text-[10.5px] text-[#a89878] leading-relaxed mt-0.5">{desc}</p>
                       )}
                     </div>
                   )
@@ -75,10 +75,8 @@ export default function ArchitectureRenderer({ data }) {
 
             {/* Protocol Arrow between tiers */}
             {!isLast && (
-              <div className="flex flex-col items-center py-1.5 text-[#d4af37]/70">
-                <div className="w-0.5 h-3 bg-gradient-to-b from-[#d4af37]/60 to-[#d4af37]/20" />
-                <ArrowDown className="w-4 h-4 -my-1 text-[#e5c76b]" />
-                <div className="w-0.5 h-2 bg-[#d4af37]/20" />
+              <div className="flex flex-col items-center py-1 text-[#d4af37]/50">
+                <ArrowDown className="w-3.5 h-3.5" />
               </div>
             )}
           </div>
