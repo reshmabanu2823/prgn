@@ -598,48 +598,48 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
           {activeTab === 'About Pragna' && (
             <div style={{ animation: 'fadeUp 0.15s ease' }}>
               {/* Product Introduction */}
-              <div style={{ marginBottom: '28px' }}>
-                <div style={{ fontSize: '22px', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--pragna-gold-soft)', marginBottom: '8px' }}>
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '0.3px', color: 'var(--pragna-gold-soft)', marginBottom: '6px' }}>
                   PRAGNA AI
                 </div>
-                <p style={{ margin: 0, fontSize: '14.5px', lineHeight: 1.6, color: 'var(--pragna-text-soft)', maxWidth: '580px' }}>
+                <p style={{ margin: 0, fontSize: '13.5px', lineHeight: 1.6, color: 'var(--pragna-text-soft)', maxWidth: '560px' }}>
                   A thoughtful AI workspace built to help you understand, create, explore and get things done.
                 </p>
               </div>
 
-              <div style={{ height: '1px', background: 'var(--pragna-border)', marginBottom: '24px' }}></div>
+              <div style={{ height: '1px', background: 'var(--pragna-border)', marginBottom: '22px' }}></div>
 
               {/* Section Heading */}
-              <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.8px', color: 'var(--pragna-gold-soft)', textTransform: 'uppercase', marginBottom: '16px' }}>
-                What Pragna Can Do
+              <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1px', color: 'var(--pragna-gold-soft)', textTransform: 'uppercase', marginBottom: '14px' }}>
+                Capabilities
               </div>
 
               {/* Features Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '14px', marginBottom: '26px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px', marginBottom: '22px' }}>
                 
                 {/* 1. Pragna Canvas */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <SparklesIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <SparklesIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Pragna Canvas
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Turn ideas into clear visual structures. Pragna can transform complex information into diagrams, roadmaps, tables, timelines and other interactive views.
                   </p>
                 </div>
@@ -647,26 +647,26 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 {/* 2. Pragna Autopilot */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <ZapIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <ZapIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Pragna Autopilot
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Give Pragna a goal and let it break the task down, organize the work and guide you through the steps toward a result.
                   </p>
                 </div>
@@ -674,26 +674,26 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 {/* 3. Indian Multilingual AI */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <GlobeIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <GlobeIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Indian Multilingual AI
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Communicate naturally across Indian languages with support for regional expressions, mixed-language conversations and context-aware responses.
                   </p>
                 </div>
@@ -701,26 +701,26 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 {/* 4. Response Morphing */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <CompareIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <CompareIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Response Morphing
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Shape an answer to fit the way you want to understand it — simpler, deeper, more precise, more creative or more concise.
                   </p>
                 </div>
@@ -728,26 +728,26 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 {/* 5. Image Studio */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <ImagesIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <ImagesIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Image Studio
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Create and explore visual ideas directly inside Pragna, from simple concepts to detailed creative work.
                   </p>
                 </div>
@@ -755,53 +755,53 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 {/* 6. Smart Search */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <SearchIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <SearchIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Smart Search
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Find current information and explore topics beyond Pragna's built-in knowledge with live web grounding.
                   </p>
                 </div>
 
-                {/* 7. Voice Assistant */}
+                {/* 7. Voice Mode */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <SoundwaveIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <SoundwaveIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Voice Mode
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Speak naturally with hands-free conversation, ambient voice recognition and expressive spoken responses.
                   </p>
                 </div>
@@ -809,26 +809,26 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                 {/* 8. Memory & Continuity */}
                 <div
                   style={{
-                    padding: '18px 20px',
-                    borderRadius: '14px',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
-                    transition: 'all 0.2s ease',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
-                  className="hover:border-[rgba(212,175,55,0.25)] hover:bg-[rgba(255,255,255,0.035)]"
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
-                      <BotIcon size={15} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <BotIcon size={14} />
                     </span>
-                    <span style={{ fontSize: '14.5px', fontWeight: 650, color: 'var(--pragna-text)' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
                       Memory & Continuity
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.6, color: 'var(--pragna-text-muted)' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
                     Pragna can remember useful context from your conversations so future interactions feel more continuous and relevant.
                   </p>
                 </div>
@@ -838,13 +838,13 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
               {/* Supported Languages Note */}
               <div
                 style={{
-                  padding: '14px 18px',
-                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
                   background: 'rgba(255, 255, 255, 0.015)',
                   border: '1px solid rgba(255, 255, 255, 0.04)',
-                  marginBottom: '20px',
-                  fontSize: '12.5px',
-                  lineHeight: 1.6,
+                  marginBottom: '18px',
+                  fontSize: '12px',
+                  lineHeight: 1.55,
                   color: 'var(--pragna-text-muted)',
                 }}
               >
@@ -859,11 +859,11 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   flexWrap: 'wrap',
-                  gap: '10px',
-                  fontSize: '12px',
+                  gap: '8px',
+                  fontSize: '11.5px',
                   color: 'var(--pragna-text-muted)',
-                  opacity: 0.65,
-                  paddingTop: '6px',
+                  opacity: 0.6,
+                  paddingTop: '4px',
                 }}
               >
                 <span>Pragna — Designed for thoughtful exploration and creation.</span>
