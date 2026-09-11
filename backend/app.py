@@ -2709,36 +2709,6 @@ def discord_oauth_callback():
     return _oauth_success_redirect(user_id, token, state)
 
 
-@app.route('/api/auth/discord/login', methods=['GET'])
-def discord_oauth_login():
-    client_id = (getattr(config, 'DISCORD_CLIENT_ID', '') or os.getenv('DISCORD_CLIENT_ID', '')).strip().strip('"').strip("'")
-    client_secret = (getattr(config, 'DISCORD_CLIENT_SECRET', '') or os.getenv('DISCORD_CLIENT_SECRET', '')).strip().strip('"').strip("'")
-    if not client_id or not client_secret:
-        return jsonify({'error': 'Discord login is not configured on this server'}), 503
-    state = oauth_service.make_state()
-    return redirect(oauth_service.discord_authorize_url(_oauth_redirect_uri('discord'), state))
-
-
-@app.route('/api/auth/discord/callback', methods=['GET'])
-def discord_oauth_callback():
-    if request.args.get('error'):
-        return _oauth_error_redirect(request.args['error'])
-
-    state = request.args.get('state')
-    code = request.args.get('code')
-    if not oauth_service.verify_state(state) or not code:
-        return _oauth_error_redirect('invalid_state')
-
-    try:
-        profile = oauth_service.discord_fetch_profile(code, _oauth_redirect_uri('discord'))
-        user_id, token = _resolve_oauth_user('discord', profile)
-    except Exception as e:
-        logger.error(f"Discord OAuth callback failed: {e}", exc_info=True)
-        return _oauth_error_redirect('login_failed')
-
-    return _oauth_success_redirect(user_id, token)
-
-
 @app.route('/api/auth/verify', methods=['GET'])
 @require_auth
 def verify_token():
