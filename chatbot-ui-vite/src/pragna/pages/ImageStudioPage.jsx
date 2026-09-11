@@ -269,23 +269,6 @@ const ImageStudioPage = ({
             </h1>
           </div>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              fontSize: isMobile ? '9px' : '10.5px',
-              letterSpacing: isMobile ? '1.5px' : '2.8px',
-              fontWeight: 600,
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.75,
-              textTransform: 'uppercase',
-              userSelect: 'none',
-            }}
-          >
-            EXPLORE &nbsp; CREATE &nbsp; EVOLVE
-          </span>
-          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
-        </div>
       </div>
 
       {/* 2-Column Responsive Layout */}

@@ -50,34 +50,6 @@ const GptModesPage = ({ chatMode, onSelectMode }) => {
         }}
       />
 
-      {/* Top Header tracking phrase */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          marginBottom: '20px',
-          zIndex: 2,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              fontSize: isMobile ? '9.5px' : '11px',
-              letterSpacing: isMobile ? '2px' : '3.2px',
-              fontWeight: 600,
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.75,
-              textTransform: 'uppercase',
-              userSelect: 'none',
-            }}
-          >
-            EXPLORE &nbsp; LEARN &nbsp; CREATE &nbsp; EVOLVE
-          </span>
-          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
-        </div>
-      </div>
-
       <div style={{ position: 'relative', zIndex: 1 }}>
         <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 700, color: 'var(--pragna-text)' }}>
           Pragna Modes
