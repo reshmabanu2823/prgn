@@ -197,9 +197,12 @@ class DuckDuckGoSearchProvider(WebSearchProvider):
     """
 
     def search(self, query: str, max_results: int = 4, timeout: int = 4) -> List[Dict[str, str]]:
-        # Strategy 1: Try duckduckgo_search package
+        # Strategy 1: Try ddgs / duckduckgo_search package
         try:
-            from duckduckgo_search import DDGS
+            try:
+                from ddgs import DDGS
+            except ImportError:
+                from duckduckgo_search import DDGS
             with DDGS(timeout=timeout) as ddgs:
                 raw_items = list(ddgs.text(query, max_results=max_results))
                 cleaned = []

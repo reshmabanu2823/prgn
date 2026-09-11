@@ -229,8 +229,6 @@ def github_fetch_profile(code, redirect_uri):
     }
 
 
-# ── Discord ──────────────────────────────────────────────────────────────
-
 DISCORD_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize'
 DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token'
 DISCORD_USER_URL = 'https://discord.com/api/users/@me'
@@ -270,7 +268,7 @@ def discord_fetch_profile(code, redirect_uri):
     token_data = token_res.json()
     access_token = token_data.get('access_token')
     if not access_token:
-        raise RuntimeError(f"Discord token response missing access_token: {token_data}")
+        raise RuntimeError(f"Discord token response missing access_token: {token_data.get('error_description', token_data)}")
 
     headers = {'Authorization': f'Bearer {access_token}'}
     user_res = requests.get(DISCORD_USER_URL, headers=headers, timeout=10)
@@ -288,9 +286,10 @@ def discord_fetch_profile(code, redirect_uri):
     if not oauth_id:
         raise RuntimeError('Discord profile response missing id')
 
+    username_source = user.get('global_name') or user.get('username') or email.split('@')[0]
     return {
         'email': email,
-        'username_hint': sanitize_username(user.get('global_name') or user.get('username') or email.split('@')[0]),
+        'username_hint': sanitize_username(username_source),
         'oauth_id': str(oauth_id),
     }
 

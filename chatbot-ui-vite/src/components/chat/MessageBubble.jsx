@@ -147,49 +147,299 @@ function findVoiceForLanguage(langTag, preferFemale = true) {
 }
 
 
-// Clean markdown formatting from text for clean display
-const cleanMarkdownForDisplay = (text) => {
-  if (!text) return "";
+// Render inline markdown tokens: clickable links, bold, italic, code, raw URLs
+const renderInlineText = (text) => {
+  if (!text) return null;
 
-  let cleaned = text;
+  // Regex matches:
+  // 1. Markdown link: [text](url)
+  // 2. Inline code: `code`
+  // 3. Bold: **text** or __text__
+  // 4. Italic: *text* or _text_
+  // 5. Strikethrough: ~~text~~
+  // 6. Raw URL: (https?://...)
+  const tokenRegex = /(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|(?:\*([^*]+)\*)|(?:_([^_]+)_)|~~([^~]+)~~|(https?:\/\/[^\s<]+[^<.,:;"')\]\s]))/g;
 
-  // Remove markdown headings (###, ##, #) anywhere in text, including mid-line
-  cleaned = cleaned.replace(/#+\s+/g, "");
+  const elements = [];
+  let lastIndex = 0;
+  let match;
 
-  // Remove bold markdown ** and __ (handle nested cases)
-  cleaned = cleaned.replace(/\*\*(.+?)\*\*/g, "$1");
-  cleaned = cleaned.replace(/__(.*?)__/g, "$1");
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const matchIndex = match.index;
+    if (matchIndex > lastIndex) {
+      elements.push(text.slice(lastIndex, matchIndex));
+    }
 
-  // Remove italic markdown * and _ (but be careful with single asterisks)
-  // This handles *text* and _text_ patterns
-  cleaned = cleaned.replace(/([^\*]+)\*([^\*]+)\*([^\*]*)/g, "$1$2$3");
-  cleaned = cleaned.replace(/([^_]+)_([^_]+)_([^_]*)/g, "$1$2$3");
+    const [fullMatch, , linkText, linkUrl, codeText, boldText1, boldText2, italicText1, italicText2, strikeText, rawUrl] = match;
 
-  // Remove bare markdown symbols that appear to be formatting attempts
-  cleaned = cleaned.replace(/\s+\*\s+/g, " ");
-  cleaned = cleaned.replace(/\s+_\s+/g, " ");
+    if (linkText && linkUrl) {
+      elements.push(
+        <a
+          key={matchIndex}
+          href={linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "var(--pragna-gold-soft, #F3C96A)",
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+            fontWeight: 600,
+            transition: "all 0.15s ease",
+            wordBreak: "break-word",
+          }}
+          className="hover:text-[#FFE082] hover:opacity-90"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {linkText}
+        </a>
+      );
+    } else if (rawUrl) {
+      let displayUrl = rawUrl;
+      try {
+        const u = new URL(rawUrl);
+        displayUrl = u.hostname + (u.pathname.length > 22 ? u.pathname.slice(0, 20) + "…" : u.pathname);
+      } catch {}
+      elements.push(
+        <a
+          key={matchIndex}
+          href={rawUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "var(--pragna-gold-soft, #F3C96A)",
+            textDecoration: "underline",
+            textUnderlineOffset: "3px",
+            fontWeight: 600,
+            transition: "all 0.15s ease",
+            wordBreak: "break-word",
+          }}
+          className="hover:text-[#FFE082] hover:opacity-90"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {displayUrl}
+        </a>
+      );
+    } else if (codeText) {
+      elements.push(
+        <code
+          key={matchIndex}
+          style={{
+            background: "rgba(255, 255, 255, 0.08)",
+            border: "1px solid rgba(212, 175, 55, 0.22)",
+            borderRadius: "5px",
+            padding: "2px 6px",
+            fontSize: "13px",
+            color: "var(--pragna-gold-soft, #F3C96A)",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          }}
+        >
+          {codeText}
+        </code>
+      );
+    } else if (boldText1 || boldText2) {
+      elements.push(
+        <strong key={matchIndex} style={{ color: "var(--pragna-text, #FFFFFF)", fontWeight: 700 }}>
+          {boldText1 || boldText2}
+        </strong>
+      );
+    } else if (italicText1 || italicText2) {
+      elements.push(
+        <em key={matchIndex} style={{ fontStyle: "italic", opacity: 0.9 }}>
+          {italicText1 || italicText2}
+        </em>
+      );
+    } else if (strikeText) {
+      elements.push(
+        <del key={matchIndex} style={{ opacity: 0.7 }}>
+          {strikeText}
+        </del>
+      );
+    }
 
-  // Remove markdown links [text](url) but keep the link text
-  cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+    lastIndex = matchIndex + fullMatch.length;
+  }
 
-  // Convert markdown bullet points to clean version
-  cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, "• ");
+  if (lastIndex < text.length) {
+    elements.push(text.slice(lastIndex));
+  }
 
-  // Remove inline code markers but keep content
-  cleaned = cleaned.replace(/`([^`]+)`/g, "$1");
+  return elements.length > 0 ? elements : text;
+};
 
-  // Remove strikethrough
-  cleaned = cleaned.replace(/~~([^~]+)~~/g, "$1");
+// Render structured markdown content: headings, lists, blockquotes, paragraphs
+const renderMarkdownContent = (rawText, isStreaming, isLast) => {
+  if (!rawText) return null;
 
-  // Remove remaining stray markdown symbols
-  cleaned = cleaned.replace(/^\s*#+\s*/gm, "");  // Leading hashes
-  cleaned = cleaned.replace(/\*\*+/g, "");       // Extra asterisks
-  cleaned = cleaned.replace(/___+/g, "");        // Extra underscores
+  const lines = rawText.split("\n");
+  const nodes = [];
+  let inList = false;
+  let listType = null; // 'ul' | 'ol'
+  let listItems = [];
 
-  // Clean up multiple spaces
-  cleaned = cleaned.replace(/[ ]{2,}/g, " ");
+  const flushList = (key) => {
+    if (listItems.length > 0) {
+      if (listType === "ol") {
+        nodes.push(
+          <ol key={`ol-${key}`} style={{ margin: "8px 0 12px 0", paddingLeft: "22px", display: "flex", flexDirection: "column", gap: "6px" }}>
+            {listItems.map((item, i) => (
+              <li key={i} style={{ lineHeight: "1.65", color: "var(--pragna-text)" }}>
+                {renderInlineText(item)}
+              </li>
+            ))}
+          </ol>
+        );
+      } else {
+        nodes.push(
+          <ul key={`ul-${key}`} style={{ margin: "8px 0 12px 0", paddingLeft: "20px", listStyleType: "disc", display: "flex", flexDirection: "column", gap: "6px" }}>
+            {listItems.map((item, i) => (
+              <li key={i} style={{ lineHeight: "1.65", color: "var(--pragna-text)" }}>
+                {renderInlineText(item)}
+              </li>
+            ))}
+          </ul>
+        );
+      }
+      listItems = [];
+      inList = false;
+      listType = null;
+    }
+  };
 
-  return cleaned.trim();
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+
+    // Empty line -> flush list and add spacer if needed
+    if (!trimmed) {
+      flushList(index);
+      return;
+    }
+
+    // Horizontal rule
+    if (/^(\-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      flushList(index);
+      nodes.push(
+        <hr
+          key={`hr-${index}`}
+          style={{
+            border: "none",
+            borderTop: "1px solid rgba(212, 175, 55, 0.22)",
+            margin: "16px 0",
+          }}
+        />
+      );
+      return;
+    }
+
+    // Headings
+    const h1Match = trimmed.match(/^#\s+(.+)$/);
+    if (h1Match) {
+      flushList(index);
+      nodes.push(
+        <h1 key={`h1-${index}`} style={{ fontSize: "20px", fontWeight: 700, color: "var(--pragna-gold-soft, #F3C96A)", margin: "18px 0 8px 0", letterSpacing: "-0.01em" }}>
+          {renderInlineText(h1Match[1])}
+        </h1>
+      );
+      return;
+    }
+
+    const h2Match = trimmed.match(/^##\s+(.+)$/);
+    if (h2Match) {
+      flushList(index);
+      nodes.push(
+        <h2 key={`h2-${index}`} style={{ fontSize: "17.5px", fontWeight: 700, color: "var(--pragna-gold-soft, #F3C96A)", margin: "16px 0 8px 0", letterSpacing: "-0.01em" }}>
+          {renderInlineText(h2Match[1])}
+        </h2>
+      );
+      return;
+    }
+
+    const h3Match = trimmed.match(/^###\s+(.+)$/);
+    if (h3Match) {
+      flushList(index);
+      nodes.push(
+        <h3 key={`h3-${index}`} style={{ fontSize: "15.5px", fontWeight: 700, color: "var(--pragna-gold-soft, #F3C96A)", margin: "14px 0 6px 0" }}>
+          {renderInlineText(h3Match[1])}
+        </h3>
+      );
+      return;
+    }
+
+    const h4Match = trimmed.match(/^####\s+(.+)$/);
+    if (h4Match) {
+      flushList(index);
+      nodes.push(
+        <h4 key={`h4-${index}`} style={{ fontSize: "14.5px", fontWeight: 600, color: "var(--pragna-text)", margin: "12px 0 4px 0" }}>
+          {renderInlineText(h4Match[1])}
+        </h4>
+      );
+      return;
+    }
+
+    // Blockquote
+    const quoteMatch = trimmed.match(/^>\s*(.+)$/);
+    if (quoteMatch) {
+      flushList(index);
+      nodes.push(
+        <blockquote
+          key={`quote-${index}`}
+          style={{
+            borderLeft: "3px solid var(--pragna-gold-soft, #F3C96A)",
+            margin: "10px 0",
+            padding: "8px 14px",
+            background: "rgba(212, 175, 55, 0.05)",
+            borderRadius: "0 8px 8px 0",
+            color: "var(--pragna-text-muted)",
+            fontSize: "14px",
+            lineHeight: "1.6",
+          }}
+        >
+          {renderInlineText(quoteMatch[1])}
+        </blockquote>
+      );
+      return;
+    }
+
+    // Unordered List (- item, * item, • item)
+    const ulMatch = trimmed.match(/^[-*•]\s+(.+)$/);
+    if (ulMatch) {
+      if (!inList || listType !== "ul") {
+        flushList(index);
+        inList = true;
+        listType = "ul";
+      }
+      listItems.push(ulMatch[1]);
+      return;
+    }
+
+    // Ordered List (1. item)
+    const olMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+    if (olMatch) {
+      if (!inList || listType !== "ol") {
+        flushList(index);
+        inList = true;
+        listType = "ol";
+      }
+      listItems.push(olMatch[1]);
+      return;
+    }
+
+    // Regular paragraph line
+    flushList(index);
+    nodes.push(
+      <p key={`p-${index}`} style={{ margin: "0 0 10px 0", lineHeight: "1.65", color: "var(--pragna-text)" }}>
+        {renderInlineText(trimmed)}
+      </p>
+    );
+  });
+
+  flushList("end");
+
+  return (
+    <div style={{ wordBreak: "break-word" }}>
+      {nodes}
+      {isStreaming && isLast && <span className="cursor" style={{ color: "var(--pragna-gold-soft)", fontWeight: 700 }}>|</span>}
+    </div>
+  );
 };
 
 // Parse code blocks from message text
@@ -203,7 +453,7 @@ const parseMessageContent = (text) => {
     if (index > lastIndex) {
       parts.push({
         type: "text",
-        content: cleanMarkdownForDisplay(text.slice(lastIndex, index)),
+        content: text.slice(lastIndex, index),
       });
     }
     // Add code block
@@ -219,16 +469,15 @@ const parseMessageContent = (text) => {
   if (lastIndex < text.length) {
     parts.push({
       type: "text",
-      content: cleanMarkdownForDisplay(text.slice(lastIndex)),
+      content: text.slice(lastIndex),
     });
   }
 
-  return parts.length > 0 ? parts : [{ type: "text", content: cleanMarkdownForDisplay(text) }];
+  return parts.length > 0 ? parts : [{ type: "text", content: text }];
 };
 
 // Render parsed message content as a stack of blocks: text segments become
 // individual "glass card" bubbles, code segments render as standalone CodeBlocks
-// (mirrors the mock, where the bubble and the code block are visual siblings).
 const renderContentBlocks = (text, isStreaming) => {
   const parts = parseMessageContent(text);
   return parts.map((part, idx) => {
@@ -239,11 +488,10 @@ const renderContentBlocks = (text, isStreaming) => {
     return (
       <div
         key={idx}
-        className="glass-card rounded-[4px_18px_18px_18px] px-5 py-4 text-[15px] leading-[1.65] whitespace-pre-wrap"
+        className="glass-card rounded-[4px_18px_18px_18px] px-5 py-4 text-[15px] leading-[1.65]"
         style={{ color: "var(--pragna-text)" }}
       >
-        {part.content}
-        {isStreaming && isLast && <span className="cursor">|</span>}
+        {renderMarkdownContent(part.content, isStreaming, isLast)}
       </div>
     );
   });

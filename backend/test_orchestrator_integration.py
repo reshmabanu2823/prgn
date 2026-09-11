@@ -4,14 +4,14 @@ import unittest
 from unittest.mock import patch
 
 import app as app_module
+from auth import auth_service
 
 
 class OrchestratorIntegrationTests(unittest.TestCase):
     def setUp(self):
         app_module.app.config["TESTING"] = True
         self.client = app_module.app.test_client()
-        from auth import AuthService
-        self.token = AuthService.generate_token("test-user")
+        self.token = auth_service.generate_token("test-user")
         self.headers = {"Authorization": f"Bearer {self.token}"}
 
     def test_orchestrator_query_endpoint(self):
