@@ -54,6 +54,8 @@ export default function ChatWindow() {
     setActivePersonaId,
     sidebarOpen,
     highlightedMessageId,
+    extendedThinking,
+    abortControllerRef,
   } = useContext(ChatContext);
 
   // The floating "reopen sidebar" button this padding makes room for is
@@ -167,7 +169,7 @@ export default function ChatWindow() {
   const getModeLabel = (v) => modeMapping[v] || "General";
 
   // Send suggestion message
-  const sendSuggestionMessage = useCallback(async (suggestion) => {
+  const sendSuggestionMessage = useCallback(async (suggestion, attachments = []) => {
     if (isLoading) return;
 
     let targetChatId = activeChatId;
@@ -191,7 +193,7 @@ export default function ChatWindow() {
     setChats((prev) =>
       prev.map((c) =>
         c.id === targetChatId
-          ? { ...c, messages: [...c.messages, { sender: "user", text: suggestion, attachments: [] }, botMsg] }
+          ? { ...c, messages: [...c.messages, { sender: "user", text: suggestion, attachments }, botMsg] }
           : c
       )
     );
@@ -276,12 +278,33 @@ export default function ChatWindow() {
       const activePersona = personas.find((p) => p.id === activePersonaId);
 
       let sawResponse = false;
+      const controller = new AbortController();
+      if (abortControllerRef) {
+        abortControllerRef.current = controller;
+      }
+
       await sendOrchestratedMessageStream({
         text: suggestion,
         language: normalizeLanguageCode(language),
         user_id: targetChatId,
         chatMode,
         personaSystemPrompt: activePersona?.system_prompt,
+        extendedThinking,
+        signal: controller.signal,
+        onThinking: (thinking) => {
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, thinking } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        },
         onChunk: (chunk) => {
           sawResponse = true;
           setChats((prev) =>
@@ -358,7 +381,7 @@ export default function ChatWindow() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeChatId, chat, isLoading, language, setChats, setActiveChatId, setIsLoading, chatMode, personas, activePersonaId]);
+  }, [activeChatId, chat, isLoading, language, setChats, setActiveChatId, setIsLoading, chatMode, personas, activePersonaId, extendedThinking, abortControllerRef]);
 
   // Retry a failed message: remove the old failed user+bot pair, then resend
   const retryMessage = useCallback((idx) => {
@@ -371,22 +394,41 @@ export default function ChatWindow() {
         c.id === targetChatId ? { ...c, messages: c.messages.slice(0, idx - 1) } : c
       )
     );
-    sendSuggestionMessage(userMsg.text);
+    sendSuggestionMessage(userMsg.text, userMsg.attachments || []);
   }, [chat, activeChatId, isLoading, setChats, sendSuggestionMessage]);
 
-  // Edit a previously sent user message: drop it and everything after it, then resend the new text
-  const editMessage = useCallback((idx, newText) => {
+  // Edit a previously sent user message: support both in-place editing and re-submitting with fresh response
+  const editMessage = useCallback((idx, newText, resubmit = true) => {
     if (isLoading) return;
     const trimmed = (newText || "").trim();
     if (!trimmed) return;
     const targetChatId = activeChatId;
+
+    if (!resubmit) {
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === targetChatId
+            ? {
+                ...c,
+                messages: c.messages.map((m, i) =>
+                  i === idx ? { ...m, text: trimmed, edited: true } : m
+                ),
+              }
+            : c
+        )
+      );
+      return;
+    }
+
+    const currentMsg = chat?.messages?.[idx];
+    const originalAttachments = currentMsg?.attachments || [];
     setChats((prev) =>
       prev.map((c) =>
         c.id === targetChatId ? { ...c, messages: c.messages.slice(0, idx) } : c
       )
     );
-    sendSuggestionMessage(trimmed);
-  }, [activeChatId, isLoading, setChats, sendSuggestionMessage]);
+    sendSuggestionMessage(trimmed, originalAttachments);
+  }, [activeChatId, chat, isLoading, setChats, sendSuggestionMessage]);
 
   // Toggle the bookmarked flag on a single message, leaving everything else untouched
   const toggleBookmark = useCallback((idx) => {
@@ -505,7 +547,7 @@ export default function ChatWindow() {
                   message={m}
                   language={language}
                   onRetry={idx === chat.messages.length - 1 ? () => retryMessage(idx) : undefined}
-                  onEdit={m.sender !== "bot" ? (newText) => editMessage(idx, newText) : undefined}
+                  onEdit={m.sender !== "bot" ? (newText, resubmit) => editMessage(idx, newText, resubmit) : undefined}
                   isLoading={isLoading}
                   onToggleBookmark={() => toggleBookmark(idx)}
                 />
@@ -516,7 +558,7 @@ export default function ChatWindow() {
         </div>
       </div>
 
-      {/* Floating Scroll to Bottom Button (ChatGPT style) */}
+      {/* Floating Scroll to Bottom Button */}
       {showScrollBottom && (
         <button
           type="button"
