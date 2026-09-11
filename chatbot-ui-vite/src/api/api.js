@@ -166,6 +166,7 @@ export const sendOrchestratedMessageStream = async ({
       onArtifact?.(event);
     } else if (event.content) {
       onChunk?.(event.content);
+      onToken?.(event.content);
     } else if (event.sources) {
       onSources?.(event.sources);
     } else if (event.actions) {

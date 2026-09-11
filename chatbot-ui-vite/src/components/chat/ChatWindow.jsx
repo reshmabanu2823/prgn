@@ -54,6 +54,8 @@ export default function ChatWindow() {
     setActivePersonaId,
     sidebarOpen,
     highlightedMessageId,
+    extendedThinking,
+    abortControllerRef,
   } = useContext(ChatContext);
 
   // The floating "reopen sidebar" button this padding makes room for is
@@ -68,26 +70,65 @@ export default function ChatWindow() {
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const messagesContainerRef = useRef(null);
   const messagesBottomRef = useRef(null);
+  const isAutoScrollEnabledRef = useRef(true);
+  const prevMessagesLengthRef = useRef(chat?.messages?.length || 0);
 
   const handleScroll = () => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    setShowScrollBottom(distanceFromBottom > 120);
+    // If the user scrolls up by more than 100px, pause auto-scroll so they can read peacefully
+    if (distanceFromBottom > 100) {
+      isAutoScrollEnabledRef.current = false;
+      setShowScrollBottom(true);
+    } else {
+      // Near bottom: resume auto-scroll
+      isAutoScrollEnabledRef.current = true;
+      setShowScrollBottom(false);
+    }
   };
 
-  const scrollToBottom = useCallback((smooth = true) => {
-    messagesBottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  const scrollToBottom = useCallback((smooth = false) => {
+    isAutoScrollEnabledRef.current = true;
+    setShowScrollBottom(false);
+    if (!messagesContainerRef.current) return;
+    if (smooth) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    } else {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, []);
 
   useEffect(() => {
-    if (!messagesContainerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
-    if (isNearBottom || isLoading) {
-      scrollToBottom(false);
+    const currentLength = chat?.messages?.length || 0;
+    // When a new message is appended (user submits or bot begins), re-enable auto-scroll
+    if (currentLength > prevMessagesLengthRef.current) {
+      isAutoScrollEnabledRef.current = true;
+      setShowScrollBottom(false);
     }
-  }, [chat?.messages, isLoading, scrollToBottom]);
+    prevMessagesLengthRef.current = currentLength;
+
+    if (!messagesContainerRef.current) return;
+    if (isAutoScrollEnabledRef.current) {
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current && isAutoScrollEnabledRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [chat?.messages, isLoading]);
+
+  useEffect(() => {
+    // When switching active chats, scroll immediately to bottom
+    isAutoScrollEnabledRef.current = true;
+    setShowScrollBottom(false);
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [activeChatId]);
 
   useEffect(() => {
     if (!highlightedMessageId) return;
@@ -128,7 +169,7 @@ export default function ChatWindow() {
   const getModeLabel = (v) => modeMapping[v] || "General";
 
   // Send suggestion message
-  const sendSuggestionMessage = useCallback(async (suggestion) => {
+  const sendSuggestionMessage = useCallback(async (suggestion, attachments = []) => {
     if (isLoading) return;
 
     let targetChatId = activeChatId;
@@ -152,7 +193,7 @@ export default function ChatWindow() {
     setChats((prev) =>
       prev.map((c) =>
         c.id === targetChatId
-          ? { ...c, messages: [...c.messages, { sender: "user", text: suggestion, attachments: [] }, botMsg] }
+          ? { ...c, messages: [...c.messages, { sender: "user", text: suggestion, attachments }, botMsg] }
           : c
       )
     );
@@ -237,12 +278,33 @@ export default function ChatWindow() {
       const activePersona = personas.find((p) => p.id === activePersonaId);
 
       let sawResponse = false;
+      const controller = new AbortController();
+      if (abortControllerRef) {
+        abortControllerRef.current = controller;
+      }
+
       await sendOrchestratedMessageStream({
         text: suggestion,
         language: normalizeLanguageCode(language),
         user_id: targetChatId,
         chatMode,
         personaSystemPrompt: activePersona?.system_prompt,
+        extendedThinking,
+        signal: controller.signal,
+        onThinking: (thinking) => {
+          setChats((prev) =>
+            prev.map((c) =>
+              c.id === targetChatId
+                ? {
+                    ...c,
+                    messages: c.messages.map((m, idx) =>
+                      idx === c.messages.length - 1 ? { ...m, thinking } : m
+                    ),
+                  }
+                : c
+            )
+          );
+        },
         onChunk: (chunk) => {
           sawResponse = true;
           setChats((prev) =>
@@ -319,7 +381,7 @@ export default function ChatWindow() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeChatId, chat, isLoading, language, setChats, setActiveChatId, setIsLoading, chatMode, personas, activePersonaId]);
+  }, [activeChatId, chat, isLoading, language, setChats, setActiveChatId, setIsLoading, chatMode, personas, activePersonaId, extendedThinking, abortControllerRef]);
 
   // Retry a failed message: remove the old failed user+bot pair, then resend
   const retryMessage = useCallback((idx) => {
@@ -332,22 +394,41 @@ export default function ChatWindow() {
         c.id === targetChatId ? { ...c, messages: c.messages.slice(0, idx - 1) } : c
       )
     );
-    sendSuggestionMessage(userMsg.text);
+    sendSuggestionMessage(userMsg.text, userMsg.attachments || []);
   }, [chat, activeChatId, isLoading, setChats, sendSuggestionMessage]);
 
-  // Edit a previously sent user message: drop it and everything after it, then resend the new text
-  const editMessage = useCallback((idx, newText) => {
+  // Edit a previously sent user message: support both in-place editing and re-submitting with fresh response
+  const editMessage = useCallback((idx, newText, resubmit = true) => {
     if (isLoading) return;
     const trimmed = (newText || "").trim();
     if (!trimmed) return;
     const targetChatId = activeChatId;
+
+    if (!resubmit) {
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === targetChatId
+            ? {
+                ...c,
+                messages: c.messages.map((m, i) =>
+                  i === idx ? { ...m, text: trimmed, edited: true } : m
+                ),
+              }
+            : c
+        )
+      );
+      return;
+    }
+
+    const currentMsg = chat?.messages?.[idx];
+    const originalAttachments = currentMsg?.attachments || [];
     setChats((prev) =>
       prev.map((c) =>
         c.id === targetChatId ? { ...c, messages: c.messages.slice(0, idx) } : c
       )
     );
-    sendSuggestionMessage(trimmed);
-  }, [activeChatId, isLoading, setChats, sendSuggestionMessage]);
+    sendSuggestionMessage(trimmed, originalAttachments);
+  }, [activeChatId, chat, isLoading, setChats, sendSuggestionMessage]);
 
   // Toggle the bookmarked flag on a single message, leaving everything else untouched
   const toggleBookmark = useCallback((idx) => {
@@ -394,7 +475,6 @@ export default function ChatWindow() {
 
   // If chat is active and has messages, show conversation
   const chatTitle = chat.title || 'New Chat'
-  const modeLabel = getModeLabel(chatMode)
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', position: 'relative' }}>
@@ -403,35 +483,32 @@ export default function ChatWindow() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          justifyContent: 'space-between',
+          flexWrap: 'nowrap',
           gap: isMobile ? '8px' : '12px',
-          padding: isDesktop && !sidebarOpen ? '14px 28px 14px 64px' : (isMobile ? '12px 16px' : '14px 28px'),
+          padding: isDesktop && !sidebarOpen ? '14px 28px 14px 64px' : (isMobile ? '10px 14px' : '14px 28px'),
           borderBottom: '1px solid var(--pragna-border)',
           background: 'var(--pragna-surface-2)',
           backdropFilter: 'blur(8px)',
           flexShrink: 0,
         }}
       >
-        <div style={{ fontSize: '15px', fontWeight: 650, color: 'var(--pragna-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? '100%' : 'none', flexBasis: isMobile ? '100%' : 'auto' }}>{chatTitle}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 13px', borderRadius: '999px', background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.22)', fontSize: '12px', fontWeight: 600, color: 'var(--pragna-accent)', letterSpacing: '0.4px', flexShrink: 0 }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--pragna-accent)', boxShadow: '0 0 8px rgba(212,175,55,0.8)' }}></span>
-          {modeLabel} mode
-        </div>
+        <div style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 650, color: 'var(--pragna-text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chatTitle}</div>
         <button
           onClick={handleSummarize}
           disabled={summarizing}
           title="Summarize this conversation"
           style={{
-            marginLeft: isMobile ? '0' : 'auto',
+            marginLeft: 'auto',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '6px 14px',
+            padding: isMobile ? '5px 11px' : '6px 14px',
             borderRadius: '999px',
             border: '1px solid var(--pragna-border)',
             background: 'transparent',
             color: 'var(--pragna-text-muted)',
-            fontSize: '12.5px',
+            fontSize: isMobile ? '11.5px' : '12.5px',
             fontWeight: 600,
             cursor: summarizing ? 'default' : 'pointer',
             opacity: summarizing ? 0.6 : 1,
@@ -447,10 +524,10 @@ export default function ChatWindow() {
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        style={{ flex: 1, overflowY: 'auto', padding: '32px 0', minHeight: 0 }}
+        style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 0 24px 0' : '32px 0', minHeight: 0 }}
         className="custom-scrollbar"
       >
-        <div style={{ maxWidth: '780px', margin: '0 auto', padding: isMobile ? '0 12px' : '0 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        <div style={{ maxWidth: '780px', margin: '0 auto', padding: isMobile ? '0 10px' : '0 28px', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '22px' }}>
           {chat.messages.map((m, idx) => {
             const isHighlighted = highlightedMessageId && (m.id === highlightedMessageId || String(idx) === String(highlightedMessageId));
             return (
@@ -470,7 +547,7 @@ export default function ChatWindow() {
                   message={m}
                   language={language}
                   onRetry={idx === chat.messages.length - 1 ? () => retryMessage(idx) : undefined}
-                  onEdit={m.sender !== "bot" ? (newText) => editMessage(idx, newText) : undefined}
+                  onEdit={m.sender !== "bot" ? (newText, resubmit) => editMessage(idx, newText, resubmit) : undefined}
                   isLoading={isLoading}
                   onToggleBookmark={() => toggleBookmark(idx)}
                   onSendPrompt={sendSuggestionMessage}
@@ -482,7 +559,7 @@ export default function ChatWindow() {
         </div>
       </div>
 
-      {/* Floating Scroll to Bottom Button (ChatGPT style) */}
+      {/* Floating Scroll to Bottom Button */}
       {showScrollBottom && (
         <button
           type="button"

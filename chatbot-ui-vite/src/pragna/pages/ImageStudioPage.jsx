@@ -269,23 +269,6 @@ const ImageStudioPage = ({
             </h1>
           </div>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              fontSize: isMobile ? '9px' : '10.5px',
-              letterSpacing: isMobile ? '1.5px' : '2.8px',
-              fontWeight: 600,
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.75,
-              textTransform: 'uppercase',
-              userSelect: 'none',
-            }}
-          >
-            EXPLORE &nbsp; CREATE &nbsp; EVOLVE
-          </span>
-          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
-        </div>
       </div>
 
       {/* 2-Column Responsive Layout */}
@@ -340,7 +323,7 @@ const ImageStudioPage = ({
                   background: 'var(--pragna-surface)',
                   color: 'var(--pragna-text)',
                   fontFamily: 'inherit',
-                  fontSize: '14px',
+                  fontSize: isMobile ? '16px' : '14px',
                   lineHeight: 1.5,
                   padding: '12px 14px',
                   boxSizing: 'border-box',
@@ -816,7 +799,7 @@ const ImageStudioPage = ({
                   border: '1px solid var(--pragna-border)',
                   background: 'var(--pragna-surface)',
                   color: 'var(--pragna-text)',
-                  fontSize: '13px',
+                  fontSize: isMobile ? '16px' : '13px',
                   outline: 'none',
                   boxSizing: 'border-box',
                 }}

@@ -11,7 +11,7 @@ class OrchestratorIntegrationTests(unittest.TestCase):
     def setUp(self):
         app_module.app.config["TESTING"] = True
         self.client = app_module.app.test_client()
-        self.token = auth_service.generate_token("dev_user")
+        self.token = auth_service.generate_token("test-user")
         self.headers = {"Authorization": f"Bearer {self.token}"}
 
     def test_orchestrator_query_endpoint(self):

@@ -15,6 +15,7 @@ import SettingsModal from './components/SettingsModal'
 import ShortcutsHelpModal from './components/ShortcutsHelpModal'
 import CommandPalette from './components/CommandPalette'
 import ArtifactPanel from '../components/artifact/ArtifactPanel'
+import VoiceAssistantModal from '../components/voice/VoiceAssistantModal'
 
 
 const IMAGE_REQUEST_RE = /(create|generate|make|design)\s+(an?\s+)?(ai\s+)?image|image\s+of|illustration\s+of|poster\s+of|logo\s+of/i
@@ -77,6 +78,10 @@ function App({ onLogout, userProfile }) {
     activeArtifact,
     isArtifactOpen,
     closeArtifact,
+    isVoiceAssistantOpen,
+    setIsVoiceAssistantOpen,
+    sendVoiceChatMessage,
+    lastAssistantMessage,
   } = useContext(ChatContext)
 
 
@@ -429,6 +434,15 @@ function App({ onLogout, userProfile }) {
         artifact={activeArtifact}
         isOpen={isArtifactOpen}
         onClose={closeArtifact}
+      />
+
+      <VoiceAssistantModal
+        isOpen={isVoiceAssistantOpen}
+        onClose={() => setIsVoiceAssistantOpen(false)}
+        currentLanguage={language}
+        onSendMessage={sendVoiceChatMessage}
+        lastAssistantMessage={lastAssistantMessage}
+        isGenerating={isLoading}
       />
     </>
 

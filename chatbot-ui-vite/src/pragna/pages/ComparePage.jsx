@@ -101,34 +101,6 @@ const ComparePage = () => {
         }}
       />
 
-      {/* Top Header tracking phrase */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          marginBottom: '20px',
-          zIndex: 2,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              fontSize: isMobile ? '9.5px' : '11px',
-              letterSpacing: isMobile ? '2px' : '3.2px',
-              fontWeight: 600,
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.75,
-              textTransform: 'uppercase',
-              userSelect: 'none',
-            }}
-          >
-            EXPLORE &nbsp; LEARN &nbsp; CREATE &nbsp; EVOLVE
-          </span>
-          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
-        </div>
-      </div>
-
       <div style={{ position: 'relative', zIndex: 1 }}>
         <h1 style={{ margin: '0 0 6px 0', fontSize: '28px', fontWeight: 700, color: 'var(--pragna-text)' }}>
           Compare Models
@@ -140,7 +112,7 @@ const ComparePage = () => {
         <div
           style={{
             maxWidth: '820px',
-            padding: '24px',
+            padding: isMobile ? '16px 14px' : '24px',
             borderRadius: '20px',
             background: 'rgba(18, 16, 12, 0.85)',
             border: '1.5px solid rgba(212, 175, 55, 0.28)',
@@ -154,7 +126,7 @@ const ComparePage = () => {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Ask something to compare across models…"
           rows="3"
-          style={{ width: '100%', resize: 'vertical', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14.5px', lineHeight: 1.55, padding: '14px 16px', marginBottom: '16px' }}
+          style={{ width: '100%', resize: 'vertical', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: isMobile ? '16px' : '14.5px', lineHeight: 1.55, padding: '14px 16px', marginBottom: '16px' }}
         />
 
         {catalogError && (

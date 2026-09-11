@@ -905,11 +905,11 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
 
   // ── User message: gold-gradient bubble ─────────────────────────────────
   if (!isBot) {
-    const handleEditSave = () => {
+    const handleEditSave = (shouldResubmit = true) => {
       const trimmed = draftText.trim();
       if (!trimmed) return;
       setIsEditing(false);
-      onEdit?.(trimmed);
+      onEdit?.(trimmed, shouldResubmit);
     };
 
     const handleEditCancel = () => {
@@ -920,7 +920,22 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
     return (
       <div className="flex flex-col items-end gap-1.5 group animate-[fadeUp_0.3s_ease]" style={{ fontFamily: "var(--pragna-chat-font)" }}>
         {isEditing ? (
-          <div className="max-w-[78%] w-full flex flex-col gap-2">
+          <div
+            className="max-w-[94%] sm:max-w-[82%] w-full flex flex-col gap-2.5 p-3 sm:p-4 rounded-[18px] border border-[rgba(212,175,55,0.4)] shadow-[0_8px_24px_rgba(0,0,0,0.55),0_0_18px_rgba(212,175,55,0.12)] backdrop-blur-md"
+            style={{
+              background: "rgba(18, 16, 12, 0.95)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-2 px-1">
+              <span className="text-[11.5px] font-bold tracking-wider uppercase text-[var(--pragna-gold-soft)] flex items-center gap-1.5">
+                <PencilIcon size={13} />
+                Edit Sent Message
+              </span>
+              <span className="text-[11px] text-[var(--pragna-text-muted)] opacity-70">
+                Esc to cancel
+              </span>
+            </div>
+
             <textarea
               autoFocus
               value={draftText}
@@ -928,45 +943,63 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleEditSave();
+                  handleEditSave(true);
                 } else if (e.key === "Escape") {
                   handleEditCancel();
                 }
               }}
-              rows={Math.min(8, Math.max(2, draftText.split("\n").length))}
-              className="w-full rounded-[14px] px-[18px] py-3 text-[15px] leading-[1.5] resize-none"
+              rows={Math.min(8, Math.max(3, draftText.split("\n").length))}
+              placeholder="Edit your message..."
+              className="w-full rounded-[12px] px-3.5 py-2.5 text-[15px] sm:text-[14.5px] leading-[1.5] resize-none outline-none focus:border-[var(--pragna-gold-soft)] transition-colors custom-scrollbar"
               style={{
                 background: "var(--pragna-surface)",
-                border: "1px solid rgba(212,175,55,0.35)",
+                border: "1px solid rgba(212,175,55,0.28)",
                 color: "var(--pragna-text)",
+                fontSize: "15px",
+                fontFamily: "inherit",
               }}
             />
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={handleEditCancel}
-                className="rounded-lg px-3 py-1.5 text-[13px] font-semibold"
-                style={{ color: "var(--pragna-text-muted)" }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleEditSave}
-                className="rounded-lg px-3 py-1.5 text-[13px] font-semibold"
-                style={{
-                  background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
-                  color: "var(--pragna-on-gold)",
-                }}
-              >
-                Save
-              </button>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <span className="text-[11px] text-[var(--pragna-text-muted)] opacity-60 hidden sm:inline">
+                Enter sends fresh response • Shift+Enter new line
+              </span>
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={handleEditCancel}
+                  className="rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-[rgba(255,255,255,0.06)]"
+                  style={{ color: "var(--pragna-text-muted)" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEditSave(false)}
+                  title="Update message text only without regenerating"
+                  className="rounded-lg px-3 py-1.5 text-[12.5px] font-semibold border border-[rgba(212,175,55,0.35)] transition-colors hover:bg-[rgba(212,175,55,0.1)] text-[var(--pragna-gold-soft)]"
+                >
+                  Save only
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEditSave(true)}
+                  title="Save and submit to regenerate fresh response"
+                  className="rounded-lg px-3.5 py-1.5 text-[12.5px] font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
+                    color: "var(--pragna-on-gold)",
+                  }}
+                >
+                  Save & Submit
+                </button>
+              </div>
             </div>
           </div>
         ) : (
           <>
             <div
-              className="max-w-[78%] rounded-[18px_18px_4px_18px] px-[18px] py-3 text-[15px] leading-[1.5] shadow-premium-md whitespace-pre-wrap break-words"
+              className="max-w-[90%] sm:max-w-[78%] rounded-[18px_18px_4px_18px] px-3.5 py-2.5 sm:px-[18px] sm:py-3 text-[14.5px] sm:text-[15px] leading-[1.5] shadow-premium-md whitespace-pre-wrap break-words"
               style={{
                 background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
                 color: "var(--pragna-on-gold)",
@@ -976,13 +1009,18 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
               {hasAttachments && renderAttachments(message.attachments)}
               {message.text}
             </div>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1.5">
+              {message.edited && (
+                <span className="text-[11px] text-[var(--pragna-text-muted)] opacity-60 mr-1 select-none">
+                  (edited)
+                </span>
+              )}
               {onToggleBookmark && (
                 <button
                   type="button"
                   onClick={onToggleBookmark}
                   title={bookmarked ? "Remove bookmark" : "Bookmark message"}
-                  className={`${actionBtnBase} ${bookmarked ? "opacity-100" : "opacity-0 group-hover:opacity-100"} ${bookmarked ? "text-accent-400" : "text-[color:var(--pragna-text-muted)]"}`}
+                  className={`${actionBtnBase} ${bookmarked ? "opacity-100" : "opacity-75 sm:opacity-0 group-hover:opacity-100"} ${bookmarked ? "text-accent-400" : "text-[color:var(--pragna-text-muted)]"}`}
                 >
                   <StarIcon filled={bookmarked} />
                 </button>
@@ -995,21 +1033,21 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
                     setIsEditing(true);
                   }}
                   title="Edit message"
-                  className={`${actionBtnBase} opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]`}
+                  aria-label="Edit message"
+                  className={`${actionBtnBase} opacity-75 sm:opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)] hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.12)]`}
                 >
-                  <PencilIcon />
+                  <PencilIcon size={15} />
                 </button>
               )}
               <button
                 type="button"
                 onClick={copyToClipboard}
                 title={copied ? "Copied!" : "Copy request"}
-                className={`${actionBtnBase} ${copied ? "opacity-100 text-accent-400" : "opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]"}`}
+                className={`${actionBtnBase} ${copied ? "opacity-100 text-accent-400" : "opacity-75 sm:opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)] hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.12)]"}`}
               >
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
             </div>
-
           </>
         )}
       </div>
@@ -1019,16 +1057,16 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
   // ── Assistant / error message ───────────────────────────────────────────
   return (
     <div className="flex flex-col items-start animate-[fadeUp_0.3s_ease]" style={{ fontFamily: "var(--pragna-chat-font)" }}>
-      <div className="flex gap-3.5 max-w-[92%] min-w-0">
+      <div className="flex gap-2.5 sm:gap-3.5 max-w-full sm:max-w-[92%] min-w-0 w-full">
         {isError ? (
           <div
-            className="w-8 h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center"
+            className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center"
             style={{ background: "rgba(180,60,60,0.15)", border: "1px solid rgba(220,110,100,0.35)" }}
           >
             <ErrorIcon />
           </div>
         ) : (
-          <img src={pragnaShield} alt="Pragna" className="w-9 h-9 shrink-0 mt-0.5 object-contain" />
+          <img src={pragnaShield} alt="Pragna" className="w-7 h-7 sm:w-9 sm:h-9 shrink-0 mt-0.5 object-contain" />
         )}
 
         <div className="flex flex-col gap-2.5 min-w-0 flex-1">
@@ -1181,7 +1219,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
 
           {/* Only show action icons for finished, non-error assistant messages */}
           {isBot && !isStreaming && !isError && (
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               <button
                 type="button"
                 onClick={copyToClipboard}

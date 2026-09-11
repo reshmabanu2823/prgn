@@ -2197,21 +2197,44 @@ def chat_stream():
             raw_text = result.get('response', '')
             cleaned_text = clean_llm_response_text(raw_text)
             chat_text, artifact_data = extract_artifact_from_response(cleaned_text)
+            text_to_stream = chat_text if (chat_text is not None and len(chat_text) > 0) else (cleaned_text or raw_text or "No response generated.")
 
-            _persist_chat_turn(chat_id, current_user_id, user_message, chat_text or cleaned_text, language=language)
+            _persist_chat_turn(chat_id, current_user_id, user_message, text_to_stream, language=language)
 
             if artifact_data:
                 yield f"data: {json.dumps(artifact_data)}\n\n"
 
-            chunk_size = 200
-            for i in range(0, len(chat_text), chunk_size):
-                chunk = chat_text[i:i + chunk_size]
-                yield f"data: {json.dumps({'content': chunk})}\n\n"
+            # Stream word-by-word / line-by-line like Claude / ChatGPT
+            import time
+            import re
+            tokens = re.findall(r'\S+[^\S\r\n]*|\r?\n|[^\S\r\n]+', text_to_stream)
+            num_tokens = len(tokens)
+            for token in tokens:
+                yield f"data: {json.dumps({'content': token})}\n\n"
+                # Natural reading cadence (~35-60 words/sec) with subtle pause on punctuation
+                if '\n' in token:
+                    time.sleep(0.022)
+                elif any(punct in token for punct in ('.', '!', '?', ':', ';')):
+                    time.sleep(0.026)
+                elif num_tokens > 400:
+                    time.sleep(0.008)
+                elif num_tokens > 200:
+                    time.sleep(0.012)
+                else:
+                    time.sleep(0.016)
 
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
 
-        return Response(stream_orchestrated_chunks(), mimetype='text/event-stream')
+        return Response(
+            stream_orchestrated_chunks(),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache, no-transform',
+                'X-Accel-Buffering': 'no',
+                'Connection': 'keep-alive',
+            }
+        )
         
     except Exception as e:
         logger.error(f"Error in chat_stream endpoint: {e}", exc_info=True)

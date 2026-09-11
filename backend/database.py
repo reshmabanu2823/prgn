@@ -441,12 +441,18 @@ class Database:
             self.release_connection(conn)
 
     def verify_password(self, stored_hash, password):
-        """Verify password against stored hash. stored_hash is None for
-        OAuth-only accounts (no password was ever set) - no password can
-        match that, so fail closed instead of crashing on None.encode()."""
-        if not stored_hash:
+        """Verify password against stored hash. stored_hash is None or placeholder
+        for OAuth-only accounts (no password was ever set) - no password can
+        match that, so fail closed instead of crashing on None.encode() or invalid salt."""
+        if not stored_hash or not password:
             return False
-        return bcrypt.checkpw(password.encode(), stored_hash.encode())
+        stored_hash_str = str(stored_hash)
+        if stored_hash_str.startswith('!oauth') or len(stored_hash_str) < 10:
+            return False
+        try:
+            return bcrypt.checkpw(str(password).encode('utf-8'), stored_hash_str.encode('utf-8'))
+        except (ValueError, TypeError, Exception):
+            return False
 
     def update_password(self, user_id, new_password):
         password_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
@@ -568,8 +574,7 @@ class Database:
                 f'SELECT * FROM users WHERE oauth_provider = {param} AND oauth_id = {param}',
                 (provider, oauth_id),
             )
-            user = c.fetchone()
-            return dict(user) if user else None
+            return _row_to_dict(c, c.fetchone())
         finally:
             self.release_connection(conn)
 

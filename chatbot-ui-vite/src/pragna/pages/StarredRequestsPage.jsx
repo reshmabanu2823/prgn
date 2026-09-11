@@ -100,35 +100,6 @@ export default function StarredRequestsPage({ chats, setChats, onOpenChat }) {
         }}
       />
 
-      {/* Top Header tracking phrase */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          marginBottom: '16px',
-          zIndex: 2,
-          position: 'relative',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
-            style={{
-              fontSize: '11px',
-              letterSpacing: '3.2px',
-              fontWeight: 600,
-              color: 'var(--pragna-text-muted)',
-              opacity: 0.75,
-              textTransform: 'uppercase',
-              userSelect: 'none',
-            }}
-          >
-            EXPLORE &nbsp; LEARN &nbsp; CREATE &nbsp; EVOLVE
-          </span>
-          <span style={{ color: 'var(--pragna-gold-soft)', opacity: 0.5, fontWeight: 300 }}>—</span>
-        </div>
-      </div>
-
       <div style={{ maxWidth: '960px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
         
         {/* Page Header */}
