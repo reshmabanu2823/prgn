@@ -276,6 +276,39 @@ export const RetryIcon = (props) =>
     props
   )
 
+export const MaximizeIcon = (props) =>
+  baseSvg(
+    [
+      'M15 3h6v6',
+      'M9 21H3v-6',
+      'M21 3l-7 7',
+      'M3 21l7-7',
+    ],
+    props
+  )
+
+export const MinimizeIcon = (props) =>
+  baseSvg(
+    [
+      'M4 14h6v6',
+      'M20 10h-6V4',
+      'M14 10l7-7',
+      'M3 21l7-7',
+    ],
+    props
+  )
+
+export const PdfIcon = (props) =>
+  baseSvg(
+    [
+      'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z',
+      'M14 2v6h6',
+      'M9 15h6',
+      'M9 11h6',
+    ],
+    props
+  )
+
 export const ThumbsUpIcon = ({ filled = false, ...props }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -395,6 +428,12 @@ export const ChevronLeftIcon = (props) =>
 export const ExternalLinkIcon = (props) =>
   baseSvg(
     ['M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', 'M15 3h6v6', 'M10 14L21 3'],
+    props
+  )
+
+export const RefreshCwIcon = (props) =>
+  baseSvg(
+    ['M23 4v6h-6', 'M1 20v-6h6', 'M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15'],
     props
   )
 
@@ -747,6 +786,10 @@ const ICON_MAP = {
   'chevron-right': ChevronRightIcon,
   'chevron-left': ChevronLeftIcon,
   'external-link': ExternalLinkIcon,
+  maximize: MaximizeIcon,
+  minimize: MinimizeIcon,
+  pdf: PdfIcon,
+  refresh: RefreshCwIcon,
 
   // Modes & Tools
   sparkles: SparklesIcon,
