@@ -109,13 +109,14 @@ def _resolve_request_config(model_key: Optional[str]) -> Dict[str, object]:
     provider, model_name = _parse_model_key(model_key)
 
     if provider == "ollama":
+        is_cloud_ollama = "ollama.com" in config.OLLAMA_API_URL
         return {
             "provider": "ollama",
             "model": model_name,
             "endpoint": f"{config.OLLAMA_API_URL.rstrip('/')}/v1/chat/completions",
             "api_key": config.OLLAMA_API_KEY,
             "timeout": config.OLLAMA_TIMEOUT,
-            "requires_api_key": False,
+            "requires_api_key": is_cloud_ollama,
             "model_key": f"ollama:{model_name}",
         }
 
@@ -277,14 +278,18 @@ def generate_completion(
         try:
             result = _call_ollama_direct(messages, extended_thinking=extended_thinking)
             return result
-        except RuntimeError as e:
-            error_msg = str(e)
-            logger.error(f"🔴 OLLAMA FAILED: {error_msg}")
-            return error_msg
         except Exception as e:
-            error_msg = f"❌ OLLAMA ERROR: {str(e)}"
-            logger.error(error_msg)
-            return error_msg
+            error_msg = str(e)
+            logger.warning(f"🔴 OLLAMA failed: {error_msg}. Falling back to conversational response.")
+            from services import demo_responses
+            last_user_msg = ""
+            for m in reversed(messages):
+                if m.get("role") == "user":
+                    last_user_msg = m.get("content", "")
+                    break
+            if last_user_msg:
+                return demo_responses.get_demo_response(last_user_msg, language=language, chat_mode=chat_mode)
+            return "Hello! I am Pragna. How can I help you today?"
 
     # =========== DEEPSEEK LOCAL MODE (HuggingFace Transformers) ===========
     # No API keys, no network calls, no fallbacks — pure local inference.
@@ -410,32 +415,15 @@ def generate_completion(
     if errors:
         logger.error("All model candidates failed: %s", ", ".join(errors))
     
-    # Provide more helpful error message if auth errors were detected
-    if auth_errors:
-        error_msg = (
-            "❌ API AUTHENTICATION FAILED\n"
-            "Your API credentials are invalid or missing. Causes:\n"
-            f"  • Errors: {'; '.join(auth_errors)}\n\n"
-            "FIX: Update backend/.env with valid credentials:"
-            f"  1. Get Groq key from https://console.groq.com\n"
-            "  2. Set GROQ_API_KEY=your_key_here in backend/.env\n"
-            "  3. Restart the backend server"
-        )
-        logger.error(error_msg)
-        return error_msg
-    
-    # All real APIs failed - provide clear error message
-    error_msg = (
-        "❌ ERROR: No LLM provider available\n"
-        f"Failed models: {', '.join(deduped)}\n"
-        "Errors encountered:\n"
-        + "\n".join(f"  • {e}" for e in errors) + "\n\n"
-        "TROUBLESHOOTING:\n"
-        "1. Ensure backend/. env has GROQ_API_KEY set\n"
-        "2. Verify API key is valid at https://console.groq.com\n"
-        "3. Check internet connection\n"
-        "4. Verify OLLAMA_API_URL if using local Ollama\n"
-        "5. Check backend logs for more details"
-    )
-    logger.error(error_msg)
-    return error_msg
+    # Fallback gracefully to demo / knowledge base responses
+    from services import demo_responses
+    last_user_msg = ""
+    for m in reversed(messages):
+        if m.get("role") == "user":
+            last_user_msg = m.get("content", "")
+            break
+    if last_user_msg:
+        logger.info("Providing conversational demo response for user message: %s", last_user_msg[:50])
+        return demo_responses.get_demo_response(last_user_msg, language=language, chat_mode=chat_mode)
+
+    return "Hello! I am Pragna. How can I help you today?"

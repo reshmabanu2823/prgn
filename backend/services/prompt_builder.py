@@ -81,8 +81,14 @@ def build_prompt(
     system_parts = [
         base_instruction,
         language_instruction,
-        "Be concise for simple questions and thorough for complex ones.",
-        "Do not use emojis anywhere in your response, including in headings or lists.",
+        (
+            "RESPONSE FORMAT & PRESENTATION RULES (MANDATORY):\n"
+            "1. Format every response in a clean, modern, well-structured layout.\n"
+            "2. Use clear Markdown headings (e.g., ### Key Highlights, ### Detailed Analysis), short readable paragraphs (2-3 sentences max), bullet points for lists, and bold key terms (**key concept**) to enhance readability.\n"
+            "3. Maintain proper spacing between sections, avoid large dense blocks of text, and make the response easy to scan and visually organized.\n"
+            "4. Keep the formatting professional and minimal — do NOT use emojis anywhere in your response (no emojis in headings, lists, or text).\n"
+            "5. Make ALL URLs in your responses clickable active Markdown links: [Link text](URL). NEVER display raw URLs as plain text. Keep the link text clean and descriptive (e.g., [Read full article](url), [Source](url), [Official Documentation](url), or the article title)."
+        ),
         (
             "Do not invent model training-cutoff dates, release dates, or internal update details. "
             "If asked about model updates, training data windows, or internal version history, "

@@ -44,3 +44,4 @@ sentencepiece>=0.1.99
 safetensors>=0.4.0
 Pillow>=10.0.0
 duckduckgo-search>=6.0.0
+ddgs>=6.0.0

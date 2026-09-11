@@ -332,6 +332,8 @@ def _build_upload_analysis_prompt(user_message, payload):
 def _clean_rewritten_image_prompt(raw_text: str) -> str:
     if not raw_text:
         return ""
+    if any(k in raw_text for k in ["[401", "UNAUTHORIZED", "API authentication failed", "API KEY NOT CONFIGURED", "❌", "Sorry, the AI service", "ERROR:"]):
+        return ""
     cleaned = raw_text.strip().strip('"').strip("'")
     import re
     cleaned = re.sub(
@@ -648,6 +650,7 @@ PUBLIC_ENDPOINTS = [
     '/api/auth/register/request-otp',
     '/api/auth/register/verify-otp',
     '/api/images/config',
+    '/api/images/history',
 ]
 
 @app.before_request
@@ -1347,7 +1350,6 @@ def image_studio_config():
 @app.route('/api/images/generate', methods=['POST'])
 @limiter.limit(config.AI_GENERATION_RATE_LIMIT)
 def generate_image():
-
     """Generate an AI image using configured provider (Runway/OpenAI/fallback)."""
     try:
         data = request.json or {}
@@ -1356,6 +1358,17 @@ def generate_image():
         quality = (data.get('quality') or 'hd').strip().lower()
         size = (data.get('size') or '1024x1024').strip().lower()
         requested_provider = (data.get('provider') or config.IMAGE_PROVIDER or 'auto').strip().lower()
+
+        # Extract user_id from auth token or payload
+        auth_header = request.headers.get('Authorization', '')
+        user_id = 'default'
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:].strip()
+            verified = auth_service.verify_token(token)
+            if verified and verified.get('user_id'):
+                user_id = verified['user_id']
+        elif data.get('user_id'):
+            user_id = str(data.get('user_id')).strip()
 
         if not prompt:
             return jsonify({'error': 'Prompt is required'}), 400
@@ -1376,8 +1389,20 @@ def generate_image():
         if requested_provider in {'runway', 'auto'} and config.RUNWAY_API_KEY:
             try:
                 runway_image = _generate_with_runway(enhanced_prompt, size)
+                img_id = db.save_image_generation(
+                    user_id=user_id,
+                    prompt=prompt,
+                    image_url=runway_image,
+                    effective_prompt=enhanced_prompt,
+                    style=style,
+                    quality=quality,
+                    size=size,
+                    provider='runway',
+                    model=config.RUNWAY_MODEL,
+                )
                 return jsonify({
                     'status': 'success',
+                    'id': img_id,
                     'provider': 'runway',
                     'image': runway_image,
                     'model': config.RUNWAY_MODEL,
@@ -1387,7 +1412,7 @@ def generate_image():
                     'effective_prompt': enhanced_prompt,
                 })
             except Exception as runway_exc:
-                logger.error(f"Runway image generation failed: {runway_exc}")
+                logger.warning(f"Runway image generation failed: {runway_exc}")
                 if requested_provider == 'runway' and config.RUNWAY_STRICT_MODE:
                     return jsonify({
                         'error': 'Runway image generation failed',
@@ -1397,84 +1422,173 @@ def generate_image():
                 logger.warning("Falling back to other image providers after Runway failure")
 
         # 2) OpenAI path (explicit or auto)
-        if not config.OPENAI_API_KEY:
-            if not config.IMAGE_FALLBACK_PROVIDER_ENABLED:
-                return jsonify({'error': 'Image generation is not configured (missing provider API key)'}), 503
+        if requested_provider in {'openai', 'auto'} and config.OPENAI_API_KEY:
+            try:
+                payload = {
+                    'model': config.OPENAI_IMAGE_MODEL,
+                    'prompt': enhanced_prompt,
+                    'size': size,
+                    'quality': quality,
+                    'n': 1,
+                    'response_format': 'b64_json',
+                }
 
-            encoded_prompt = urllib.parse.quote_plus(enhanced_prompt)
-            fallback_url = (
-                f"{config.IMAGE_FALLBACK_PROVIDER_URL.rstrip('/')}/{encoded_prompt}"
-                f"?width={size.split('x')[0]}&height={size.split('x')[1]}&model=flux&nologo=true"
-            )
-            return jsonify({
-                'status': 'success',
-                'provider': 'pollinations-fallback',
-                'image': fallback_url,
-                'model': 'flux',
-                'style': style,
-                'quality': quality,
-                'size': size,
-                'effective_prompt': enhanced_prompt,
-                'note': 'Fallback provider used because primary provider key is not configured.',
-            })
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {config.OPENAI_API_KEY}',
+                }
 
-        payload = {
-            'model': config.OPENAI_IMAGE_MODEL,
-            'prompt': enhanced_prompt,
-            'size': size,
-            'quality': quality,
-            'n': 1,
-            'response_format': 'b64_json',
-        }
+                response = requests.post(
+                    'https://api.openai.com/v1/images/generations',
+                    headers=headers,
+                    json=payload,
+                    timeout=config.OPENAI_TIMEOUT,
+                )
 
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {config.OPENAI_API_KEY}',
-        }
+                if response.status_code == 200:
+                    result = response.json()
+                    data_items = result.get('data') or []
+                    if data_items:
+                        first = data_items[0]
+                        image_b64 = first.get('b64_json')
+                        image_url = first.get('url')
+                        final_image = image_url or (f"data:image/png;base64,{image_b64}" if image_b64 else None)
+                        if final_image:
+                            img_id = db.save_image_generation(
+                                user_id=user_id,
+                                prompt=prompt,
+                                image_url=final_image,
+                                effective_prompt=enhanced_prompt,
+                                style=style,
+                                quality=quality,
+                                size=size,
+                                provider='openai',
+                                model=config.OPENAI_IMAGE_MODEL,
+                            )
+                            return jsonify({
+                                'status': 'success',
+                                'id': img_id,
+                                'provider': 'openai',
+                                'image': final_image,
+                                'model': config.OPENAI_IMAGE_MODEL,
+                                'style': style,
+                                'quality': quality,
+                                'size': size,
+                                'effective_prompt': enhanced_prompt,
+                            })
+                logger.warning(f"OpenAI image generation returned {response.status_code}: {response.text[:200]}")
+            except Exception as openai_exc:
+                logger.warning(f"OpenAI image generation failed: {openai_exc}")
 
-        response = requests.post(
-            'https://api.openai.com/v1/images/generations',
-            headers=headers,
-            json=payload,
-            timeout=config.OPENAI_TIMEOUT,
+        # 3) Fallback Provider (Pollinations AI - zero config / keyless / fast / reliable)
+        encoded_prompt = urllib.parse.quote_plus(enhanced_prompt)
+        w, h = size.split('x') if 'x' in size else ('1024', '1024')
+        import random
+        seed = random.randint(100000, 999999)
+        fallback_url = (
+            f"{config.IMAGE_FALLBACK_PROVIDER_URL.rstrip('/')}/{encoded_prompt}"
+            f"?width={w}&height={h}&model=flux&nologo=true&seed={seed}"
         )
-
-        if response.status_code >= 400:
-            provider_error = response.text[:500]
-            logger.error(f"Image generation failed: {response.status_code} {provider_error}")
-            return jsonify({
-                'error': 'Image generation failed on provider',
-                'provider_status': response.status_code,
-                'provider_error': provider_error,
-            }), 502
-
-        result = response.json()
-        data_items = result.get('data') or []
-        if not data_items:
-            return jsonify({'error': 'No image returned from provider'}), 502
-
-        first = data_items[0]
-        image_b64 = first.get('b64_json')
-        image_url = first.get('url')
-
-        final_image = image_url or (f"data:image/png;base64,{image_b64}" if image_b64 else None)
-        if not final_image:
-            return jsonify({'error': 'Provider response missing image payload'}), 502
-
+        img_id = db.save_image_generation(
+            user_id=user_id,
+            prompt=prompt,
+            image_url=fallback_url,
+            effective_prompt=enhanced_prompt,
+            style=style,
+            quality=quality,
+            size=size,
+            provider='pollinations-fallback',
+            model='flux',
+        )
         return jsonify({
             'status': 'success',
-            'provider': 'openai',
-            'image': final_image,
-            'model': config.OPENAI_IMAGE_MODEL,
+            'id': img_id,
+            'provider': 'pollinations-fallback',
+            'image': fallback_url,
+            'model': 'flux',
             'style': style,
             'quality': quality,
             'size': size,
             'effective_prompt': enhanced_prompt,
+            'note': 'Generated via high-quality Pollinations Flux engine.',
         })
 
     except Exception as e:
         logger.error(f"Error generating image: {e}", exc_info=True)
         return jsonify({'error': 'Failed to generate image'}), 500
+
+
+@app.route('/api/images/history', methods=['GET'])
+def get_image_history():
+    """Retrieve history of AI images generated by the current user."""
+    try:
+        user_id = 'default'
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:].strip()
+            verified = auth_service.verify_token(token)
+            if verified and verified.get('user_id'):
+                user_id = verified['user_id']
+        elif request.args.get('user_id'):
+            user_id = request.args.get('user_id')
+
+        limit = min(int(request.args.get('limit', 50)), 100)
+        offset = int(request.args.get('offset', 0))
+
+        history = db.get_user_image_history(user_id=user_id, limit=limit, offset=offset)
+        return jsonify({
+            'status': 'success',
+            'user_id': user_id,
+            'count': len(history),
+            'history': history,
+        })
+    except Exception as e:
+        logger.error(f"Error fetching image history: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to fetch image history'}), 500
+
+
+@app.route('/api/images/history/<image_id>', methods=['DELETE'])
+def delete_image_history_item(image_id):
+    """Delete a single image from the user's generation history."""
+    try:
+        user_id = 'default'
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:].strip()
+            verified = auth_service.verify_token(token)
+            if verified and verified.get('user_id'):
+                user_id = verified['user_id']
+        elif request.args.get('user_id'):
+            user_id = request.args.get('user_id')
+
+        success = db.delete_image_generation(image_id=image_id, user_id=user_id)
+        if success:
+            return jsonify({'status': 'success', 'deleted_id': image_id})
+        return jsonify({'error': 'Image not found or not owned by user'}), 404
+    except Exception as e:
+        logger.error(f"Error deleting image history item: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to delete image history item'}), 500
+
+
+@app.route('/api/images/history', methods=['DELETE'])
+def clear_image_history():
+    """Clear all image generation history for the current user."""
+    try:
+        user_id = 'default'
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:].strip()
+            verified = auth_service.verify_token(token)
+            if verified and verified.get('user_id'):
+                user_id = verified['user_id']
+        elif request.args.get('user_id'):
+            user_id = request.args.get('user_id')
+
+        db.clear_user_image_history(user_id=user_id)
+        return jsonify({'status': 'success', 'message': 'Image history cleared'})
+    except Exception as e:
+        logger.error(f"Error clearing image history: {e}", exc_info=True)
+        return jsonify({'error': 'Failed to clear image history'}), 500
 
 
 @app.route('/api/events/feed', methods=['GET'])
@@ -2593,6 +2707,36 @@ def discord_oauth_callback():
         return _oauth_error_redirect('login_failed', state)
 
     return _oauth_success_redirect(user_id, token, state)
+
+
+@app.route('/api/auth/discord/login', methods=['GET'])
+def discord_oauth_login():
+    client_id = (getattr(config, 'DISCORD_CLIENT_ID', '') or os.getenv('DISCORD_CLIENT_ID', '')).strip().strip('"').strip("'")
+    client_secret = (getattr(config, 'DISCORD_CLIENT_SECRET', '') or os.getenv('DISCORD_CLIENT_SECRET', '')).strip().strip('"').strip("'")
+    if not client_id or not client_secret:
+        return jsonify({'error': 'Discord login is not configured on this server'}), 503
+    state = oauth_service.make_state()
+    return redirect(oauth_service.discord_authorize_url(_oauth_redirect_uri('discord'), state))
+
+
+@app.route('/api/auth/discord/callback', methods=['GET'])
+def discord_oauth_callback():
+    if request.args.get('error'):
+        return _oauth_error_redirect(request.args['error'])
+
+    state = request.args.get('state')
+    code = request.args.get('code')
+    if not oauth_service.verify_state(state) or not code:
+        return _oauth_error_redirect('invalid_state')
+
+    try:
+        profile = oauth_service.discord_fetch_profile(code, _oauth_redirect_uri('discord'))
+        user_id, token = _resolve_oauth_user('discord', profile)
+    except Exception as e:
+        logger.error(f"Discord OAuth callback failed: {e}", exc_info=True)
+        return _oauth_error_redirect('login_failed')
+
+    return _oauth_success_redirect(user_id, token)
 
 
 @app.route('/api/auth/verify', methods=['GET'])

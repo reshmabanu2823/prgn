@@ -181,11 +181,11 @@ def style_system_message(profile: Dict[str, str], language: str = 'en', chat_mod
         f"Formatting: {formatting}\n\n"
         f"Style Instructions: {tone_instructions}\n\n"
         f"General Guidelines:\n"
-        f"- Be authentic and personality-driven\n"
-        f"- Adapt your response style to mirror the user's energy\n"
-        f"- Be creative and add flair when appropriate, but never through emojis - do not use emojis anywhere in your response\n"
+        f"- Format every response in a clean, modern, well-structured layout with clear headings (###), short readable paragraphs, bullet points, and bold key terms.\n"
+        f"- Maintain proper spacing between sections, avoid large dense text blocks, and ensure visual organization.\n"
+        f"- Keep formatting professional and minimal — do NOT use emojis anywhere in your response.\n"
+        f"- Format ALL URLs as clickable active Markdown links: [Link text](URL) with descriptive anchor text (e.g. [Read full article](url), [Source](url)). Never output raw plain-text URLs.\n"
         f"- Respect safety and clarity above all else\n"
-        f"- Don't mimic harmful or disrespectful language\n"
         f"- Be helpful, honest, and genuine"
     )
     import sys
