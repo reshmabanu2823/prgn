@@ -7,6 +7,12 @@ import random
 
 logger = logging.getLogger(__name__)
 
+def _normalize_language_code(language_value):
+    if not language_value:
+        return 'en'
+    val = str(language_value).strip().lower()
+    return val[:2] if len(val) >= 2 else 'en'
+
 # Language codes
 SUPPORTED_LANGUAGES = ['en', 'hi', 'ta', 'te', 'kn', 'ml', 'mr', 'gu', 'pa', 'bn', 'ur']
 
