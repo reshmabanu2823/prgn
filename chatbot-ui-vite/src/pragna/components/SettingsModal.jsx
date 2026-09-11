@@ -230,7 +230,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
         <div
           style={
             isMobile
-              ? { width: '100%', flexShrink: 0, padding: '10px 10px', background: 'var(--pragna-surface-2)', borderBottom: '1px solid var(--pragna-border)', display: 'flex', flexDirection: 'row', gap: '6px', overflowX: 'auto' }
+              ? { width: '100%', flexShrink: 0, padding: '10px 10px', background: 'var(--pragna-surface-2)', borderBottom: '1px solid var(--pragna-border)', display: 'flex', flexDirection: 'row', gap: '6px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }
               : { width: '232px', flexShrink: 0, padding: '22px 14px', background: 'var(--pragna-surface-2)', borderRight: '1px solid var(--pragna-border)', display: 'flex', flexDirection: 'column', gap: '4px' }
           }
         >
@@ -278,7 +278,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
         </div>
 
         {/* Settings Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '20px 18px 30px 18px' : '30px 40px', minWidth: 0, position: 'relative' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px 36px 16px' : '30px 40px', minWidth: 0, position: 'relative' }}>
 
           {/* Close button */}
           <button
@@ -296,33 +296,27 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
               justifyContent: 'center',
               transition: 'all 0.15s ease',
               position: 'absolute',
-              top: isMobile ? '14px' : '24px',
-              right: isMobile ? '14px' : '28px',
+              top: isMobile ? '12px' : '24px',
+              right: isMobile ? '12px' : '28px',
               zIndex: 10,
             }}
             className="hover:bg-[var(--pragna-surface-2)] hover:text-[var(--pragna-gold-soft)]"
           >
-            <CloseIcon size={17} strokeWidth={2.2} />
+            <CloseIcon size={16} />
           </button>
 
-          {/* GENERAL / PROFILE TAB */}
+          {/* GENERAL TAB */}
           {activeTab === 'General' && (
-            <div style={{ animation: 'fadeUp 0.15s ease' }}>
-              <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: 700, color: 'var(--pragna-text)' }}>Profile</h2>
-
-              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : '20px', marginBottom: '30px' }}>
-                <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: isMobile ? 'auto' : '110px', flexShrink: 0 }}>Avatar</div>
-                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'linear-gradient(135deg, #2a2415, var(--pragna-surface-2))', border: '1.5px solid rgba(212,175,55,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pragna-accent)', fontWeight: 700, fontSize: '19px' }}>
-                  {userInitial}
-                </div>
-              </div>
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--pragna-text)', marginBottom: '4px' }}>General</div>
+              <p style={{ margin: '0 0 24px 0', fontSize: '13px', color: 'var(--pragna-text-muted)' }}>Manage your profile and instructions.</p>
 
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : '20px', marginBottom: '28px' }}>
                 <div style={{ fontSize: '13px', color: 'var(--pragna-text-muted)', width: isMobile ? 'auto' : '110px', flexShrink: 0 }}>Full name</div>
                 <input
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  style={{ width: isMobile ? '100%' : 'auto', flex: isMobile ? 'none' : 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px' }}
+                  style={{ width: isMobile ? '100%' : 'auto', flex: isMobile ? 'none' : 1, padding: '11px 14px', borderRadius: '10px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: isMobile ? '16px' : '14px' }}
                 />
               </div>
 
@@ -336,7 +330,7 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                       onChange={(e) => setInstructions(e.target.value)}
                       placeholder="e.g. I primarily code in Python (not a beginner)"
                       rows="3"
-                      style={{ width: '100%', resize: 'vertical', padding: '13px 14px', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14px', lineHeight: 1.5 }}
+                      style={{ width: '100%', resize: 'vertical', padding: '13px 14px', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface-2)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: isMobile ? '16px' : '14px', lineHeight: 1.5 }}
                     />
                   </>
                 )}

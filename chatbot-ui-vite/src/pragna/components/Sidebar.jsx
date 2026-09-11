@@ -1032,6 +1032,7 @@ ${turns}
               <button
                 onClick={() => {
                   setUserMenuOpen(false)
+                  if (onClose) onClose()
                   onOpenSettings?.()
                 }}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '11px', padding: '10px 12px', borderRadius: '9px', border: 'none', background: 'transparent', color: '#d8cbb0', fontSize: '13.5px', fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}

@@ -441,31 +441,32 @@ export default function ChatWindow() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          justifyContent: 'space-between',
+          flexWrap: 'nowrap',
           gap: isMobile ? '8px' : '12px',
-          padding: isDesktop && !sidebarOpen ? '14px 28px 14px 64px' : (isMobile ? '12px 16px' : '14px 28px'),
+          padding: isDesktop && !sidebarOpen ? '14px 28px 14px 64px' : (isMobile ? '10px 14px' : '14px 28px'),
           borderBottom: '1px solid var(--pragna-border)',
           background: 'var(--pragna-surface-2)',
           backdropFilter: 'blur(8px)',
           flexShrink: 0,
         }}
       >
-        <div style={{ fontSize: '15px', fontWeight: 650, color: 'var(--pragna-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? '100%' : 'none', flexBasis: isMobile ? '100%' : 'auto' }}>{chatTitle}</div>
+        <div style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 650, color: 'var(--pragna-text)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chatTitle}</div>
         <button
           onClick={handleSummarize}
           disabled={summarizing}
           title="Summarize this conversation"
           style={{
-            marginLeft: isMobile ? '0' : 'auto',
+            marginLeft: 'auto',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '6px 14px',
+            padding: isMobile ? '5px 11px' : '6px 14px',
             borderRadius: '999px',
             border: '1px solid var(--pragna-border)',
             background: 'transparent',
             color: 'var(--pragna-text-muted)',
-            fontSize: '12.5px',
+            fontSize: isMobile ? '11.5px' : '12.5px',
             fontWeight: 600,
             cursor: summarizing ? 'default' : 'pointer',
             opacity: summarizing ? 0.6 : 1,
@@ -481,10 +482,10 @@ export default function ChatWindow() {
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        style={{ flex: 1, overflowY: 'auto', padding: '32px 0', minHeight: 0 }}
+        style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 0 24px 0' : '32px 0', minHeight: 0 }}
         className="custom-scrollbar"
       >
-        <div style={{ maxWidth: '780px', margin: '0 auto', padding: isMobile ? '0 12px' : '0 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        <div style={{ maxWidth: '780px', margin: '0 auto', padding: isMobile ? '0 10px' : '0 28px', display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '22px' }}>
           {chat.messages.map((m, idx) => {
             const isHighlighted = highlightedMessageId && (m.id === highlightedMessageId || String(idx) === String(highlightedMessageId));
             return (

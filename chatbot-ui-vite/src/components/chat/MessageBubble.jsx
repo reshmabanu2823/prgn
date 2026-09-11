@@ -867,7 +867,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
         ) : (
           <>
             <div
-              className="max-w-[78%] rounded-[18px_18px_4px_18px] px-[18px] py-3 text-[15px] leading-[1.5] shadow-premium-md whitespace-pre-wrap break-words"
+              className="max-w-[90%] sm:max-w-[78%] rounded-[18px_18px_4px_18px] px-3.5 py-2.5 sm:px-[18px] sm:py-3 text-[14.5px] sm:text-[15px] leading-[1.5] shadow-premium-md whitespace-pre-wrap break-words"
               style={{
                 background: "linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold))",
                 color: "var(--pragna-on-gold)",
@@ -883,7 +883,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
                   type="button"
                   onClick={onToggleBookmark}
                   title={bookmarked ? "Remove bookmark" : "Bookmark message"}
-                  className={`${actionBtnBase} ${bookmarked ? "opacity-100" : "opacity-0 group-hover:opacity-100"} ${bookmarked ? "text-accent-400" : "text-[color:var(--pragna-text-muted)]"}`}
+                  className={`${actionBtnBase} ${bookmarked ? "opacity-100" : "opacity-75 sm:opacity-0 group-hover:opacity-100"} ${bookmarked ? "text-accent-400" : "text-[color:var(--pragna-text-muted)]"}`}
                 >
                   <StarIcon filled={bookmarked} />
                 </button>
@@ -896,7 +896,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
                     setIsEditing(true);
                   }}
                   title="Edit message"
-                  className={`${actionBtnBase} opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]`}
+                  className={`${actionBtnBase} opacity-75 sm:opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]`}
                 >
                   <PencilIcon />
                 </button>
@@ -905,7 +905,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
                 type="button"
                 onClick={copyToClipboard}
                 title={copied ? "Copied!" : "Copy request"}
-                className={`${actionBtnBase} ${copied ? "opacity-100 text-accent-400" : "opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]"}`}
+                className={`${actionBtnBase} ${copied ? "opacity-100 text-accent-400" : "opacity-75 sm:opacity-0 group-hover:opacity-100 text-[color:var(--pragna-text-muted)]"}`}
               >
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
@@ -920,16 +920,16 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
   // ── Assistant / error message ───────────────────────────────────────────
   return (
     <div className="flex flex-col items-start animate-[fadeUp_0.3s_ease]" style={{ fontFamily: "var(--pragna-chat-font)" }}>
-      <div className="flex gap-3.5 max-w-[92%] min-w-0">
+      <div className="flex gap-2.5 sm:gap-3.5 max-w-full sm:max-w-[92%] min-w-0 w-full">
         {isError ? (
           <div
-            className="w-8 h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center"
+            className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 mt-0.5 rounded-[9px] flex items-center justify-center"
             style={{ background: "rgba(180,60,60,0.15)", border: "1px solid rgba(220,110,100,0.35)" }}
           >
             <ErrorIcon />
           </div>
         ) : (
-          <img src={pragnaShield} alt="Pragna" className="w-9 h-9 shrink-0 mt-0.5 object-contain" />
+          <img src={pragnaShield} alt="Pragna" className="w-7 h-7 sm:w-9 sm:h-9 shrink-0 mt-0.5 object-contain" />
         )}
 
         <div className="flex flex-col gap-2.5 min-w-0 flex-1">
@@ -1079,7 +1079,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
 
           {/* Only show action icons for finished, non-error assistant messages */}
           {isBot && !isStreaming && !isError && (
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               <button
                 type="button"
                 onClick={copyToClipboard}

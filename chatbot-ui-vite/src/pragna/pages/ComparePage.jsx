@@ -140,7 +140,7 @@ const ComparePage = () => {
         <div
           style={{
             maxWidth: '820px',
-            padding: '24px',
+            padding: isMobile ? '16px 14px' : '24px',
             borderRadius: '20px',
             background: 'rgba(18, 16, 12, 0.85)',
             border: '1.5px solid rgba(212, 175, 55, 0.28)',
@@ -154,7 +154,7 @@ const ComparePage = () => {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Ask something to compare across models…"
           rows="3"
-          style={{ width: '100%', resize: 'vertical', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: '14.5px', lineHeight: 1.55, padding: '14px 16px', marginBottom: '16px' }}
+          style={{ width: '100%', resize: 'vertical', borderRadius: '12px', border: '1px solid var(--pragna-border)', background: 'var(--pragna-surface)', color: 'var(--pragna-text)', fontFamily: 'inherit', fontSize: isMobile ? '16px' : '14.5px', lineHeight: 1.55, padding: '14px 16px', marginBottom: '16px' }}
         />
 
         {catalogError && (

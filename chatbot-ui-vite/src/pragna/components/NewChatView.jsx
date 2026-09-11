@@ -819,17 +819,18 @@ export default function NewChatView({ onNavigateToImages }) {
             border: isFocused
               ? '1.5px solid rgba(212, 175, 55, 0.7)'
               : '1.5px solid rgba(212, 175, 55, 0.42)',
-            borderRadius: '9999px',
+            borderRadius: isMobile ? '20px' : '9999px',
             boxShadow: isFocused
               ? '0 0 35px rgba(212, 175, 55, 0.22), 0 12px 36px rgba(0, 0, 0, 0.65)'
               : '0 0 24px rgba(212, 175, 55, 0.12), 0 8px 28px rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
-            padding: isMobile ? '6px 10px 6px 14px' : '7px 10px 7px 18px',
+            padding: isMobile ? '8px 10px 8px 12px' : '7px 10px 7px 18px',
             display: 'flex',
-            alignItems: 'center',
-            gap: isMobile ? '6px' : '10px',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '8px' : '10px',
             position: 'relative',
             marginBottom: '24px',
             boxSizing: 'border-box',
@@ -845,31 +846,33 @@ export default function NewChatView({ onNavigateToImages }) {
             style={{ display: 'none' }}
           />
 
-          {/* Attachment Button (Leftmost) */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            title="Attach document or image"
-            style={{
-              padding: '6px',
-              borderRadius: '50%',
-              border: 'none',
-              background: 'transparent',
-              color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : '#c9bda2',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              flexShrink: 0,
-              transition: 'all 0.15s ease',
-            }}
-            className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.12)]"
-          >
-            <PaperclipIcon size={19} strokeWidth={1.9} />
-          </button>
+          {/* Desktop Attachment Button */}
+          {!isMobile && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Attach document or image"
+              style={{
+                padding: '6px',
+                borderRadius: '50%',
+                border: 'none',
+                background: 'transparent',
+                color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : '#c9bda2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.15s ease',
+              }}
+              className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.12)]"
+            >
+              <PaperclipIcon size={19} strokeWidth={1.9} />
+            </button>
+          )}
 
-          {/* Attachment Chips (Floating preview if attached) */}
-          {attachments.length > 0 && (
+          {/* Desktop Attachment Chips */}
+          {!isMobile && attachments.length > 0 && (
             <div
               style={{
                 display: 'flex',
@@ -911,17 +914,18 @@ export default function NewChatView({ onNavigateToImages }) {
             placeholder="Ask Pragna anything..."
             style={{
               flex: 1,
+              width: '100%',
               minWidth: 0,
               background: 'transparent',
               border: 'none',
               outline: 'none',
               color: '#fffdf7',
               caretColor: 'var(--pragna-gold)',
-              fontSize: isMobile ? '14px' : '15px',
+              fontSize: isMobile ? '16px' : '15px',
               fontFamily: 'inherit',
               lineHeight: '22px',
               resize: 'none',
-              padding: isMobile ? '7px 4px' : '7px 8px',
+              padding: isMobile ? '6px 4px' : '7px 8px',
               minHeight: '36px',
               height: '36px',
               margin: 0,
@@ -931,8 +935,72 @@ export default function NewChatView({ onNavigateToImages }) {
             }}
           />
 
-          {/* Right Action Group */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '7px', flexShrink: 0 }}>
+          {/* Action Row */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isMobile ? 'space-between' : 'flex-end',
+              width: isMobile ? '100%' : 'auto',
+              gap: isMobile ? '6px' : '7px',
+              flexShrink: 0,
+            }}
+          >
+            {/* Mobile Attachment Button & Chips */}
+            {isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach document or image"
+                  style={{
+                    padding: '6px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    background: 'transparent',
+                    color: attachments.length > 0 ? 'var(--pragna-gold-soft)' : '#c9bda2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  <PaperclipIcon size={18} strokeWidth={1.9} />
+                </button>
+                {attachments.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 7px',
+                      borderRadius: '999px',
+                      background: 'rgba(212, 175, 55, 0.14)',
+                      border: '1px solid rgba(212, 175, 55, 0.3)',
+                      fontSize: '11px',
+                      color: '#fffdf7',
+                      maxWidth: '100px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {attachments.length} file{attachments.length > 1 ? 's' : ''}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAttachments([])}
+                      style={{ background: 'transparent', border: 'none', color: '#c9bda2', cursor: 'pointer', padding: 0, display: 'flex' }}
+                    >
+                      <CloseIcon size={10} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Right Action Controls Group */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '7px', flexShrink: 0 }}>
             {/* Mode selector dropdown */}
             <div style={{ position: 'relative' }} ref={modeDropdownRef}>
               <button
@@ -1143,6 +1211,7 @@ export default function NewChatView({ onNavigateToImages }) {
             >
               <SendIcon size={17} strokeWidth={2.4} />
             </button>
+            </div>
           </div>
         </div>
 

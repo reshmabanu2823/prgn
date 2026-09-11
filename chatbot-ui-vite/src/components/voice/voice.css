@@ -288,3 +288,73 @@
   color: #fff;
   border-color: rgba(212, 175, 55, 0.4);
 }
+
+/* Mobile Responsiveness for Voice Assistant Modal */
+@media (max-width: 640px) {
+  .pragna-voice-overlay {
+    padding: max(16px, env(safe-area-inset-top, 16px)) 16px max(24px, env(safe-area-inset-bottom, 24px)) 16px;
+    height: 100dvh;
+  }
+
+  .pragna-voice-stage {
+    margin: 8px 0;
+  }
+
+  .pragna-voice-orb-container {
+    width: clamp(160px, 48vw, 220px);
+    height: clamp(160px, 48vw, 220px);
+  }
+
+  .pragna-voice-transcript-box {
+    max-height: 110px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+
+  .pragna-voice-transcript-text {
+    font-size: 14.5px;
+    line-height: 1.45;
+  }
+
+  .pragna-voice-controls {
+    gap: 12px;
+    margin-top: 6px;
+  }
+
+  .pragna-voice-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  .pragna-voice-btn.danger {
+    width: 52px;
+    height: 52px;
+  }
+
+  .pragna-voice-status-pill {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  .pragna-voice-close-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 380px) {
+  .pragna-voice-orb-container {
+    width: clamp(140px, 44vw, 180px);
+    height: clamp(140px, 44vw, 180px);
+  }
+
+  .pragna-voice-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .pragna-voice-btn.danger {
+    width: 48px;
+    height: 48px;
+  }
+}

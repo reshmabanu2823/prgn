@@ -24,7 +24,7 @@ const MainLayout = ({
   const { sidebarOpen, toggleSidebar } = useContext(ChatContext)
 
   return (
-    <div className="pragna-shell flex h-screen overflow-hidden bg-transparent">
+    <div className="pragna-shell flex h-screen h-[100dvh] overflow-hidden bg-transparent">
       {/* Desktop Sidebar */}
       {isDesktop && sidebarOpen && (
         <div style={{ width: '270px' }} className="flex-shrink-0">
