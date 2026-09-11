@@ -115,6 +115,13 @@ services:
                      # register: {BACKEND_URL}/api/auth/github/callback
       - key: GITHUB_CLIENT_SECRET
         sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false # Optional - Discord sign-in is disabled until both
+                     # this and DISCORD_CLIENT_SECRET are set.
+                     # From discord.com/developers/applications -> OAuth2.
+                     # Redirect URI: {BACKEND_URL}/api/auth/discord/callback
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
       - key: SMTP_USERNAME
         sync: false # REQUIRED for password-reset emails to actually send.
                      # SMTP login - for Gmail the full address, for SendGrid
