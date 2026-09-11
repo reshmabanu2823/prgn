@@ -433,7 +433,6 @@ export default function ChatWindow() {
 
   // If chat is active and has messages, show conversation
   const chatTitle = chat.title || 'New Chat'
-  const modeLabel = getModeLabel(chatMode)
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', position: 'relative' }}>
@@ -452,10 +451,6 @@ export default function ChatWindow() {
         }}
       >
         <div style={{ fontSize: '15px', fontWeight: 650, color: 'var(--pragna-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? '100%' : 'none', flexBasis: isMobile ? '100%' : 'auto' }}>{chatTitle}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 13px', borderRadius: '999px', background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.22)', fontSize: '12px', fontWeight: 600, color: 'var(--pragna-accent)', letterSpacing: '0.4px', flexShrink: 0 }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--pragna-accent)', boxShadow: '0 0 8px rgba(212,175,55,0.8)' }}></span>
-          {modeLabel} mode
-        </div>
         <button
           onClick={handleSummarize}
           disabled={summarizing}
