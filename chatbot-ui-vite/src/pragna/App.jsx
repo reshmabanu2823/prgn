@@ -3,9 +3,7 @@ import { ChatContext } from '../context/ChatContext'
 import { generateAIImage, generateDocument, sendOrchestratedMessageStream } from '../api/api'
 import { normalizeLanguageCode } from '../utils/language'
 import MainLayout from './layouts/MainLayout'
-import HomePage from './pages/HomePage'
 import ImageStudioPage from './pages/ImageStudioPage'
-import GptModesPage from './pages/GptModesPage'
 import ComparePage from './pages/ComparePage'
 import StarredRequestsPage from './pages/StarredRequestsPage'
 import ChatWindow from '../components/chat/ChatWindow'
@@ -343,22 +341,6 @@ function App({ onLogout, userProfile }) {
           <ChatWindow />
           <InputBar />
         </>
-      )
-    }
-
-    if (activeView === 'modes') {
-      return <HomePage onUsePrompt={sendQuickPrompt} userProfile={userProfile} />
-    }
-
-    if (activeView === 'gpts') {
-      return (
-        <GptModesPage
-          chatMode={chatMode}
-          onSelectMode={(modeId) => {
-            setChatMode(modeId)
-            setActiveView('chats')
-          }}
-        />
       )
     }
 
