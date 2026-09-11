@@ -10,6 +10,9 @@ class OrchestratorIntegrationTests(unittest.TestCase):
     def setUp(self):
         app_module.app.config["TESTING"] = True
         self.client = app_module.app.test_client()
+        from auth import AuthService
+        self.token = AuthService.generate_token("test-user")
+        self.headers = {"Authorization": f"Bearer {self.token}"}
 
     def test_orchestrator_query_endpoint(self):
         payload = {
@@ -34,7 +37,7 @@ class OrchestratorIntegrationTests(unittest.TestCase):
                 "chat_mode": "general",
             },
         ) as mocked:
-            resp = self.client.post("/api/orchestrator/query", json=payload)
+            resp = self.client.post("/api/orchestrator/query", json=payload, headers=self.headers)
 
         self.assertEqual(resp.status_code, 200)
         body = resp.get_json()
@@ -65,7 +68,7 @@ class OrchestratorIntegrationTests(unittest.TestCase):
         }
 
         with patch.object(app_module.orchestrator, "handle_query", return_value=response_payload):
-            resp = self.client.post("/api/chat_stream", json=payload)
+            resp = self.client.post("/api/chat_stream", json=payload, headers=self.headers)
 
         self.assertEqual(resp.status_code, 200)
         text = resp.get_data(as_text=True)
@@ -109,7 +112,7 @@ class OrchestratorIntegrationTests(unittest.TestCase):
             "chat_mode": "general",
         }
 
-        resp = self.client.post("/api/orchestrator/query", json=payload)
+        resp = self.client.post("/api/orchestrator/query", json=payload, headers=self.headers)
         self.assertEqual(resp.status_code, 200)
         body = resp.get_json()
         self.assertEqual(body["action"], "model_update_info")

@@ -68,26 +68,65 @@ export default function ChatWindow() {
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const messagesContainerRef = useRef(null);
   const messagesBottomRef = useRef(null);
+  const isAutoScrollEnabledRef = useRef(true);
+  const prevMessagesLengthRef = useRef(chat?.messages?.length || 0);
 
   const handleScroll = () => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    setShowScrollBottom(distanceFromBottom > 120);
+    // If the user scrolls up by more than 100px, pause auto-scroll so they can read peacefully
+    if (distanceFromBottom > 100) {
+      isAutoScrollEnabledRef.current = false;
+      setShowScrollBottom(true);
+    } else {
+      // Near bottom: resume auto-scroll
+      isAutoScrollEnabledRef.current = true;
+      setShowScrollBottom(false);
+    }
   };
 
-  const scrollToBottom = useCallback((smooth = true) => {
-    messagesBottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  const scrollToBottom = useCallback((smooth = false) => {
+    isAutoScrollEnabledRef.current = true;
+    setShowScrollBottom(false);
+    if (!messagesContainerRef.current) return;
+    if (smooth) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    } else {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, []);
 
   useEffect(() => {
-    if (!messagesContainerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
-    if (isNearBottom || isLoading) {
-      scrollToBottom(false);
+    const currentLength = chat?.messages?.length || 0;
+    // When a new message is appended (user submits or bot begins), re-enable auto-scroll
+    if (currentLength > prevMessagesLengthRef.current) {
+      isAutoScrollEnabledRef.current = true;
+      setShowScrollBottom(false);
     }
-  }, [chat?.messages, isLoading, scrollToBottom]);
+    prevMessagesLengthRef.current = currentLength;
+
+    if (!messagesContainerRef.current) return;
+    if (isAutoScrollEnabledRef.current) {
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current && isAutoScrollEnabledRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [chat?.messages, isLoading]);
+
+  useEffect(() => {
+    // When switching active chats, scroll immediately to bottom
+    isAutoScrollEnabledRef.current = true;
+    setShowScrollBottom(false);
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [activeChatId]);
 
   useEffect(() => {
     if (!highlightedMessageId) return;
