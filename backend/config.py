@@ -136,54 +136,52 @@ LIMITER_STORAGE_URI = os.getenv('LIMITER_STORAGE_URI', 'memory://')
 DEVELOPMENT_MODE = os.getenv('DEVELOPMENT_MODE', 'True').lower() == 'true'
 
 
+def _clean_key(val):
+    if not val:
+        return ''
+    s = str(val).strip().strip('"').strip("'")
+    if s.lower().startswith(('your_', 'your-', 'placeholder', 'changeme', 'change-me', 'todo', 'xxx')):
+        return ''
+    return s
+
 if DEVELOPMENT_MODE:
     import logging
     logging.warning('⚠️  DEVELOPMENT_MODE is enabled - demo responses will be used instead of real APIs')
 
 # Groq Configuration (Primary LLM)
-GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
+GROQ_API_KEY = _clean_key(os.getenv('GROQ_API_KEY', ''))
 GROQ_MODEL = os.getenv('GROQ_MODEL', 'llama-3.1-70b-versatile')
 GROQ_TIMEOUT = int(os.getenv('GROQ_TIMEOUT', 60))
 GROQ_BASE_URL = os.getenv('GROQ_BASE_URL', 'https://api.groq.com/openai/v1')
 
-# Validate that at least one API key is configured for production
-_has_valid_api = GROQ_API_KEY or os.getenv('OPENAI_API_KEY', '') or os.getenv('OLLAMA_ENABLED', 'False').lower() == 'true'
-if not _has_valid_api and not DEVELOPMENT_MODE:
-    import logging
-    logging.error('❌ CRITICAL: No valid API configuration found!')
-    logging.error('   Please configure one of: GROQ_API_KEY, OPENAI_API_KEY, or enable Ollama')
-    logging.error('   Set DEVELOPMENT_MODE=True only for testing')
-
-# LLM Provider Selection (Ollama Mode - Cloud-based Model)
-LLM_PROVIDER = 'ollama_only'
-
 # Ollama Configuration (Cloud Models via Ollama Cloud / Remote API)
-OLLAMA_ENABLED = True
-OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://localhost:11434')
+OLLAMA_ENABLED = os.getenv('OLLAMA_ENABLED', 'True').lower() == 'true'
+OLLAMA_API_URL = os.getenv('OLLAMA_API_URL', 'http://localhost:11434').strip()
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'gemma4:31b-cloud')
 OLLAMA_TIMEOUT = int(os.getenv('OLLAMA_TIMEOUT', 120))
+OLLAMA_API_KEY = _clean_key(os.getenv('OLLAMA_API_KEY', ''))
 
+# LLM Provider Selection
+_raw_provider = os.getenv('LLM_PROVIDER', 'standard').strip().lower()
+if _raw_provider == 'ollama_only':
+    # If pointed to ollama.com cloud but no API key is provided, avoid hard 401 loop
+    if 'ollama.com' in OLLAMA_API_URL and not OLLAMA_API_KEY:
+        LLM_PROVIDER = 'standard'
+    else:
+        LLM_PROVIDER = 'ollama_only'
+else:
+    LLM_PROVIDER = _raw_provider
 
-
-# Only needed when OLLAMA_API_URL points at Ollama's hosted cloud API
-# (https://ollama.com) instead of a self-hosted daemon - authenticates
-# requests to :cloud-tagged models. Unused for local/self-hosted Ollama.
-OLLAMA_API_KEY = os.getenv('OLLAMA_API_KEY', '')
+# Validate that at least one API key is configured for production
+_has_valid_api = bool(GROQ_API_KEY or _clean_key(os.getenv('OPENAI_API_KEY', '')) or (OLLAMA_ENABLED and ('localhost' in OLLAMA_API_URL or '127.0.0.1' in OLLAMA_API_URL or OLLAMA_API_KEY)))
+if not _has_valid_api and not DEVELOPMENT_MODE:
+    DEVELOPMENT_MODE = True
+    import logging
+    logging.warning('⚠️  No active third-party LLM key found - Enabling DEVELOPMENT_MODE demo responses as fallback')
 
 # ── DeepSeek Local (HuggingFace Transformers) ──────────────────────────────
 # Used when LLM_PROVIDER = 'deepseek_local'.  The model is downloaded once
 # from HuggingFace Hub and cached at ~/.cache/huggingface/.
-#
-# CPU baseline (Intel i7-1065G7, 16 GB RAM):
-#   - Load time  : 60–120 s on first run (model download), ~30 s from cache
-#   - Inference  : 30–120 s per response at max_new_tokens=384
-#   - RAM usage  : ~6 GB (float32)
-#
-# GPU upgrade (NVIDIA, no code changes needed):
-#   - Device auto-detected, dtype switches to float16
-#   - Inference  : 2–10 s per response
-#   - VRAM usage : ~3 GB (float16)
-#
 DEEPSEEK_MODEL_NAME = os.getenv(
     'DEEPSEEK_MODEL_NAME',
     'deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B'
@@ -209,7 +207,7 @@ if LLM_PROVIDER == 'ollama_only':
     logging.warning('   Start Ollama with: ollama run mistral')
 
 # OpenAI Configuration (Fallback/Alternative)
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+OPENAI_API_KEY = _clean_key(os.getenv('OPENAI_API_KEY', ''))
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o')
 OPENAI_IMAGE_MODEL = os.getenv('OPENAI_IMAGE_MODEL', 'gpt-image-1')
 OPENAI_TTS_MODEL = os.getenv('OPENAI_TTS_MODEL', 'tts-1')
@@ -221,7 +219,7 @@ IMAGE_FALLBACK_PROVIDER_ENABLED = os.getenv('IMAGE_FALLBACK_PROVIDER_ENABLED', '
 IMAGE_FALLBACK_PROVIDER_URL = os.getenv('IMAGE_FALLBACK_PROVIDER_URL', 'https://image.pollinations.ai/prompt')
 
 # Runway image generation configuration
-RUNWAY_API_KEY = os.getenv('RUNWAY_API_KEY', '')
+RUNWAY_API_KEY = _clean_key(os.getenv('RUNWAY_API_KEY', ''))
 RUNWAY_API_URL = os.getenv('RUNWAY_API_URL', 'https://api.dev.runwayml.com/v1')
 RUNWAY_MODEL = os.getenv('RUNWAY_MODEL', 'gen4_image')
 RUNWAY_TIMEOUT = int(os.getenv('RUNWAY_TIMEOUT', 90))

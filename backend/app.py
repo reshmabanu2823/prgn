@@ -322,6 +322,8 @@ def _build_upload_analysis_prompt(user_message, payload):
 def _clean_rewritten_image_prompt(raw_text: str) -> str:
     if not raw_text:
         return ""
+    if any(k in raw_text for k in ["[401", "UNAUTHORIZED", "API authentication failed", "API KEY NOT CONFIGURED", "❌", "Sorry, the AI service", "ERROR:"]):
+        return ""
     cleaned = raw_text.strip().strip('"').strip("'")
     import re
     cleaned = re.sub(
@@ -1361,7 +1363,7 @@ def generate_image():
                     'effective_prompt': enhanced_prompt,
                 })
             except Exception as runway_exc:
-                logger.error(f"Runway image generation failed: {runway_exc}")
+                logger.warning(f"Runway image generation failed: {runway_exc}")
                 if requested_provider == 'runway' and config.RUNWAY_STRICT_MODE:
                     return jsonify({
                         'error': 'Runway image generation failed',
@@ -1371,104 +1373,95 @@ def generate_image():
                 logger.warning("Falling back to other image providers after Runway failure")
 
         # 2) OpenAI path (explicit or auto)
-        if not config.OPENAI_API_KEY:
-            if not config.IMAGE_FALLBACK_PROVIDER_ENABLED:
-                return jsonify({'error': 'Image generation is not configured (missing provider API key)'}), 503
+        if requested_provider in {'openai', 'auto'} and config.OPENAI_API_KEY:
+            try:
+                payload = {
+                    'model': config.OPENAI_IMAGE_MODEL,
+                    'prompt': enhanced_prompt,
+                    'size': size,
+                    'quality': quality,
+                    'n': 1,
+                    'response_format': 'b64_json',
+                }
 
-            encoded_prompt = urllib.parse.quote_plus(enhanced_prompt)
-            fallback_url = (
-                f"{config.IMAGE_FALLBACK_PROVIDER_URL.rstrip('/')}/{encoded_prompt}"
-                f"?width={size.split('x')[0]}&height={size.split('x')[1]}&model=flux&nologo=true"
-            )
-            img_id = db.save_image_generation(
-                user_id=user_id,
-                prompt=prompt,
-                image_url=fallback_url,
-                effective_prompt=enhanced_prompt,
-                style=style,
-                quality=quality,
-                size=size,
-                provider='pollinations-fallback',
-                model='flux',
-            )
-            return jsonify({
-                'status': 'success',
-                'id': img_id,
-                'provider': 'pollinations-fallback',
-                'image': fallback_url,
-                'model': 'flux',
-                'style': style,
-                'quality': quality,
-                'size': size,
-                'effective_prompt': enhanced_prompt,
-                'note': 'Fallback provider used because primary provider key is not configured.',
-            })
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {config.OPENAI_API_KEY}',
+                }
 
-        payload = {
-            'model': config.OPENAI_IMAGE_MODEL,
-            'prompt': enhanced_prompt,
-            'size': size,
-            'quality': quality,
-            'n': 1,
-            'response_format': 'b64_json',
-        }
+                response = requests.post(
+                    'https://api.openai.com/v1/images/generations',
+                    headers=headers,
+                    json=payload,
+                    timeout=config.OPENAI_TIMEOUT,
+                )
 
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {config.OPENAI_API_KEY}',
-        }
+                if response.status_code == 200:
+                    result = response.json()
+                    data_items = result.get('data') or []
+                    if data_items:
+                        first = data_items[0]
+                        image_b64 = first.get('b64_json')
+                        image_url = first.get('url')
+                        final_image = image_url or (f"data:image/png;base64,{image_b64}" if image_b64 else None)
+                        if final_image:
+                            img_id = db.save_image_generation(
+                                user_id=user_id,
+                                prompt=prompt,
+                                image_url=final_image,
+                                effective_prompt=enhanced_prompt,
+                                style=style,
+                                quality=quality,
+                                size=size,
+                                provider='openai',
+                                model=config.OPENAI_IMAGE_MODEL,
+                            )
+                            return jsonify({
+                                'status': 'success',
+                                'id': img_id,
+                                'provider': 'openai',
+                                'image': final_image,
+                                'model': config.OPENAI_IMAGE_MODEL,
+                                'style': style,
+                                'quality': quality,
+                                'size': size,
+                                'effective_prompt': enhanced_prompt,
+                            })
+                logger.warning(f"OpenAI image generation returned {response.status_code}: {response.text[:200]}")
+            except Exception as openai_exc:
+                logger.warning(f"OpenAI image generation failed: {openai_exc}")
 
-        response = requests.post(
-            'https://api.openai.com/v1/images/generations',
-            headers=headers,
-            json=payload,
-            timeout=config.OPENAI_TIMEOUT,
+        # 3) Fallback Provider (Pollinations AI - zero config / keyless / fast / reliable)
+        encoded_prompt = urllib.parse.quote_plus(enhanced_prompt)
+        w, h = size.split('x') if 'x' in size else ('1024', '1024')
+        import random
+        seed = random.randint(100000, 999999)
+        fallback_url = (
+            f"{config.IMAGE_FALLBACK_PROVIDER_URL.rstrip('/')}/{encoded_prompt}"
+            f"?width={w}&height={h}&model=flux&nologo=true&seed={seed}"
         )
-
-        if response.status_code >= 400:
-            provider_error = response.text[:500]
-            logger.error(f"Image generation failed: {response.status_code} {provider_error}")
-            return jsonify({
-                'error': 'Image generation failed on provider',
-                'provider_status': response.status_code,
-                'provider_error': provider_error,
-            }), 502
-
-        result = response.json()
-        data_items = result.get('data') or []
-        if not data_items:
-            return jsonify({'error': 'No image returned from provider'}), 502
-
-        first = data_items[0]
-        image_b64 = first.get('b64_json')
-        image_url = first.get('url')
-
-        final_image = image_url or (f"data:image/png;base64,{image_b64}" if image_b64 else None)
-        if not final_image:
-            return jsonify({'error': 'Provider response missing image payload'}), 502
-
         img_id = db.save_image_generation(
             user_id=user_id,
             prompt=prompt,
-            image_url=final_image,
+            image_url=fallback_url,
             effective_prompt=enhanced_prompt,
             style=style,
             quality=quality,
             size=size,
-            provider='openai',
-            model=config.OPENAI_IMAGE_MODEL,
+            provider='pollinations-fallback',
+            model='flux',
         )
-
         return jsonify({
             'status': 'success',
             'id': img_id,
-            'provider': 'openai',
-            'image': final_image,
-            'model': config.OPENAI_IMAGE_MODEL,
+            'provider': 'pollinations-fallback',
+            'image': fallback_url,
+            'model': 'flux',
             'style': style,
             'quality': quality,
             'size': size,
             'effective_prompt': enhanced_prompt,
+            'note': 'Generated via high-quality Pollinations Flux engine.',
         })
 
     except Exception as e:

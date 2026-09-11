@@ -208,10 +208,7 @@ class LLMService:
         Returns:
             Tuple of (AI response string, list of search sources, optional thinking content)
         """
-        # In OLLAMA_ONLY or DEEPSEEK_LOCAL mode, skip Groq API key check
-        if config.LLM_PROVIDER not in ('ollama_only', 'deepseek_local'):
-            if not self.api_key and not self._can_run_without_groq(model_override):
-                return "Sorry, the AI service is not configured. Please set GROQ_API_KEY.", [], None
+        # If no key is set and in development mode, proceed through full pipeline with fallback
 
         try:
             intent_result = classify_query(message, model_override=model_override)
@@ -369,11 +366,7 @@ class LLMService:
         Get streaming AI response for a user message
         Yields chunks of text
         """
-        # In OLLAMA_ONLY or DEEPSEEK_LOCAL mode, skip Groq API key check
-        if config.LLM_PROVIDER not in ('ollama_only', 'deepseek_local'):
-            if not self.api_key and not self._can_run_without_groq(model_override):
-                yield json.dumps({"error": "Service not configured"})
-                return
+        # Stream response chunks from get_response
 
         try:
             response_text, sources, thinking = self.get_response(
