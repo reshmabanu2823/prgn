@@ -68,26 +68,65 @@ export default function ChatWindow() {
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const messagesContainerRef = useRef(null);
   const messagesBottomRef = useRef(null);
+  const isAutoScrollEnabledRef = useRef(true);
+  const prevMessagesLengthRef = useRef(chat?.messages?.length || 0);
 
   const handleScroll = () => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    setShowScrollBottom(distanceFromBottom > 120);
+    // If the user scrolls up by more than 100px, pause auto-scroll so they can read peacefully
+    if (distanceFromBottom > 100) {
+      isAutoScrollEnabledRef.current = false;
+      setShowScrollBottom(true);
+    } else {
+      // Near bottom: resume auto-scroll
+      isAutoScrollEnabledRef.current = true;
+      setShowScrollBottom(false);
+    }
   };
 
-  const scrollToBottom = useCallback((smooth = true) => {
-    messagesBottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  const scrollToBottom = useCallback((smooth = false) => {
+    isAutoScrollEnabledRef.current = true;
+    setShowScrollBottom(false);
+    if (!messagesContainerRef.current) return;
+    if (smooth) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    } else {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, []);
 
   useEffect(() => {
-    if (!messagesContainerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
-    if (isNearBottom || isLoading) {
-      scrollToBottom(false);
+    const currentLength = chat?.messages?.length || 0;
+    // When a new message is appended (user submits or bot begins), re-enable auto-scroll
+    if (currentLength > prevMessagesLengthRef.current) {
+      isAutoScrollEnabledRef.current = true;
+      setShowScrollBottom(false);
     }
-  }, [chat?.messages, isLoading, scrollToBottom]);
+    prevMessagesLengthRef.current = currentLength;
+
+    if (!messagesContainerRef.current) return;
+    if (isAutoScrollEnabledRef.current) {
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current && isAutoScrollEnabledRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [chat?.messages, isLoading]);
+
+  useEffect(() => {
+    // When switching active chats, scroll immediately to bottom
+    isAutoScrollEnabledRef.current = true;
+    setShowScrollBottom(false);
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [activeChatId]);
 
   useEffect(() => {
     if (!highlightedMessageId) return;
@@ -394,7 +433,6 @@ export default function ChatWindow() {
 
   // If chat is active and has messages, show conversation
   const chatTitle = chat.title || 'New Chat'
-  const modeLabel = getModeLabel(chatMode)
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', position: 'relative' }}>
@@ -413,10 +451,6 @@ export default function ChatWindow() {
         }}
       >
         <div style={{ fontSize: '15px', fontWeight: 650, color: 'var(--pragna-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: isMobile ? '100%' : 'none', flexBasis: isMobile ? '100%' : 'auto' }}>{chatTitle}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '5px 13px', borderRadius: '999px', background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.22)', fontSize: '12px', fontWeight: 600, color: 'var(--pragna-accent)', letterSpacing: '0.4px', flexShrink: 0 }}>
-          <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--pragna-accent)', boxShadow: '0 0 8px rgba(212,175,55,0.8)' }}></span>
-          {modeLabel} mode
-        </div>
         <button
           onClick={handleSummarize}
           disabled={summarizing}
