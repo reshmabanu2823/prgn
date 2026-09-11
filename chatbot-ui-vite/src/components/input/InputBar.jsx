@@ -13,6 +13,7 @@ import {
   ThinkIcon,
   FileTextIcon,
   CloseIcon,
+  SoundwaveIcon,
 } from "../icons/PragnaIcon";
 
 // BCP-47 tags for SpeechRecognition
@@ -115,6 +116,7 @@ export default function InputBar() {
     personas, activePersonaId, setActivePersonaId,
     newChat, setLanguage, abortControllerRef, stopGeneration, openArtifact,
     extendedThinking, toggleExtendedThinking,
+    setIsVoiceAssistantOpen,
   } = useContext(ChatContext);
 
 
@@ -815,7 +817,7 @@ export default function InputBar() {
     : [];
 
   return (
-    <div style={{ padding: isMobile ? '8px 10px 14px 10px' : '16px 28px 22px 28px', flexShrink: 0 }}>
+    <div style={{ padding: isMobile ? '8px 10px max(12px, env(safe-area-inset-bottom)) 10px' : '16px 28px 22px 28px', flexShrink: 0 }}>
       <div style={{ maxWidth: '780px', margin: '0 auto', position: 'relative' }}>
 
         {slashMatches.length > 0 && (
@@ -890,8 +892,8 @@ export default function InputBar() {
             flexDirection: isMobile ? 'column' : 'row',
             alignItems: isMobile ? 'stretch' : 'center',
             gap: isMobile ? '8px' : '10px',
-            padding: isMobile ? '6px 10px 6px 14px' : '7px 10px 7px 16px',
-            borderRadius: '9999px',
+            padding: isMobile ? '8px 10px 8px 12px' : '7px 10px 7px 16px',
+            borderRadius: isMobile ? '20px' : '9999px',
             background: 'rgba(18, 16, 12, 0.85)',
             border: inputFocused
               ? '1.5px solid rgba(212, 175, 55, 0.7)'
@@ -932,7 +934,7 @@ export default function InputBar() {
               color: '#fffdf7',
               caretColor: 'var(--pragna-gold)',
               fontFamily: 'var(--pragna-chat-font)',
-              fontSize: '15px',
+              fontSize: isMobile ? '16px' : '15px',
               lineHeight: '22px',
               padding: isMobile ? '7px 4px' : '7px 8px',
               maxHeight: '180px',
@@ -952,11 +954,11 @@ export default function InputBar() {
               alignItems: 'center',
               justifyContent: 'space-between',
               width: isMobile ? '100%' : 'auto',
-              gap: '8px',
+              gap: isMobile ? '6px' : '8px',
             }}
           >
             {/* Left Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '4px' : '6px', minWidth: 0, flexWrap: 'wrap' }}>
               {/* Attach Button */}
               <div style={{ position: 'relative' }} ref={attachMenuRef}>
                 <button
@@ -1055,6 +1057,30 @@ export default function InputBar() {
                 className={recording ? 'animate-pulse' : 'hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.1)]'}
               >
                 {recording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
+              </button>
+
+              {/* ChatGPT-style Voice Mode Button */}
+              <button
+                type="button"
+                onClick={() => setIsVoiceAssistantOpen(true)}
+                title="Voice Assistant Mode"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  flexShrink: 0,
+                  borderRadius: '50%',
+                  border: '1px solid rgba(212, 175, 55, 0.35)',
+                  background: 'rgba(212, 175, 55, 0.1)',
+                  color: 'var(--pragna-gold-soft, #d4af37)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+                className="hover:scale-110 hover:bg-[rgba(212,175,55,0.22)] active:scale-95"
+              >
+                <SoundwaveIcon size={16} />
               </button>
 
               {/* Extended Thinking Toggle */}

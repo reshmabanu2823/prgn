@@ -3,9 +3,7 @@ import { ChatContext } from '../context/ChatContext'
 import { generateAIImage, generateDocument, sendOrchestratedMessageStream } from '../api/api'
 import { normalizeLanguageCode } from '../utils/language'
 import MainLayout from './layouts/MainLayout'
-import HomePage from './pages/HomePage'
 import ImageStudioPage from './pages/ImageStudioPage'
-import GptModesPage from './pages/GptModesPage'
 import ComparePage from './pages/ComparePage'
 import StarredRequestsPage from './pages/StarredRequestsPage'
 import ChatWindow from '../components/chat/ChatWindow'
@@ -17,6 +15,7 @@ import SettingsModal from './components/SettingsModal'
 import ShortcutsHelpModal from './components/ShortcutsHelpModal'
 import CommandPalette from './components/CommandPalette'
 import ArtifactPanel from '../components/artifact/ArtifactPanel'
+import VoiceAssistantModal from '../components/voice/VoiceAssistantModal'
 
 
 const IMAGE_REQUEST_RE = /(create|generate|make|design)\s+(an?\s+)?(ai\s+)?image|image\s+of|illustration\s+of|poster\s+of|logo\s+of/i
@@ -79,6 +78,10 @@ function App({ onLogout, userProfile }) {
     activeArtifact,
     isArtifactOpen,
     closeArtifact,
+    isVoiceAssistantOpen,
+    setIsVoiceAssistantOpen,
+    sendVoiceChatMessage,
+    lastAssistantMessage,
   } = useContext(ChatContext)
 
 
@@ -341,22 +344,6 @@ function App({ onLogout, userProfile }) {
       )
     }
 
-    if (activeView === 'modes') {
-      return <HomePage onUsePrompt={sendQuickPrompt} userProfile={userProfile} />
-    }
-
-    if (activeView === 'gpts') {
-      return (
-        <GptModesPage
-          chatMode={chatMode}
-          onSelectMode={(modeId) => {
-            setChatMode(modeId)
-            setActiveView('chats')
-          }}
-        />
-      )
-    }
-
     if (activeView === 'images') {
       return (
         <ImageStudioPage
@@ -447,6 +434,15 @@ function App({ onLogout, userProfile }) {
         artifact={activeArtifact}
         isOpen={isArtifactOpen}
         onClose={closeArtifact}
+      />
+
+      <VoiceAssistantModal
+        isOpen={isVoiceAssistantOpen}
+        onClose={() => setIsVoiceAssistantOpen(false)}
+        currentLanguage={language}
+        onSendMessage={sendVoiceChatMessage}
+        lastAssistantMessage={lastAssistantMessage}
+        isGenerating={isLoading}
       />
     </>
 

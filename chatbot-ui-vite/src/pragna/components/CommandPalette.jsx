@@ -15,9 +15,7 @@ const CHAT_MODES = [
 
 const NAV_VIEWS = [
   { id: 'chats', label: 'Chats' },
-  { id: 'modes', label: 'Modes' },
   { id: 'images', label: 'Images' },
-  { id: 'gpts', label: 'GPTs' },
   { id: 'starred', label: 'Starred requests' },
 ]
 
@@ -223,15 +221,15 @@ export default function CommandPalette({ isOpen, onClose, onNavigate, onOpenSett
   let lastSection = null
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '12vh', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 'max(6vh, 24px)', paddingLeft: '12px', paddingRight: '12px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0 }}></div>
-      <div style={{ position: 'relative', width: 'min(560px, 92vw)', maxHeight: '64vh', display: 'flex', flexDirection: 'column', borderRadius: '18px', overflow: 'hidden', background: 'var(--pragna-surface)', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 24px 70px rgba(0,0,0,0.65)' }}>
+      <div style={{ position: 'relative', width: 'min(560px, 96vw)', maxHeight: '72dvh', display: 'flex', flexDirection: 'column', borderRadius: '18px', overflow: 'hidden', background: 'var(--pragna-surface)', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 24px 70px rgba(0,0,0,0.65)' }}>
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search chats or run a command…"
-          style={{ padding: '16px 20px', border: 'none', borderBottom: '1px solid var(--pragna-border)', background: 'transparent', color: 'var(--pragna-text)', fontSize: '15px', fontFamily: 'inherit', outline: 'none' }}
+          style={{ padding: '14px 18px', border: 'none', borderBottom: '1px solid var(--pragna-border)', background: 'transparent', color: 'var(--pragna-text)', fontSize: '16px', fontFamily: 'inherit', outline: 'none' }}
         />
 
         <div style={{ overflowY: 'auto', padding: '8px' }} className="custom-scrollbar">

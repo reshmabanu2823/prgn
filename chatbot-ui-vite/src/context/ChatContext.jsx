@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useRef, useCallback } from "react";
 import { normalizeLanguageCode } from "../utils/language";
-import { listPersonas } from "../api/api";
+import { listPersonas, sendOrchestratedMessageStream } from "../api/api";
 import ChatManagementAPI from "../api/chatManagement";
 
 export const ChatContext = createContext();
@@ -373,6 +373,127 @@ export function ChatProvider({ children }) {
     setTemplates((prev) => prev.filter((t) => t.id !== templateId));
   };
 
+  // Voice Assistant state & streaming integration
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
+
+  const activeChat = chats.find((c) => c.id === activeChatId);
+  const activeMessages = activeChat?.messages || [];
+  const lastAssistantMessage = [...activeMessages].reverse().find((m) => m.sender === "bot")?.text || "";
+
+  const sendVoiceChatMessage = useCallback(
+    async (promptText) => {
+      if (!promptText || !promptText.trim()) return;
+      const text = promptText.trim();
+
+      let targetChatId = activeChatId;
+      let currentChat = chats.find((c) => c.id === activeChatId);
+
+      if (!targetChatId || !currentChat) {
+        const newId = Date.now().toString();
+        const newChatObj = {
+          id: newId,
+          title: "Voice conversation",
+          messages: [],
+        };
+        setChats((prev) => [newChatObj, ...prev]);
+        setActiveChatId(newId);
+        targetChatId = newId;
+        currentChat = newChatObj;
+      }
+
+      const updatedMessages = [
+        ...currentChat.messages,
+        { sender: "user", text, attachments: [] },
+      ];
+      const botMsg = { sender: "bot", text: "", isStreaming: true };
+
+      setChats((prev) =>
+        prev.map((c) =>
+          c.id === targetChatId ? { ...c, messages: [...updatedMessages, botMsg] } : c
+        )
+      );
+      setIsLoading(true);
+
+      try {
+        const normalizedLanguage = normalizeLanguageCode(language);
+        const activePersona = personas.find((p) => p.id === activePersonaId);
+        const controller = new AbortController();
+        if (abortControllerRef) {
+          abortControllerRef.current = controller;
+        }
+
+        let accumulated = "";
+        await sendOrchestratedMessageStream({
+          text,
+          language: normalizedLanguage,
+          user_id: targetChatId,
+          chatMode,
+          personaSystemPrompt: activePersona?.system_prompt,
+          extendedThinking,
+          signal: controller.signal,
+          onChunk: (chunk) => {
+            accumulated += chunk;
+            setChats((prev) =>
+              prev.map((c) =>
+                c.id === targetChatId
+                  ? {
+                      ...c,
+                      messages: c.messages.map((m, idx) =>
+                        idx === c.messages.length - 1
+                          ? { ...m, text: accumulated, isStreaming: true }
+                          : m
+                      ),
+                    }
+                  : c
+              )
+            );
+          },
+        });
+
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === targetChatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m, idx) =>
+                    idx === c.messages.length - 1
+                      ? { ...m, isStreaming: false }
+                      : m
+                  ),
+                }
+              : c
+          )
+        );
+
+        return accumulated;
+      } catch (err) {
+        console.error("Voice chat stream error:", err);
+        setChats((prev) =>
+          prev.map((c) =>
+            c.id === targetChatId
+              ? {
+                  ...c,
+                  messages: c.messages.map((m, idx) =>
+                    idx === c.messages.length - 1
+                      ? {
+                          ...m,
+                          text: "Sorry, I encountered an error processing your voice request.",
+                          isStreaming: false,
+                        }
+                      : m
+                  ),
+                }
+              : c
+          )
+        );
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [activeChatId, chats, language, chatMode, personas, activePersonaId, extendedThinking, abortControllerRef]
+  );
+
   return (
     <ChatContext.Provider
       value={{
@@ -433,6 +554,11 @@ export function ChatProvider({ children }) {
         closeArtifact,
         highlightedMessageId,
         setHighlightedMessageId,
+
+        isVoiceAssistantOpen,
+        setIsVoiceAssistantOpen,
+        sendVoiceChatMessage,
+        lastAssistantMessage,
       }}
     >
 
