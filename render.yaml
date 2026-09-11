@@ -86,18 +86,11 @@ services:
                      # https://etherx-frontend.onrender.com). Defaults to "*"
                      # (any origin) if left unset.
       - key: FRONTEND_URL
-        sync: false # REQUIRED for working password-reset emails: set to the
-                     # etherx-frontend URL (e.g. https://etherx-frontend-xxxx
-                     # .onrender.com). Used to build the reset link sent by
-                     # email - defaults to localhost otherwise, which breaks
-                     # for anyone except you on your own dev machine.
+        value: https://etherx-frontend.onrender.com
       - key: BACKEND_URL
-        sync: false # REQUIRED for Google/GitHub sign-in: set to this
-                     # service's own URL (e.g. https://etherx-backend
-                     # .onrender.com). Used to build the OAuth redirect_uri -
-                     # must exactly match the callback URL registered on
-                     # each provider's app (see GOOGLE_CLIENT_ID /
-                     # GITHUB_CLIENT_ID below for the exact paths).
+        value: https://etherx-backend.onrender.com
+      - key: JWT_SECRET
+        generateValue: true
       - key: GOOGLE_CLIENT_ID
         sync: false # Optional - Google sign-in is disabled (button returns
                      # 503) until both this and GOOGLE_CLIENT_SECRET are set.
@@ -207,4 +200,4 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        sync: false # Set to your backend URL after deploying backend
+        value: https://etherx-backend.onrender.com

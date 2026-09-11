@@ -430,7 +430,10 @@ export default function Login({ onLoginSuccess }) {
                   type="button"
                   className="auth-oauth-btn"
                   disabled={loading}
-                  onClick={() => { window.location.href = `${API_BASE}/api/auth/google/login`; }}
+                  onClick={() => {
+                    const returnTo = encodeURIComponent(window.location.origin);
+                    window.location.href = `${API_BASE}/api/auth/google/login?return_to=${returnTo}`;
+                  }}
                   title="Sign in with Google"
                 >
                   <GoogleIcon />
@@ -440,7 +443,10 @@ export default function Login({ onLoginSuccess }) {
                   type="button"
                   className="auth-oauth-btn"
                   disabled={loading}
-                  onClick={() => { window.location.href = `${API_BASE}/api/auth/github/login`; }}
+                  onClick={() => {
+                    const returnTo = encodeURIComponent(window.location.origin);
+                    window.location.href = `${API_BASE}/api/auth/github/login?return_to=${returnTo}`;
+                  }}
                   title="Sign in with GitHub"
                 >
                   <GitHubIcon />
@@ -451,7 +457,10 @@ export default function Login({ onLoginSuccess }) {
                 type="button"
                 className="auth-oauth-btn auth-oauth-btn-discord"
                 disabled={loading}
-                onClick={() => { window.location.href = `${API_BASE}/api/auth/discord/login`; }}
+                onClick={() => {
+                  const returnTo = encodeURIComponent(window.location.origin);
+                  window.location.href = `${API_BASE}/api/auth/discord/login?return_to=${returnTo}`;
+                }}
                 title="Sign in with Discord"
               >
                 <DiscordIcon />
