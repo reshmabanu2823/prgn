@@ -340,7 +340,7 @@ const ImageStudioPage = ({
                   background: 'var(--pragna-surface)',
                   color: 'var(--pragna-text)',
                   fontFamily: 'inherit',
-                  fontSize: '14px',
+                  fontSize: isMobile ? '16px' : '14px',
                   lineHeight: 1.5,
                   padding: '12px 14px',
                   boxSizing: 'border-box',
@@ -816,7 +816,7 @@ const ImageStudioPage = ({
                   border: '1px solid var(--pragna-border)',
                   background: 'var(--pragna-surface)',
                   color: 'var(--pragna-text)',
-                  fontSize: '13px',
+                  fontSize: isMobile ? '16px' : '13px',
                   outline: 'none',
                   boxSizing: 'border-box',
                 }}

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './voice.css';
+import { API_BASE } from '../../api/api';
 
 // Language tags for SpeechRecognition and SpeechSynthesis
 const LANG_VOICE_MAP = {
@@ -195,6 +196,7 @@ export default function VoiceAssistantModal({
   const speechQueueRef = useRef([]);
   const speechTimerRef = useRef(null);
   const isSpeakingRef = useRef(false);
+  const audioRef = useRef(null);
 
   const langConfig = LANG_VOICE_MAP[currentLanguage] || LANG_VOICE_MAP.en;
 
@@ -236,7 +238,7 @@ export default function VoiceAssistantModal({
     }
   }, []);
 
-  // Cleanup audio tracks and synthesizer
+  // Cleanup audio tracks, audio elements, and synthesizer
   const cleanupAudio = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -253,6 +255,13 @@ export default function VoiceAssistantModal({
       } catch {}
       recognitionRef.current = null;
     }
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch {}
+      audioRef.current = null;
+    }
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -267,7 +276,7 @@ export default function VoiceAssistantModal({
     isListeningRef.current = false;
   }, []);
 
-  // Play next emotional sentence from queue
+  // Play next emotional sentence from queue via Web Speech API fallback
   const playNextSentence = useCallback(() => {
     if (!isOpen || isMuted) {
       setVoiceState('idle');
@@ -279,7 +288,7 @@ export default function VoiceAssistantModal({
       setVoiceState('idle');
       setCurrentEmotion('neutral');
       isSpeakingRef.current = false;
-      // Auto resume listening for seamless hands-free loop
+      // Auto resume listening for hands-free conversational loop
       if (isOpen && !isMuted) {
         setTimeout(() => startListening(), 350);
       }
@@ -294,6 +303,9 @@ export default function VoiceAssistantModal({
     const femaleVoice = selectBestFemaleVoice(voices, langConfig.tag, langConfig.fallback);
     if (femaleVoice) {
       utterance.voice = femaleVoice;
+      utterance.lang = femaleVoice.lang;
+    } else {
+      utterance.lang = langConfig.tag || 'en-US';
     }
 
     // Apply accurate emotional cadence and register
@@ -301,7 +313,6 @@ export default function VoiceAssistantModal({
     utterance.rate = emotion.rate;
 
     utterance.onend = () => {
-      // Natural breath pause between thoughts
       speechTimerRef.current = setTimeout(() => {
         playNextSentence();
       }, emotion.pauseAfter);
@@ -312,17 +323,53 @@ export default function VoiceAssistantModal({
       playNextSentence();
     };
 
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
     window.speechSynthesis.speak(utterance);
   }, [isOpen, isMuted, langConfig]);
 
-  // Speak AI response with emotional sentence analysis and female voice
+  // Fallback Web Speech emotional synthesizer
+  const playWebSpeech = useCallback((clean) => {
+    if (!('speechSynthesis' in window)) {
+      setVoiceState('idle');
+      isSpeakingRef.current = false;
+      return;
+    }
+    window.speechSynthesis.cancel();
+    if (speechTimerRef.current) {
+      clearTimeout(speechTimerRef.current);
+      speechTimerRef.current = null;
+    }
+    const rawSentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+    speechQueueRef.current = rawSentences
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((sentence) => ({
+        sentence,
+        emotion: analyzeSentenceEmotion(sentence),
+      }));
+
+    playNextSentence();
+  }, [playNextSentence]);
+
+  // Speak AI response: first tries high-fidelity backend speech (Google TTS MP3), falls back to Web Speech API
   const speakResponse = useCallback((text) => {
-    if (!('speechSynthesis' in window) || !text) {
+    if (!text) {
       setVoiceState('idle');
       return;
     }
 
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch {}
+      audioRef.current = null;
+    }
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     if (speechTimerRef.current) {
       clearTimeout(speechTimerRef.current);
       speechTimerRef.current = null;
@@ -337,19 +384,63 @@ export default function VoiceAssistantModal({
     setAiSpeechText(clean);
     setVoiceState('speaking');
     isSpeakingRef.current = true;
+    setCurrentEmotion(analyzeSentenceEmotion(clean).type);
 
-    // Split text into coherent sentence clauses for dynamic emotional inflection
-    const rawSentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
-    speechQueueRef.current = rawSentences
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((sentence) => ({
-        sentence,
-        emotion: analyzeSentenceEmotion(sentence),
-      }));
+    // Call high-fidelity backend TTS
+    fetch(`${API_BASE}/api/speech`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: clean,
+        language: currentLanguage || 'en',
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((audioBlob) => {
+        if (!isOpen || isMuted) return;
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
 
-    playNextSentence();
-  }, [playNextSentence]);
+        audio.onplay = () => {
+          setVoiceState('speaking');
+          isSpeakingRef.current = true;
+        };
+
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          audioRef.current = null;
+          isSpeakingRef.current = false;
+          setVoiceState('idle');
+          setCurrentEmotion('neutral');
+          if (isOpen && !isMuted) {
+            setTimeout(() => startListening(), 350);
+          }
+        };
+
+        audio.onerror = (e) => {
+          console.warn("Backend speech audio error, switching to Web Speech fallback:", e);
+          playWebSpeech(clean);
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn("Audio play() blocked, using Web Speech fallback:", err);
+            playWebSpeech(clean);
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Backend speech API unreachable, using Web Speech fallback:", err);
+        playWebSpeech(clean);
+      });
+  }, [isOpen, isMuted, currentLanguage, playWebSpeech]);
 
   // Start Speech Recognition
   const startListening = useCallback(() => {
@@ -362,6 +453,13 @@ export default function VoiceAssistantModal({
     }
 
     // Stop speaking if was talking
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch {}
+      audioRef.current = null;
+    }
     if (window.speechSynthesis && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
     }
@@ -406,12 +504,22 @@ export default function VoiceAssistantModal({
       setUserTranscript(finalTranscript || interim);
     };
 
-    recognition.onend = () => {
+    recognition.onend = async () => {
       isListeningRef.current = false;
       const query = finalTranscript.trim();
       if (query && onSendMessage) {
         setVoiceState('thinking');
-        onSendMessage(query);
+        try {
+          const responseText = await onSendMessage(query);
+          if (responseText && responseText.trim()) {
+            speakResponse(responseText);
+          } else {
+            setVoiceState('idle');
+          }
+        } catch (err) {
+          console.error("Error sending voice message:", err);
+          setVoiceState('idle');
+        }
       } else {
         setVoiceState('idle');
       }
@@ -428,7 +536,7 @@ export default function VoiceAssistantModal({
     } catch (e) {
       console.warn("Could not start recognition:", e);
     }
-  }, [isMuted, isOpen, langConfig, onSendMessage]);
+  }, [isMuted, isOpen, langConfig, onSendMessage, speakResponse]);
 
   // Stop listening
   const stopListening = useCallback(() => {
@@ -441,8 +549,15 @@ export default function VoiceAssistantModal({
     isListeningRef.current = false;
   }, []);
 
-  // Interrupt speaking (ChatGPT style: tap orb to stop speech and speak next)
+  // Interrupt speaking: tap orb or button to stop speech and speak next
   const interrupt = useCallback(() => {
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch {}
+      audioRef.current = null;
+    }
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -457,7 +572,7 @@ export default function VoiceAssistantModal({
     setTimeout(() => startListening(), 250);
   }, [startListening]);
 
-  // When assistant finishes generating response, speak it aloud with emotions
+  // When assistant finishes generating response, speak it aloud with emotions (fallback trigger)
   useEffect(() => {
     if (isOpen && !isGenerating && lastAssistantMessage && voiceState === 'thinking') {
       speakResponse(lastAssistantMessage);
