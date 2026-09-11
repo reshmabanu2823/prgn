@@ -27,6 +27,7 @@ import {
   CheckIcon,
   SparklesIcon,
   ThinkIcon,
+  SoundwaveIcon,
 } from './PragnaIcon'
 
 const IMAGE_REQUEST_RE =
@@ -140,6 +141,7 @@ export default function NewChatView({ onNavigateToImages }) {
     activePersonaId,
     extendedThinking,
     toggleExtendedThinking,
+    setIsVoiceAssistantOpen,
   } = useContext(ChatContext)
 
   const [inputVal, setInputVal] = useState('')
@@ -1084,6 +1086,29 @@ export default function NewChatView({ onNavigateToImages }) {
               className={isRecording ? 'animate-pulse' : 'hover:text-[var(--pragna-gold-soft)]'}
             >
               {isRecording ? <MicOffIcon size={17} /> : <MicIcon size={17} />}
+            </button>
+
+            {/* ChatGPT-style Voice Assistant Mode */}
+            <button
+              type="button"
+              onClick={() => setIsVoiceAssistantOpen(true)}
+              title="Voice Assistant Mode"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: '1px solid rgba(212, 175, 55, 0.35)',
+                background: 'rgba(212, 175, 55, 0.1)',
+                color: 'var(--pragna-gold-soft, #d4af37)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+              className="hover:scale-110 hover:bg-[rgba(212,175,55,0.22)] active:scale-95"
+            >
+              <SoundwaveIcon size={16} />
             </button>
 
             {/* Send Button (Solid Gold Circular Pill matching Reference Design) */}

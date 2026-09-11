@@ -81,8 +81,8 @@ export default function Login({ onLoginSuccess }) {
 
   const handleOAuthLogin = (provider) => {
     setError('');
-    const apiBase = import.meta.env.VITE_API_URL || '';
-    window.location.href = `${apiBase}/api/auth/${provider}/login`;
+    const returnTo = encodeURIComponent(window.location.origin);
+    window.location.href = `${API_BASE}/api/auth/${provider}/login?return_to=${returnTo}`;
   };
 
   const handleLogin = async (e) => {
@@ -469,51 +469,6 @@ export default function Login({ onLoginSuccess }) {
               </button>
             </p>
 
-            <div className="auth-divider">or</div>
-
-            <div className="auth-oauth-container">
-              <div className="auth-oauth-row">
-                <button
-                  type="button"
-                  className="auth-oauth-btn"
-                  disabled={loading}
-                  onClick={() => {
-                    const returnTo = encodeURIComponent(window.location.origin);
-                    window.location.href = `${API_BASE}/api/auth/google/login?return_to=${returnTo}`;
-                  }}
-                  title="Sign in with Google"
-                >
-                  <GoogleIcon />
-                  Google
-                </button>
-                <button
-                  type="button"
-                  className="auth-oauth-btn"
-                  disabled={loading}
-                  onClick={() => {
-                    const returnTo = encodeURIComponent(window.location.origin);
-                    window.location.href = `${API_BASE}/api/auth/github/login?return_to=${returnTo}`;
-                  }}
-                  title="Sign in with GitHub"
-                >
-                  <GitHubIcon />
-                  GitHub
-                </button>
-              </div>
-              <button
-                type="button"
-                className="auth-oauth-btn auth-oauth-btn-discord"
-                disabled={loading}
-                onClick={() => {
-                  const returnTo = encodeURIComponent(window.location.origin);
-                  window.location.href = `${API_BASE}/api/auth/discord/login?return_to=${returnTo}`;
-                }}
-                title="Sign in with Discord"
-              >
-                <DiscordIcon />
-                Discord
-              </button>
-            </div>
           </>
         )}
       </div>
