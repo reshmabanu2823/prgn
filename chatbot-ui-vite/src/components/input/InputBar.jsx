@@ -158,7 +158,7 @@ export default function InputBar() {
     const el = inputRef?.current;
     if (!el) return;
     el.style.height = "auto";
-    const singleLineHeight = 24;
+    const singleLineHeight = 36;
     const maxHeight = 180;
     if (!text) {
       el.style.height = `${singleLineHeight}px`;
@@ -933,12 +933,15 @@ export default function InputBar() {
               caretColor: 'var(--pragna-gold)',
               fontFamily: 'var(--pragna-chat-font)',
               fontSize: '15px',
-              lineHeight: '24px',
-              padding: isMobile ? '4px 2px' : '6px 6px',
+              lineHeight: '22px',
+              padding: isMobile ? '7px 4px' : '7px 8px',
               maxHeight: '180px',
-              minHeight: '24px',
+              minHeight: '36px',
+              height: '36px',
+              margin: 0,
               boxSizing: 'border-box',
               overflowY: 'hidden',
+              verticalAlign: 'middle',
             }}
           />
 

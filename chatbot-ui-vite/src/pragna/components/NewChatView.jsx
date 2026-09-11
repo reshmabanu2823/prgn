@@ -162,7 +162,7 @@ export default function NewChatView({ onNavigateToImages }) {
     if (!el) return
     el.style.height = 'auto'
     const scrollHeight = el.scrollHeight
-    const minHeight = 24
+    const minHeight = 36
     const maxHeight = 160
     const targetHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight)
     el.style.height = `${targetHeight}px`
@@ -917,10 +917,15 @@ export default function NewChatView({ onNavigateToImages }) {
               caretColor: 'var(--pragna-gold)',
               fontSize: isMobile ? '14px' : '15px',
               fontFamily: 'inherit',
-              lineHeight: 1.4,
+              lineHeight: '22px',
               resize: 'none',
-              padding: '6px 0',
+              padding: isMobile ? '7px 4px' : '7px 8px',
+              minHeight: '36px',
+              height: '36px',
+              margin: 0,
+              boxSizing: 'border-box',
               maxHeight: '120px',
+              verticalAlign: 'middle',
             }}
           />
 
