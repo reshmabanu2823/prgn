@@ -444,6 +444,7 @@ function App({ onLogout, userProfile }) {
         artifact={activeArtifact}
         isOpen={isArtifactOpen}
         onClose={closeArtifact}
+        onOpen={() => openArtifact(activeArtifact)}
       />
 
       <VoiceAssistantModal

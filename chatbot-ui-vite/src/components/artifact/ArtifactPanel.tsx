@@ -29,6 +29,7 @@ export interface ArtifactPanelProps {
   artifact: ArtifactData | null;
   isOpen: boolean;
   onClose: () => void;
+  onOpen?: () => void;
 }
 
 export interface DetectedFileInfo {
@@ -425,7 +426,7 @@ function renderMarkdownDocument(rawText: string) {
   return elements;
 }
 
-export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPanelProps) {
+export default function ArtifactPanel({ artifact, isOpen, onClose, onOpen }: ArtifactPanelProps) {
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [viewportMode, setViewportMode] = useState<'responsive' | 'mobile' | 'tablet'>('responsive');
@@ -604,9 +605,12 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                 flexWrap: 'wrap',
               }}
             >
-              {/* Left Info: Icon, Title & Type Badge */}
+              {/* Left Info: Icon (toggle/hide split sidebar), Title & Type Badge */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                <div
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title="Hide split sidebar"
                   style={{
                     width: '36px',
                     height: '36px',
@@ -619,10 +623,13 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                     color: 'var(--pragna-gold-soft, #f3c96a)',
                     flexShrink: 0,
                     boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
+                  className="hover:scale-105 hover:border-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.25)] active:scale-95"
                 >
                   <CodeIcon />
-                </div>
+                </button>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <h3
@@ -1152,6 +1159,41 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
             </div>
           </motion.div>
         </>
+      )}
+
+      {/* Floating Re-Open / Show Button when split sidebar is hidden */}
+      {!isOpen && artifact && onOpen && (
+        <motion.button
+          key="artifact-toggle-show-btn"
+          type="button"
+          initial={{ opacity: 0, scale: 0.8, x: 20 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          exit={{ opacity: 0, scale: 0.8, x: 20 }}
+          transition={{ duration: 0.2 }}
+          onClick={onOpen}
+          title={`Show split sidebar (${artifact.title || 'Artifact'})`}
+          style={{
+            position: 'fixed',
+            right: '18px',
+            top: '78px',
+            zIndex: 45,
+            width: '40px',
+            height: '40px',
+            borderRadius: '11px',
+            background: 'linear-gradient(135deg, rgba(28,26,20,0.95), rgba(18,17,22,0.95))',
+            border: '1px solid rgba(212,175,55,0.45)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.6), 0 0 12px rgba(212,175,55,0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--pragna-gold-soft, #f3c96a)',
+            cursor: 'pointer',
+            backdropFilter: 'blur(12px)',
+          }}
+          className="hover:scale-110 hover:border-[var(--pragna-gold-soft)] hover:shadow-[0_0_18px_rgba(212,175,55,0.5)] active:scale-95 transition-all"
+        >
+          <CodeIcon />
+        </motion.button>
       )}
     </AnimatePresence>
   );
