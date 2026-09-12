@@ -17,6 +17,7 @@ import {
   RetryIcon,
   CloseIcon,
   ZapIcon,
+  ChevronDownIcon,
 } from '../components/PragnaIcon'
 
 const STYLE_OPTIONS = [
@@ -286,30 +287,44 @@ const ImageStudioPage = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div
             style={{
-              padding: isMobile ? '18px 16px' : '24px',
+              padding: isMobile ? '20px 16px' : '26px',
               borderRadius: '20px',
-              background: 'rgba(18, 16, 12, 0.85)',
-              border: '1.5px solid rgba(212, 175, 55, 0.28)',
-              backdropFilter: 'blur(14px)',
-              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.08)',
+              background: 'linear-gradient(180deg, rgba(28, 25, 20, 0.75) 0%, rgba(18, 16, 13, 0.9) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <SparklesIcon size={16} color="var(--pragna-gold-soft)" />
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '8px',
+                    background: 'rgba(212, 175, 55, 0.12)',
+                    border: '1px solid rgba(212, 175, 55, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--pragna-gold-soft)',
+                  }}
+                >
+                  <SparklesIcon size={15} />
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '0.01em' }}>
                   Create New Artwork
                 </span>
               </div>
               {rateLimit && (
-                <span style={{ fontSize: '11.5px', color: 'var(--pragna-text-muted)', background: 'rgba(255,255,255,0.04)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--pragna-gold-soft)', background: 'rgba(212, 175, 55, 0.08)', padding: '3px 9px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
                   Limit: {rateLimit}/acct
                 </span>
               )}
             </div>
 
             {/* Prompt textarea */}
-            <div style={{ position: 'relative', marginBottom: '14px' }}>
+            <div style={{ position: 'relative', marginBottom: '16px' }}>
               <textarea
                 value={imagePrompt}
                 onChange={(e) => setImagePrompt(e.target.value)}
@@ -318,107 +333,134 @@ const ImageStudioPage = ({
                 style={{
                   width: '100%',
                   resize: 'vertical',
-                  borderRadius: '12px',
-                  border: '1px solid var(--pragna-border)',
-                  background: 'var(--pragna-surface)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(0, 0, 0, 0.3)',
                   color: 'var(--pragna-text)',
                   fontFamily: 'inherit',
-                  fontSize: isMobile ? '16px' : '14px',
-                  lineHeight: 1.5,
-                  padding: '12px 14px',
+                  fontSize: isMobile ? '15px' : '13.5px',
+                  lineHeight: 1.55,
+                  padding: '14px 16px',
                   boxSizing: 'border-box',
                   outline: 'none',
-                  transition: 'border-color 0.2s ease',
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
                 }}
-                onFocus={(e) => (e.target.style.borderColor = 'var(--pragna-gold-soft)')}
-                onBlur={(e) => (e.target.style.borderColor = 'var(--pragna-border)')}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)'
+                  e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.1)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'
+                  e.target.style.boxShadow = 'none'
+                }}
               />
             </div>
 
             {/* Controls Selects */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '10px', marginBottom: '18px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '6px', letterSpacing: '0.3px' }}>
                   Style
                 </label>
-                <select
-                  value={imageStyle}
-                  onChange={(e) => setImageStyle(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 11px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--pragna-border)',
-                    background: 'var(--pragna-surface)',
-                    color: 'var(--pragna-text)',
-                    fontFamily: 'inherit',
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
-                >
-                  {STYLE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={imageStyle}
+                    onChange={(e) => setImageStyle(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 30px 10px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      color: 'var(--pragna-text)',
+                      fontFamily: 'inherit',
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                    }}
+                  >
+                    {STYLE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value} style={{ background: '#181613', color: '#fff' }}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--pragna-text-muted)', display: 'flex' }}>
+                    <ChevronDownIcon size={14} />
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '6px', letterSpacing: '0.3px' }}>
                   Quality
                 </label>
-                <select
-                  value={imageQuality}
-                  onChange={(e) => setImageQuality(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 11px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--pragna-border)',
-                    background: 'var(--pragna-surface)',
-                    color: 'var(--pragna-text)',
-                    fontFamily: 'inherit',
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
-                >
-                  {QUALITY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={imageQuality}
+                    onChange={(e) => setImageQuality(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 30px 10px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      color: 'var(--pragna-text)',
+                      fontFamily: 'inherit',
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                    }}
+                  >
+                    {QUALITY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value} style={{ background: '#181613', color: '#fff' }}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--pragna-text-muted)', display: 'flex' }}>
+                    <ChevronDownIcon size={14} />
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '6px', letterSpacing: '0.3px' }}>
                   Aspect Ratio
                 </label>
-                <select
-                  value={imageSize}
-                  onChange={(e) => setImageSize(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 11px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--pragna-border)',
-                    background: 'var(--pragna-surface)',
-                    color: 'var(--pragna-text)',
-                    fontFamily: 'inherit',
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
-                >
-                  {SIZE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={imageSize}
+                    onChange={(e) => setImageSize(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 30px 10px 12px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      color: 'var(--pragna-text)',
+                      fontFamily: 'inherit',
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                    }}
+                  >
+                    {SIZE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value} style={{ background: '#181613', color: '#fff' }}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--pragna-text-muted)', display: 'flex' }}>
+                    <ChevronDownIcon size={14} />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -429,17 +471,17 @@ const ImageStudioPage = ({
                 disabled={isGeneratingImage || !imagePrompt.trim()}
                 style={{
                   flex: 1,
-                  padding: '12px 18px',
-                  borderRadius: '11px',
+                  padding: '12px 20px',
+                  borderRadius: '12px',
                   border: 'none',
-                  background: 'linear-gradient(135deg, var(--pragna-gold-soft), var(--pragna-gold-deep))',
-                  color: 'var(--pragna-bg)',
-                  fontSize: '14px',
+                  background: 'linear-gradient(135deg, #dfc066 0%, #c49a37 100%)',
+                  color: '#12100C',
+                  fontSize: '13.5px',
                   fontWeight: 700,
                   cursor: (isGeneratingImage || !imagePrompt.trim()) ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.3), 0 0 14px rgba(212,175,55,0.22)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.3), 0 0 16px rgba(212,175,55,0.2)',
                   transition: 'all 0.2s ease',
-                  opacity: (isGeneratingImage || !imagePrompt.trim()) ? 0.5 : 1,
+                  opacity: (isGeneratingImage || !imagePrompt.trim()) ? 0.45 : 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -462,7 +504,7 @@ const ImageStudioPage = ({
                   </>
                 ) : (
                   <>
-                    <SparklesIcon size={16} />
+                    <SparklesIcon size={15} />
                     <span>Generate Artwork</span>
                   </>
                 )}
@@ -471,12 +513,12 @@ const ImageStudioPage = ({
               <button
                 onClick={onSendToChat}
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: '11px',
-                  border: '1px solid var(--pragna-border)',
-                  background: 'transparent',
+                  padding: '12px 18px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(255, 255, 255, 0.04)',
                   color: 'var(--pragna-text-muted)',
-                  fontSize: '13.5px',
+                  fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
@@ -492,11 +534,11 @@ const ImageStudioPage = ({
             {imageError && (
               <div
                 style={{
-                  marginTop: '14px',
+                  marginTop: '16px',
                   padding: '12px 14px',
                   borderRadius: '10px',
-                  background: 'rgba(180,60,60,0.15)',
-                  border: '1px solid rgba(220,110,100,0.35)',
+                  background: 'rgba(180,60,60,0.12)',
+                  border: '1px solid rgba(220,110,100,0.3)',
                   color: '#e8a598',
                   fontSize: '13px',
                   lineHeight: 1.4,
@@ -511,18 +553,19 @@ const ImageStudioPage = ({
           {generatedImage?.image && (
             <div
               style={{
-                padding: '18px',
+                padding: '20px',
                 borderRadius: '18px',
-                background: 'rgba(18, 16, 12, 0.75)',
-                border: '1px solid rgba(212, 175, 55, 0.25)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                background: 'linear-gradient(180deg, rgba(28, 25, 20, 0.75) 0%, rgba(18, 16, 13, 0.9) 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
+                gap: '14px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--pragna-gold-soft)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--pragna-gold-soft)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                   Latest Result
                 </span>
                 <span style={{ fontSize: '11.5px', color: 'var(--pragna-text-muted)' }}>
@@ -535,7 +578,7 @@ const ImageStudioPage = ({
                   position: 'relative',
                   borderRadius: '12px',
                   overflow: 'hidden',
-                  border: '1px solid var(--pragna-border)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   cursor: 'pointer',
                 }}
                 onClick={() => setSelectedImage(generatedImage)}
@@ -574,13 +617,13 @@ const ImageStudioPage = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '7px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(212,175,55,0.35)',
+                    padding: '8px 14px',
+                    borderRadius: '9px',
+                    border: '1px solid rgba(212,175,55,0.3)',
                     background: 'rgba(212,175,55,0.08)',
                     textDecoration: 'none',
                     color: 'var(--pragna-gold-soft)',
-                    fontSize: '12.5px',
+                    fontSize: '12px',
                     fontWeight: 600,
                   }}
                 >
@@ -593,10 +636,10 @@ const ImageStudioPage = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    padding: '7px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--pragna-border)',
-                    background: 'transparent',
+                    padding: '8px 12px',
+                    borderRadius: '9px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(255, 255, 255, 0.03)',
                     color: 'var(--pragna-text-muted)',
                     fontSize: '12px',
                     fontWeight: 500,
@@ -638,30 +681,31 @@ const ImageStudioPage = ({
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
-            background: 'rgba(18, 16, 12, 0.75)',
+            gap: '18px',
+            background: 'linear-gradient(180deg, rgba(28, 25, 20, 0.75) 0%, rgba(18, 16, 13, 0.9) 100%)',
             borderRadius: '20px',
-            border: '1px solid rgba(212, 175, 55, 0.2)',
-            padding: isMobile ? '16px' : '22px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(20px)',
+            padding: isMobile ? '20px 16px' : '26px',
+            boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
             minHeight: '480px',
           }}
         >
           {/* History Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '-0.01em' }}>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '-0.01em' }}>
                 Generation History
               </span>
               <span
                 style={{
                   fontSize: '11px',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: 'var(--pragna-gold-soft)',
-                  background: 'rgba(212,175,55,0.12)',
-                  border: '1px solid rgba(212,175,55,0.28)',
+                  background: 'rgba(212,175,55,0.08)',
+                  border: '1px solid rgba(212,175,55,0.2)',
                   padding: '2px 8px',
-                  borderRadius: '12px',
+                  borderRadius: '20px',
                 }}
               >
                 {history.length} {history.length === 1 ? 'artwork' : 'artworks'}
@@ -674,18 +718,20 @@ const ImageStudioPage = ({
                 disabled={historyLoading}
                 title="Refresh history"
                 style={{
-                  padding: '6px 10px',
+                  padding: '6px 11px',
                   borderRadius: '8px',
-                  border: '1px solid var(--pragna-border)',
-                  background: 'transparent',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(255, 255, 255, 0.03)',
                   color: 'var(--pragna-text-muted)',
                   cursor: historyLoading ? 'wait' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '5px',
+                  gap: '6px',
                   fontSize: '12px',
+                  fontWeight: 500,
+                  transition: 'all 0.15s ease',
                 }}
-                className="hover:text-[var(--pragna-gold-soft)]"
+                className="hover:text-[var(--pragna-gold-soft)] hover:border-accent-500/40"
               >
                 <div style={{ animation: historyLoading ? 'spin 1s linear infinite' : 'none', display: 'flex' }}>
                   <RetryIcon size={13} />
@@ -700,9 +746,9 @@ const ImageStudioPage = ({
                     disabled={isClearing}
                     title="Clear history"
                     style={{
-                      padding: '6px 10px',
+                      padding: '6px 11px',
                       borderRadius: '8px',
-                      border: '1px solid rgba(220,110,100,0.3)',
+                      border: '1px solid rgba(220,110,100,0.25)',
                       background: 'rgba(180,60,60,0.08)',
                       color: '#e8a598',
                       cursor: 'pointer',
@@ -710,6 +756,8 @@ const ImageStudioPage = ({
                       alignItems: 'center',
                       gap: '5px',
                       fontSize: '12px',
+                      fontWeight: 500,
+                      transition: 'all 0.15s ease',
                     }}
                   >
                     <TrashIcon size={13} />
@@ -722,12 +770,12 @@ const ImageStudioPage = ({
                         position: 'absolute',
                         top: 'calc(100% + 8px)',
                         right: 0,
-                        width: '220px',
-                        padding: '12px',
+                        width: '230px',
+                        padding: '14px',
                         borderRadius: '12px',
                         background: '#1A1815',
-                        border: '1px solid rgba(220,110,100,0.4)',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.7)',
+                        border: '1px solid rgba(220,110,100,0.35)',
+                        boxShadow: '0 12px 30px rgba(0,0,0,0.8)',
                         zIndex: 20,
                         fontSize: '12px',
                       }}
@@ -739,9 +787,9 @@ const ImageStudioPage = ({
                         <button
                           onClick={() => setShowClearConfirm(false)}
                           style={{
-                            padding: '4px 8px',
+                            padding: '5px 9px',
                             borderRadius: '6px',
-                            border: '1px solid var(--pragna-border)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             background: 'transparent',
                             color: 'var(--pragna-text-muted)',
                             cursor: 'pointer',
@@ -754,7 +802,7 @@ const ImageStudioPage = ({
                           onClick={handleClearAll}
                           disabled={isClearing}
                           style={{
-                            padding: '4px 10px',
+                            padding: '5px 11px',
                             borderRadius: '6px',
                             border: 'none',
                             background: '#c24136',
@@ -794,15 +842,18 @@ const ImageStudioPage = ({
                 placeholder="Search past prompts, styles, or models..."
                 style={{
                   width: '100%',
-                  padding: '9px 12px 9px 34px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--pragna-border)',
-                  background: 'var(--pragna-surface)',
+                  padding: '10px 14px 10px 36px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(0, 0, 0, 0.3)',
                   color: 'var(--pragna-text)',
-                  fontSize: isMobile ? '16px' : '13px',
+                  fontSize: isMobile ? '15px' : '13px',
                   outline: 'none',
                   boxSizing: 'border-box',
+                  transition: 'border-color 0.2s ease',
                 }}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)')}
               />
               {historySearch && (
                 <button
@@ -853,7 +904,7 @@ const ImageStudioPage = ({
                 textAlign: 'center',
                 gap: '12px',
                 borderRadius: '14px',
-                border: '1px dashed rgba(212,175,55,0.18)',
+                border: '1px dashed rgba(255, 255, 255, 0.1)',
                 background: 'rgba(255,255,255,0.015)',
               }}
             >
@@ -905,15 +956,15 @@ const ImageStudioPage = ({
                     key={item.id || item.created_at}
                     style={{
                       borderRadius: '14px',
-                      background: 'var(--pragna-surface)',
-                      border: '1px solid rgba(212,175,55,0.18)',
+                      background: 'linear-gradient(180deg, rgba(32, 29, 24, 0.6) 0%, rgba(20, 18, 14, 0.85) 100%)',
+                      border: '1px solid rgba(255, 255, 255, 0.07)',
                       overflow: 'hidden',
                       display: 'flex',
                       flexDirection: 'column',
-                      transition: 'transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease',
+                      transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                       position: 'relative',
                     }}
-                    className="hover:border-[var(--pragna-gold-soft)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.4),0_0_12px_rgba(212,175,55,0.15)] group"
+                    className="hover:border-[var(--pragna-gold-soft)] hover:shadow-[0_12px_28px_rgba(0,0,0,0.5),0_0_16px_rgba(212,175,55,0.12)] group"
                   >
                     {/* Thumbnail Image Container */}
                     <div
@@ -963,11 +1014,11 @@ const ImageStudioPage = ({
                               fontWeight: 700,
                               textTransform: 'uppercase',
                               color: '#fff',
-                              background: 'rgba(0,0,0,0.7)',
-                              backdropFilter: 'blur(6px)',
+                              background: 'rgba(0,0,0,0.65)',
+                              backdropFilter: 'blur(8px)',
                               padding: '2px 7px',
                               borderRadius: '6px',
-                              border: '1px solid rgba(255,255,255,0.15)',
+                              border: '1px solid rgba(255,255,255,0.12)',
                             }}
                           >
                             {item.style}
@@ -977,11 +1028,12 @@ const ImageStudioPage = ({
                           style={{
                             fontSize: '9.5px',
                             color: 'rgba(255,255,255,0.85)',
-                            background: 'rgba(0,0,0,0.6)',
-                            backdropFilter: 'blur(6px)',
+                            background: 'rgba(0,0,0,0.65)',
+                            backdropFilter: 'blur(8px)',
                             padding: '2px 6px',
                             borderRadius: '6px',
                             marginLeft: 'auto',
+                            border: '1px solid rgba(255,255,255,0.08)',
                           }}
                         >
                           {formatTimestamp(item.created_at)}
@@ -1074,16 +1126,16 @@ const ImageStudioPage = ({
                         {item.prompt}
                       </p>
 
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                           <button
                             onClick={() => handleCopyPrompt(item.id, item.effective_prompt || item.prompt)}
                             title="Copy Prompt"
                             style={{
-                              padding: '4px 6px',
-                              borderRadius: '5px',
-                              border: '1px solid var(--pragna-border)',
-                              background: 'transparent',
+                              padding: '5px 7px',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              background: 'rgba(255, 255, 255, 0.03)',
                               color: 'var(--pragna-text-muted)',
                               cursor: 'pointer',
                               display: 'flex',
@@ -1101,10 +1153,10 @@ const ImageStudioPage = ({
                             title="Download Artwork"
                             onClick={(e) => e.stopPropagation()}
                             style={{
-                              padding: '4px 6px',
-                              borderRadius: '5px',
-                              border: '1px solid var(--pragna-border)',
-                              background: 'transparent',
+                              padding: '5px 7px',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              background: 'rgba(255, 255, 255, 0.03)',
                               color: 'var(--pragna-text-muted)',
                               display: 'flex',
                               alignItems: 'center',
@@ -1120,8 +1172,8 @@ const ImageStudioPage = ({
                           disabled={isItemDeleting}
                           title="Delete Artwork"
                           style={{
-                            padding: '4px 6px',
-                            borderRadius: '5px',
+                            padding: '5px 7px',
+                            borderRadius: '6px',
                             border: 'none',
                             background: 'transparent',
                             color: 'rgba(220,110,100,0.6)',
