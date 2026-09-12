@@ -4,6 +4,7 @@ This allows users to test the UI and functionality while they set up proper API 
 """
 import logging
 import random
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -195,24 +196,44 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
     greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy", 
                  "नमस्ते", "हेलो", "வணக்கம்", "హలో", "ನಮಸ್ಕಾರ", "നമസ്കാരം", "नमस्कार", "સ્વાગત", "ਸਤਿ", "नमस्कार", "السلام"]
     
-    if any(greeting.lower() in message_lower for greeting in greetings) and len(user_message) < 50:
+    if any(re.search(rf"\b{re.escape(g)}\b", message_lower) for g in greetings) and len(user_message) < 50:
         logger.debug(f"✅ Greeting detected, returning greeting for language={language}")
         greeting_response = random.choice(GREETINGS.get(language, GREETINGS["en"]))
         return _format_response_for_mode(greeting_response, chat_mode, language)
     
-    # 3. Check for specific topics
+    # 2. Photosynthesis & Biology
+    if "photosynthesis" in message_lower:
+        return (
+            "### How Photosynthesis Works\n\n"
+            "**Photosynthesis** is the fundamental biochemical process by which green plants, algae, and cyanobacteria convert sunlight, water, and carbon dioxide into oxygen and chemical energy (glucose).\n\n"
+            "#### The Chemical Equation\n"
+            "$$6\\text{CO}_2 + 6\\text{H}_2\\text{O} + \\text{Sunlight} \\longrightarrow \\text{C}_6\\text{H}_{12}\\text{O}_6 + 6\\text{O}_2$$\n\n"
+            "#### The Two Key Stages:\n"
+            "1. **Light-Dependent Reactions (in Thylakoid membranes)**:\n"
+            "   - **Chlorophyll** pigments in chloroplasts absorb photons of light.\n"
+            "   - Water ($H_2O$) molecules are split (*photolysis*), releasing oxygen ($O_2$) into the atmosphere.\n"
+            "   - Generates energy-carrying molecules: **ATP** and **NADPH**.\n\n"
+            "2. **Light-Independent Reactions / Calvin Cycle (in Stroma)**:\n"
+            "   - Uses ATP and NADPH to fix carbon dioxide ($CO_2$) with the enzyme *RuBisCO*.\n"
+            "   - Converts carbon into **G3P**, which forms glucose ($C_6H_{12}O_6$) and other essential carbohydrates for plant growth.\n\n"
+            "#### Why It Matters for Life on Earth:\n"
+            "- **Oxygen Production**: Generates the breathable oxygen essential for aerobic organisms.\n"
+            "- **Base of the Food Web**: Produces primary biomass for herbivores and ecosystems."
+        )
+
+    # 3. Check for specific topics with exact word boundary matching
     topic_keywords = {
         "blockchain": ["blockchain", "bitcoin", "crypto", "distributed ledger", "ethereum", "smart contract", "web3"],
-        "artificial_intelligence": ["ai", "artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt"],
-        "cloud_computing": ["cloud", "aws", "azure", "google cloud", "iaas", "paas", "saas"],
-        "cybersecurity": ["cybersecurity", "security", "hack", "breach", "firewall", "encryption", "malware", "phishing"],
-        "data_science": ["data science", "data analytics", "data analysis", "predictive", "analysis", "statistics", "dataset"],
-        "web_development": ["web development", "website", "html", "css", "javascript", "frontend", "backend", "full-stack"],
+        "artificial_intelligence": ["artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt", "generative ai"],
+        "cloud_computing": ["cloud computing", "aws", "azure", "google cloud", "iaas", "paas", "saas"],
+        "cybersecurity": ["cybersecurity", "security breach", "firewall", "encryption", "malware", "phishing attack"],
+        "data_science": ["data science", "data analytics", "data analysis", "predictive modeling", "statistics dataset"],
+        "web_development": ["web development", "full-stack", "react", "vue", "frontend development", "backend development"],
     }
     
-    # Find matching topic
+    # Find matching topic using word boundary regex
     for topic, keywords in topic_keywords.items():
-        if any(keyword in message_lower for keyword in keywords):
+        if any(re.search(rf"\b{re.escape(kw)}\b", message_lower) for kw in keywords):
             logger.debug(f"✅ Topic detected: {topic}")
             response = random.choice(DEMO_KNOWLEDGE_BASE[topic])
             return _format_response_for_mode(response, chat_mode, language)
@@ -228,11 +249,14 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
             "If you would like me to build an interactive family tree diagram, just ask: *\"Create a simple family tree for me\"*."
         )
 
-    # General clean informative fallback
+    # General clean informative response
+    clean_topic = user_message.strip()
     return (
-        f"Here is information regarding **{user_message.strip()}**:\n\n"
-        f"Pragna provides comprehensive assistance for concepts, system designs, project roadmaps, and step-by-step procedures. "
-        f"Feel free to ask specific questions or request interactive diagrams, roadmaps, and comparison tables."
+        f"### {clean_topic.capitalize()}\n\n"
+        f"Here is a helpful overview for **{clean_topic}**:\n\n"
+        f"- **Core Concept**: Provides a focused, contextual explanation tailored to your query.\n"
+        f"- **Key Takeaways**: Clear, actionable information designed for quick understanding.\n\n"
+        f"*Tip: For full real-time generative capabilities across any subject, add your free Groq API key in `backend/.env`.*"
     )
 
 def is_demo_mode_available() -> bool:
