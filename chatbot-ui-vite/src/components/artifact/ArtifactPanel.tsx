@@ -303,23 +303,27 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, isOpen, onClose]);
 
-  if (!artifact) return null;
-
-  const title = artifact.title || 'Interactive Artifact';
-  const rawContent = artifact.content || '';
+  const title = artifact?.title || 'Interactive Artifact';
+  const rawContent = artifact?.content || '';
 
   const fileInfo = useMemo(() => {
-    return detectArtifactFileInfo(title, rawContent, artifact.type || artifact.language || '');
-  }, [title, rawContent, artifact.type, artifact.language]);
+    return detectArtifactFileInfo(title, rawContent, artifact?.type || artifact?.language || '');
+  }, [title, rawContent, artifact?.type, artifact?.language]);
 
-  const isDocType = fileInfo.extension === 'pdf' || ['docx', 'xlsx', 'pptx'].includes(fileInfo.extension) || artifact.format === 'pdf' || artifact.type === 'document';
+  const isDocType = fileInfo.extension === 'pdf' || ['docx', 'xlsx', 'pptx'].includes(fileInfo.extension) || artifact?.format === 'pdf' || artifact?.type === 'document';
 
   const previewDoc = useMemo(() => {
     return buildPreviewDocument(rawContent, fileInfo, title);
   }, [rawContent, fileInfo, title]);
 
+  // Line numbers count
+  const lines = useMemo(() => {
+    return rawContent.split('\n');
+  }, [rawContent]);
+
   // Handle Direct Download with automatic file extension
   const handleDownload = () => {
+    if (!artifact) return;
     if (artifact.downloadUrl) {
       const a = document.createElement('a');
       a.href = artifact.downloadUrl;
@@ -390,11 +394,6 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
     setRefreshKey((k) => k + 1);
   };
 
-  // Line numbers count
-  const lines = useMemo(() => {
-    return rawContent.split('\n');
-  }, [rawContent]);
-
   // Width style depending on fullscreen vs split-view
   const panelStyle = isFullscreen
     ? {
@@ -425,7 +424,7 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && artifact && (
         <>
           {/* Backdrop overlay (mobile or fullscreen) */}
           <motion.div
