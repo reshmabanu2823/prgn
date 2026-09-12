@@ -5,7 +5,7 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-from services import agent_tools, time_service, memory_db
+from services import agent_tools, time_service, autopilot_service, memory_db
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +130,62 @@ class AIOrchestrator:
                 "extended_thinking": extended_thinking,
                 "language": language,
                 "chat_mode": chat_mode,
+            }
+
+        # Autopilot Intent Pipeline: detects actionable goals (diagrams, roadmaps, trees, comparisons, schemas)
+        history = memory_db.get_history(user_id) if hasattr(memory_db, "get_history") else []
+        is_autopilot, vtype, is_followup = autopilot_service.detect_autopilot_intent(message, history)
+
+        if is_autopilot:
+            logger.info("✦ Autopilot Intent Detected: type=%s, follow_up=%s", vtype, is_followup)
+            import config
+            has_valid_key = bool(config.GROQ_API_KEY or config.OPENAI_API_KEY or (config.OLLAMA_ENABLED and config.OLLAMA_API_KEY and not config.OLLAMA_API_KEY.startswith("your_")))
+            
+            ai_response = ""
+            sources = []
+            thinking = None
+
+            if has_valid_key and not config.DEVELOPMENT_MODE:
+                ai_response, sources, thinking = self.llm.get_response(
+                    message,
+                    language,
+                    user_id,
+                    chat_mode,
+                    model_override=model_override,
+                    fallback_models=fallback_models,
+                    persona_system_prompt=persona_system_prompt,
+                    extended_thinking=extended_thinking,
+                    user_timezone=user_timezone,
+                    user_location=user_location,
+                )
+
+            has_canvas = "```canvas" in ai_response or "```pragna-canvas" in ai_response
+            is_generic_demo = (
+                not ai_response
+                or "demonstration mode" in ai_response.lower()
+                or "groq api key" in ai_response.lower()
+                or "demo response" in ai_response.lower()
+                or "please configure" in ai_response.lower()
+            )
+
+            if not has_canvas or is_generic_demo:
+                logger.info("Executing Autopilot structured generation pipeline for type: %s", vtype)
+                autopilot_payload = autopilot_service.generate_structured_autopilot_payload(
+                    message, vtype=vtype or "tree", is_followup=is_followup, history=history, language=language
+                )
+                ai_response = autopilot_service.format_autopilot_response(autopilot_payload)
+
+            return {
+                "response": ai_response,
+                "route": "autopilot",
+                "action": "autopilot_visualize",
+                "actions": [],
+                "web_search_sources": sources,
+                "thinking": thinking,
+                "extended_thinking": extended_thinking,
+                "language": language,
+                "chat_mode": chat_mode,
+                "autopilot": True,
             }
 
         # Default: reuse existing classifier/router/planner + RAG flow through LLM service.

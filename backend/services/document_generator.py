@@ -320,6 +320,7 @@ def generate_document_structure(prompt, language="en"):
         if (
             outline_text
             and isinstance(outline_text, str)
+            and "Pragna Autopilot:" not in outline_text
             and "```canvas" not in outline_text
             and len(outline_text.strip()) > 30
         ):

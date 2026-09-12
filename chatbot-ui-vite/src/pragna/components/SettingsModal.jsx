@@ -644,6 +644,32 @@ const SettingsModal = ({ isOpen, onClose, onLogout, userProfile }) => {
                   </p>
                 </div>
 
+                {/* 2. Pragna Autopilot */}
+                <div
+                  style={{
+                    padding: '16px 18px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  className="hover:border-[rgba(212,175,55,0.22)] hover:bg-[rgba(255,255,255,0.03)]"
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(212,175,55,0.08)', color: 'var(--pragna-gold-soft)', flexShrink: 0 }}>
+                      <ZapIcon size={14} />
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--pragna-text)' }}>
+                      Pragna Autopilot
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12.5px', lineHeight: 1.55, color: 'var(--pragna-text-muted)' }}>
+                    Give Pragna a goal and let it break the task down, organize the work and guide you through the steps toward a result.
+                  </p>
+                </div>
 
                 {/* 3. Indian Multilingual AI */}
                 <div

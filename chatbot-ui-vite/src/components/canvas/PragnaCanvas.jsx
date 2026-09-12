@@ -36,6 +36,7 @@ import ERDiagramRenderer from './renderers/ERDiagramRenderer'
 import ArchitectureRenderer from './renderers/ArchitectureRenderer'
 import RoadmapRenderer from './renderers/RoadmapRenderer'
 import PragnaCanvasModal from './PragnaCanvasModal'
+import AutopilotProgressCard from './AutopilotProgressCard'
 
 export default function PragnaCanvas({ canvasData, onSendPrompt }) {
   const { openArtifact } = useContext(ChatContext) || {}
@@ -141,8 +142,18 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
     }
   }
 
+  const isAutopilot = parsed.autopilot || parsed.mode === 'autopilot'
+
   return (
     <div className="w-full flex flex-col">
+      {isAutopilot && (
+        <AutopilotProgressCard
+          isStreaming={false}
+          onMakeItReal={() => setIsModalOpen(true)}
+          onEdit={() => onSendPrompt?.(`Update and refine the ${title} visualization: `)}
+        />
+      )}
+
       <div className="w-full my-3 rounded-2xl border border-[#2d2a24] bg-[#0c0c0e]/95 text-[#f0e6d3] shadow-[0_4px_24px_rgba(0,0,0,0.6)] backdrop-blur-md overflow-hidden transition-all duration-200 hover:border-[#d4af37]/35">
       {/* Canvas Top Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-2.5 bg-[#101014]/90 border-b border-[#2d2a24]">
