@@ -448,6 +448,134 @@ def _extract_first_image_url(payload):
     return None
 
 
+def _apply_etherx_watermark(image_source: str) -> str:
+    """
+    Overlays a sleek, premium 'EtherX Innovations' watermark badge on the bottom-right corner,
+    covering any third-party provider watermark (such as pollinations.ai) with official
+    EtherX Innovations branding.
+
+    Accepts:
+      - HTTP / HTTPS URL
+      - data:image/... URI
+      - raw base64 string
+    Returns:
+      - data:image/jpeg;base64,... URI (or the original image_source if processing cannot be performed).
+    """
+    if not image_source or not isinstance(image_source, str):
+        return image_source
+
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        import io
+        import base64
+        import requests
+
+        img_bytes = None
+
+        if image_source.startswith('http://') or image_source.startswith('https://'):
+            resp = requests.get(image_source, timeout=30)
+            if resp.status_code == 200:
+                img_bytes = resp.content
+            else:
+                logger.warning(
+                    f"[_apply_etherx_watermark] Failed to download image from {image_source[:100]}: HTTP {resp.status_code}"
+                )
+                return image_source
+        elif image_source.startswith('data:image/'):
+            parts = image_source.split(',', 1)
+            if len(parts) == 2:
+                img_bytes = base64.b64decode(parts[1])
+        else:
+            try:
+                img_bytes = base64.b64decode(image_source)
+            except Exception:
+                return image_source
+
+        if not img_bytes:
+            return image_source
+
+        img = Image.open(io.BytesIO(img_bytes)).convert('RGBA')
+        W, H = img.size
+
+        overlay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        text = "EtherX Innovations"
+        font_size = max(13, int(min(W, H) * 0.024))
+
+        font = None
+        for font_path in (
+            'C:/Windows/Fonts/segoeuib.ttf',
+            'C:/Windows/Fonts/segoeui.ttf',
+            'C:/Windows/Fonts/arialbd.ttf',
+            'C:/Windows/Fonts/arial.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        ):
+            try:
+                if os.path.exists(font_path):
+                    font = ImageFont.truetype(font_path, font_size)
+                    break
+            except Exception:
+                pass
+
+        if font is None:
+            font = ImageFont.load_default()
+
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+
+        pad_x = max(12, int(font_size * 0.85))
+        pad_y = max(6, int(font_size * 0.45))
+        dot_r = max(3, int(font_size * 0.22))
+        gap = max(6, int(font_size * 0.35))
+
+        pill_w = pad_x * 2 + dot_r * 2 + gap + text_w
+        pill_h = text_h + pad_y * 2
+
+        margin_x = max(14, int(W * 0.022))
+        margin_y = max(14, int(H * 0.022))
+
+        x1 = W - pill_w - margin_x
+        y1 = H - pill_h - margin_y
+        x2 = W - margin_x
+        y2 = H - margin_y
+
+        radius = pill_h // 2
+
+        # Draw semi-opaque dark obsidian pill with warm gold outline
+        draw.rounded_rectangle(
+            [x1, y1, x2, y2],
+            radius=radius,
+            fill=(12, 12, 16, 235),
+            outline=(212, 175, 55, 180),
+            width=1,
+        )
+
+        # Draw gold accent dot
+        dot_cx = x1 + pad_x + dot_r
+        dot_cy = y1 + pill_h // 2
+        draw.ellipse(
+            [dot_cx - dot_r, dot_cy - dot_r, dot_cx + dot_r, dot_cy + dot_r],
+            fill=(229, 192, 123, 255),
+        )
+
+        # Draw 'EtherX Innovations' text
+        text_x = dot_cx + dot_r + gap
+        text_y = y1 + (pill_h - text_h) // 2 - bbox[1]
+        draw.text((text_x, text_y), text, font=font, fill=(245, 245, 247, 245))
+
+        final_img = Image.alpha_composite(img, overlay).convert('RGB')
+        buf = io.BytesIO()
+        final_img.save(buf, format='JPEG', quality=95, optimize=True)
+        b64_str = base64.b64encode(buf.getvalue()).decode('utf-8')
+        return f"data:image/jpeg;base64,{b64_str}"
+
+    except Exception as exc:
+        logger.warning(f"[_apply_etherx_watermark] Failed to watermark image: {exc}")
+        return image_source
+
+
 def _normalize_language_code(language_value):
     raw = str(language_value or 'en').strip().lower().replace('_', '-')
     if not raw:
@@ -1389,6 +1517,7 @@ def generate_image():
         if requested_provider in {'runway', 'auto'} and config.RUNWAY_API_KEY:
             try:
                 runway_image = _generate_with_runway(enhanced_prompt, size)
+                runway_image = _apply_etherx_watermark(runway_image)
                 img_id = db.save_image_generation(
                     user_id=user_id,
                     prompt=prompt,
@@ -1452,8 +1581,9 @@ def generate_image():
                         first = data_items[0]
                         image_b64 = first.get('b64_json')
                         image_url = first.get('url')
-                        final_image = image_url or (f"data:image/png;base64,{image_b64}" if image_b64 else None)
-                        if final_image:
+                        raw_image = image_url or (f"data:image/png;base64,{image_b64}" if image_b64 else None)
+                        if raw_image:
+                            final_image = _apply_etherx_watermark(raw_image)
                             img_id = db.save_image_generation(
                                 user_id=user_id,
                                 prompt=prompt,
@@ -1489,10 +1619,11 @@ def generate_image():
             f"{config.IMAGE_FALLBACK_PROVIDER_URL.rstrip('/')}/{encoded_prompt}"
             f"?width={w}&height={h}&model=flux&nologo=true&seed={seed}"
         )
+        final_image = _apply_etherx_watermark(fallback_url)
         img_id = db.save_image_generation(
             user_id=user_id,
             prompt=prompt,
-            image_url=fallback_url,
+            image_url=final_image,
             effective_prompt=enhanced_prompt,
             style=style,
             quality=quality,
@@ -1504,13 +1635,13 @@ def generate_image():
             'status': 'success',
             'id': img_id,
             'provider': 'pollinations-fallback',
-            'image': fallback_url,
+            'image': final_image,
             'model': 'flux',
             'style': style,
             'quality': quality,
             'size': size,
             'effective_prompt': enhanced_prompt,
-            'note': 'Generated via high-quality Pollinations Flux engine.',
+            'note': 'Generated via EtherX Studio Flux engine.',
         })
 
     except Exception as e:
