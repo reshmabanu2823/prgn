@@ -3,13 +3,10 @@ import {
   ChatsIcon,
   MoreVerticalIcon,
   ShareIcon,
-  UserIcon,
   EditIcon,
   PinIcon,
-  ArchiveIcon,
   TrashIcon,
   DownloadIcon,
-  FolderIcon,
   CopyIcon,
   PrinterIcon,
 } from './PragnaIcon'
@@ -25,22 +22,26 @@ const RecentItem = ({
   onPdfExport,
   onDuplicate,
   onPinChat,
-  onArchive,
-  onStartGroupChat,
-  onMoveToFolder,
-  folders = [],
-  currentFolderId = null,
   active = false,
-  isPinned = false
+  isPinned = false,
 }) => {
   const [showMenu, setShowMenu] = useState(false)
-  const [showFolderSubmenu, setShowFolderSubmenu] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(title || '')
   const menuRef = useRef(null)
   const buttonRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
-    if (!showMenu) setShowFolderSubmenu(false)
-  }, [showMenu])
+    setEditTitle(title || '')
+  }, [title])
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -61,10 +62,25 @@ const RecentItem = ({
     setShowMenu(false)
   }
 
+  const handleSaveRename = () => {
+    const trimmed = editTitle.trim()
+    if (trimmed && trimmed !== title) {
+      onRename?.(trimmed)
+    } else {
+      setEditTitle(title || '')
+    }
+    setIsEditing(false)
+  }
+
+  const handleCancelRename = () => {
+    setEditTitle(title || '')
+    setIsEditing(false)
+  }
+
   return (
     <div
-      onClick={onClick}
-      draggable
+      onClick={isEditing ? undefined : onClick}
+      draggable={!isEditing}
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', id)
         e.dataTransfer.effectAllowed = 'move'
@@ -72,7 +88,7 @@ const RecentItem = ({
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (!isEditing && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault()
           onClick?.()
         }
@@ -80,10 +96,10 @@ const RecentItem = ({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '11px',
-        padding: '10px 14px',
+        gap: '9px',
+        padding: '9px 12px',
         borderRadius: '10px',
-        cursor: 'pointer',
+        cursor: isEditing ? 'default' : 'pointer',
         background: active ? 'var(--pragna-surface-2)' : 'transparent',
         border: `1px solid ${active ? 'rgba(212,175,55,0.22)' : 'transparent'}`,
         transition: 'all 0.15s ease',
@@ -91,54 +107,96 @@ const RecentItem = ({
       }}
       className="group focus-ring"
     >
-      {/* Icon */}
-      <ChatsIcon
-        size={15}
-        color={active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)'}
-        style={{ flexShrink: 0 }}
-      />
+      {/* Pinned badge icon or normal chats icon */}
+      {isPinned ? (
+        <PinIcon
+          size={14}
+          color="var(--pragna-gold-soft)"
+          style={{ flexShrink: 0 }}
+        />
+      ) : (
+        <ChatsIcon
+          size={14}
+          color={active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)'}
+          style={{ flexShrink: 0 }}
+        />
+      )}
 
-      {/* Title */}
-      <span
-        style={{
-          flex: 1,
-          fontSize: '13.5px',
-          color: active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {title}
-      </span>
+      {/* Title or Inline Edit Input */}
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          onBlur={handleSaveRename}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleSaveRename()
+            } else if (e.key === 'Escape') {
+              e.preventDefault()
+              handleCancelRename()
+            }
+          }}
+          style={{
+            flex: 1,
+            fontSize: '13px',
+            padding: '3px 7px',
+            borderRadius: '6px',
+            border: '1px solid var(--pragna-gold-soft)',
+            background: 'rgba(0, 0, 0, 0.45)',
+            color: 'var(--pragna-text)',
+            outline: 'none',
+            boxShadow: '0 0 0 2px rgba(212, 175, 55, 0.15)',
+          }}
+        />
+      ) : (
+        <span
+          style={{
+            flex: 1,
+            fontSize: '13.5px',
+            color: active ? 'var(--pragna-text)' : 'var(--pragna-text-muted)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {title}
+        </span>
+      )}
 
       {/* Action button */}
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          setShowMenu(!showMenu)
-        }}
-        style={{
-          padding: '2px',
-          borderRadius: '4px',
-          border: 'none',
-          background: 'transparent',
-          color: 'var(--pragna-text-muted)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: active ? 1 : 0,
-          transition: 'all 0.15s ease',
-        }}
-        className="group-hover:opacity-100"
-        aria-label={`Menu for ${title}`}
-      >
-        <MoreVerticalIcon size={13} />
-      </button>
+      {!isEditing && (
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowMenu(!showMenu)
+          }}
+          style={{
+            padding: '2px',
+            borderRadius: '4px',
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--pragna-text-muted)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: active || showMenu ? 1 : 0,
+            transition: 'all 0.15s ease',
+          }}
+          className="group-hover:opacity-100"
+          aria-label={`Menu for ${title}`}
+        >
+          <MoreVerticalIcon size={13} />
+        </button>
+      )}
 
+      {/* Context Menu (without Archive, Group Chat, Move to Folder) */}
       {showMenu && (
         <div
           ref={menuRef}
@@ -146,13 +204,13 @@ const RecentItem = ({
             position: 'absolute',
             right: '8px',
             top: 'calc(100% + 4px)',
-            width: '180px',
+            width: '170px',
             zIndex: 100,
             padding: '4px',
             borderRadius: '10px',
             background: 'var(--pragna-surface)',
             border: '1px solid rgba(212,175,55,0.22)',
-            boxShadow: '0 10px 24px rgba(0,0,0,0.5)',
+            boxShadow: '0 10px 24px rgba(0,0,0,0.55)',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -163,7 +221,7 @@ const RecentItem = ({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 10px',
+              padding: '7px 10px',
               borderRadius: '7px',
               border: 'none',
               background: 'transparent',
@@ -185,7 +243,7 @@ const RecentItem = ({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 10px',
+              padding: '7px 10px',
               borderRadius: '7px',
               border: 'none',
               background: 'transparent',
@@ -207,7 +265,7 @@ const RecentItem = ({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 10px',
+              padding: '7px 10px',
               borderRadius: '7px',
               border: 'none',
               background: 'transparent',
@@ -229,7 +287,7 @@ const RecentItem = ({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 10px',
+              padding: '7px 10px',
               borderRadius: '7px',
               border: 'none',
               background: 'transparent',
@@ -245,35 +303,17 @@ const RecentItem = ({
           </button>
 
           <button
-            onClick={(e) => handleMenuClick(e, onStartGroupChat)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 10px',
-              borderRadius: '7px',
-              border: 'none',
-              background: 'transparent',
-              color: '#d8cbb0',
-              fontSize: '13px',
-              cursor: 'pointer',
-              textAlign: 'left',
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowMenu(false)
+              setIsEditing(true)
             }}
-            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
-          >
-            <UserIcon size={14} />
-            <span>Group Chat</span>
-          </button>
-
-          <button
-            onClick={(e) => handleMenuClick(e, onRename)}
             style={{
               width: '100%',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 10px',
+              padding: '7px 10px',
               borderRadius: '7px',
               border: 'none',
               background: 'transparent',
@@ -295,7 +335,7 @@ const RecentItem = ({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 10px',
+              padding: '7px 10px',
               borderRadius: '7px',
               border: 'none',
               background: 'transparent',
@@ -306,106 +346,8 @@ const RecentItem = ({
             }}
             className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
           >
-            <PinIcon size={14} />
+            <PinIcon size={14} color={isPinned ? 'var(--pragna-gold-soft)' : undefined} />
             <span>{isPinned ? 'Unpin' : 'Pin'}</span>
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowFolderSubmenu((v) => !v)
-            }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 10px',
-              borderRadius: '7px',
-              border: 'none',
-              background: 'transparent',
-              color: '#d8cbb0',
-              fontSize: '13px',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
-          >
-            <FolderIcon size={14} />
-            <span>Move to folder</span>
-          </button>
-
-          {showFolderSubmenu && (
-            <div style={{ padding: '2px 0 2px 18px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {folders.length === 0 && (
-                <div style={{ padding: '6px 10px', fontSize: '12px', color: '#6b6152' }}>No folders yet</div>
-              )}
-              {folders.map((folder) => (
-                <button
-                  key={folder.id}
-                  onClick={(e) => handleMenuClick(e, () => onMoveToFolder?.(folder.id))}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '6px 10px',
-                    borderRadius: '7px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: folder.id === currentFolderId ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                  className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
-                >
-                  {folder.name}
-                </button>
-              ))}
-              {currentFolderId && (
-                <button
-                  onClick={(e) => handleMenuClick(e, () => onMoveToFolder?.(null))}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '6px 10px',
-                    borderRadius: '7px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--pragna-text-muted)',
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                  }}
-                  className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
-                >
-                  Remove from folder
-                </button>
-              )}
-            </div>
-          )}
-
-          <button
-            onClick={(e) => handleMenuClick(e, onArchive)}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 10px',
-              borderRadius: '7px',
-              border: 'none',
-              background: 'transparent',
-              color: '#d8cbb0',
-              fontSize: '13px',
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-            className="hover:bg-[#1e1a10] hover:text-[var(--pragna-gold-soft)]"
-          >
-            <ArchiveIcon size={14} />
-            <span>Archive</span>
           </button>
 
           <div style={{ height: '1px', background: 'var(--pragna-border)', margin: '4px 0' }} />
@@ -417,7 +359,7 @@ const RecentItem = ({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '8px 10px',
+              padding: '7px 10px',
               borderRadius: '7px',
               border: 'none',
               background: 'transparent',

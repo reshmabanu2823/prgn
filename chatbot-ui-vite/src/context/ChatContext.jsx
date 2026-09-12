@@ -349,6 +349,34 @@ export function ChatProvider({ children }) {
     );
   };
 
+  const renameChat = (chatId, newTitle) => {
+    const trimmed = (newTitle || "").trim();
+    if (!trimmed) return;
+    setChats((prev) =>
+      prev.map((c) => (c.id === chatId ? { ...c, title: trimmed } : c))
+    );
+    ChatManagementAPI.renameChat(chatId, trimmed).catch((err) => {
+      console.warn("Rename chat API sync notice:", err);
+    });
+  };
+
+  const pinChat = (chatId, isPinned) => {
+    setChats((prev) =>
+      prev.map((c) => {
+        if (c.id === chatId) {
+          const nextPinned = isPinned !== undefined ? isPinned : !c.pinned;
+          return { ...c, pinned: nextPinned };
+        }
+        return c;
+      })
+    );
+    const targetChat = chats.find((c) => c.id === chatId);
+    const targetPinned = isPinned !== undefined ? isPinned : !targetChat?.pinned;
+    ChatManagementAPI.pinChat(chatId, targetPinned).catch((err) => {
+      console.warn("Pin chat API sync notice:", err);
+    });
+  };
+
   const duplicateChat = (chatId) => {
     const source = chats.find((c) => c.id === chatId);
     if (!source) return;
@@ -357,6 +385,7 @@ export function ChatProvider({ children }) {
       title: `${source.title || "New chat"} (copy)`,
       messages: JSON.parse(JSON.stringify(source.messages || [])),
       folderId: source.folderId || null,
+      pinned: source.pinned || false,
     };
     setChats((prev) => [copy, ...prev]);
     setActiveChatId(copy.id);
@@ -523,6 +552,8 @@ export function ChatProvider({ children }) {
         login,
         logout,
         deleteChat,
+        renameChat,
+        pinChat,
         folders,
         createFolder,
         renameFolder,

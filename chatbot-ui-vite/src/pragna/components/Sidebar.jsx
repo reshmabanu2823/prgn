@@ -14,6 +14,7 @@ import {
   MoreVerticalIcon,
   EditIcon,
   TrashIcon,
+  PinIcon,
 } from './PragnaIcon'
 import pragnaLogo from '../../assets/pragna-logo-full.png'
 import ChatManagementAPI from '../../api/chatManagement'
@@ -33,11 +34,23 @@ const Sidebar = ({
   onClose,
   onOpenSettings,
 }) => {
-  const { folders, createFolder, renameFolder, deleteFolder, moveChatToFolder, toggleSidebar, sidebarSearchInputRef, duplicateChat, setHighlightedMessageId } = useContext(ChatContext)
+  const {
+    chats,
+    setChats,
+    renameChat,
+    pinChat,
+    deleteChat,
+    folders,
+    createFolder,
+    renameFolder,
+    deleteFolder,
+    moveChatToFolder,
+    toggleSidebar,
+    sidebarSearchInputRef,
+    duplicateChat,
+    setHighlightedMessageId,
+  } = useContext(ChatContext)
 
-  const [pinnedChats, setPinnedChats] = useState(new Set())
-  const [renameDialogId, setRenameDialogId] = useState(null)
-  const [newTitle, setNewTitle] = useState('')
   const [loading, setLoading] = useState(null)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -48,6 +61,8 @@ const Sidebar = ({
   const [folderMenuOpenId, setFolderMenuOpenId] = useState(null)
   const [folderRenameId, setFolderRenameId] = useState(null)
   const [folderRenameName, setFolderRenameName] = useState('')
+
+  const allChats = chats && chats.length > 0 ? chats : (recentChats || [])
 
   useEffect(() => {
     const q = searchQuery.trim()
@@ -65,7 +80,7 @@ const Sidebar = ({
           setSearchResults(res.results)
         } else {
           const localHits = []
-          recentChats.forEach((chat) => {
+          allChats.forEach((chat) => {
             if ((chat.title || '').toLowerCase().includes(q.toLowerCase())) {
               localHits.push({
                 chat_id: chat.id,
@@ -99,11 +114,9 @@ const Sidebar = ({
     }, 250)
 
     return () => clearTimeout(timer)
-  }, [searchQuery, recentChats])
+  }, [searchQuery, allChats])
 
-  // Collapsed state for the folder/recents sections in the sidebar list, so
-  // sections that aren't needed right now can be minimized out of the way.
-  // Keyed by folder id, plus the fixed 'recents' key for unfiled chats.
+  // Collapsed state for the folder/recents/pinned sections in the sidebar list
   const [collapsedSections, setCollapsedSections] = useState(() => {
     const saved = localStorage.getItem('pragna_collapsed_sections')
     return saved ? new Set(JSON.parse(saved)) : new Set()
@@ -148,16 +161,14 @@ const Sidebar = ({
   const handlePinChat = async (chatId) => {
     try {
       setLoading('pin')
-      const isPinned = pinnedChats.has(chatId)
-      await ChatManagementAPI.pinChat(chatId, !isPinned)
-      
-      const updated = new Set(pinnedChats)
-      if (updated.has(chatId)) {
-        updated.delete(chatId)
+      const targetChat = allChats.find((c) => c.id === chatId)
+      const nextPinned = !targetChat?.pinned
+      if (pinChat) {
+        pinChat(chatId, nextPinned)
       } else {
-        updated.add(chatId)
+        setChats((prev) => prev.map((c) => (c.id === chatId ? { ...c, pinned: nextPinned } : c)))
+        await ChatManagementAPI.pinChat(chatId, nextPinned)
       }
-      setPinnedChats(updated)
       setError(null)
     } catch (err) {
       setError(err.message || 'Failed to pin chat')
@@ -167,21 +178,20 @@ const Sidebar = ({
     }
   }
 
-  const handleRename = (chatId, currentTitle) => {
-    setRenameDialogId(chatId)
-    setNewTitle(currentTitle)
-  }
-
-  const handleRenameConfirm = async (chatId) => {
+  const handleRename = async (chatId, titleToSet) => {
     try {
       setLoading('rename')
-      await ChatManagementAPI.renameChat(chatId, newTitle)
+      if (renameChat) {
+        renameChat(chatId, titleToSet)
+      } else {
+        setChats((prev) => prev.map((c) => (c.id === chatId ? { ...c, title: titleToSet } : c)))
+        await ChatManagementAPI.renameChat(chatId, titleToSet)
+      }
       setError(null)
     } catch (err) {
       setError(err.message || 'Failed to rename chat')
       console.error('Error renaming chat:', err)
     } finally {
-      setRenameDialogId(null)
       setLoading(null)
     }
   }
@@ -189,7 +199,7 @@ const Sidebar = ({
   const handleShare = async (chatId) => {
     try {
       setLoading('share')
-      const targetChat = recentChats.find((c) => c.id === chatId)
+      const targetChat = allChats.find((c) => c.id === chatId)
       const title = targetChat?.title || 'New chat'
       const messages = targetChat?.messages || []
       const result = await ChatManagementAPI.shareChat(chatId, title, messages)
@@ -206,7 +216,7 @@ const Sidebar = ({
   }
 
   const handleExport = (chatId) => {
-    const targetChat = recentChats.find((c) => c.id === chatId)
+    const targetChat = allChats.find((c) => c.id === chatId)
     if (!targetChat) return
 
     const title = targetChat.title || 'New chat'
@@ -235,7 +245,7 @@ const Sidebar = ({
   }
 
   const handlePdfExport = (chatId) => {
-    const targetChat = recentChats.find((c) => c.id === chatId)
+    const targetChat = allChats.find((c) => c.id === chatId)
     if (!targetChat) return
 
     const title = targetChat.title || 'New chat'
@@ -288,45 +298,15 @@ ${turns}
     handleChangeView('chats')
   }
 
-  const handleStartGroupChat = async (chatId) => {
-    try {
-      setLoading('group')
-      const collaborators = prompt('Enter collaborator usernames/emails (comma-separated):')
-      if (collaborators) {
-        const collaboratorList = collaborators.split(',').map(c => c.trim()).filter(c => c)
-        if (collaboratorList.length > 0) {
-          await ChatManagementAPI.startGroupChat(chatId, collaboratorList)
-          alert(`Group chat started with ${collaboratorList.length} collaborators!`)
-          setError(null)
-        }
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to start group chat')
-      console.error('Error starting group chat:', err)
-    } finally {
-      setLoading(null)
-    }
-  }
-
-  const handleArchive = async (chatId) => {
-    try {
-      setLoading('archive')
-      await ChatManagementAPI.archiveChat(chatId)
-      setError(null)
-    } catch (err) {
-      setError(err.message || 'Failed to archive chat')
-      console.error('Error archiving chat:', err)
-    } finally {
-      setLoading(null)
-    }
-  }
-
   const handleDelete = async (chatId) => {
     if (window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
       try {
         setLoading('delete')
-        await ChatManagementAPI.deleteChat(chatId)
+        if (deleteChat) {
+          deleteChat(chatId)
+        }
         onDeleteRecent?.(chatId)
+        await ChatManagementAPI.deleteChat(chatId)
         setError(null)
       } catch (err) {
         setError(err.message || 'Failed to delete chat')
@@ -343,9 +323,6 @@ ${turns}
   const displayName = rawUsername.trim() || (rawEmail && !rawEmail.includes('@dev.local') ? rawEmail.split('@')[0] : 'User')
   const displayEmail = rawEmail.includes('@dev.local') ? '' : rawEmail.trim()
   const initials = (displayName.slice(0, 1) || 'U').toUpperCase()
-
-
-
 
   const navIcon = (name) => {
     switch (name) {
@@ -377,8 +354,7 @@ ${turns}
     { id: 'starred', label: 'Starred requests' },
   ]
 
-
-  const filteredChats = recentChats.filter((chat) => {
+  const filteredChats = allChats.filter((chat) => {
     const query = searchQuery.toLowerCase()
     if (!query) return true
     const titleMatch = (chat.title || 'New chat').toLowerCase().includes(query)
@@ -386,7 +362,8 @@ ${turns}
     return titleMatch || messageMatch
   })
 
-  const unfiledChats = filteredChats.filter((chat) => !chat.folderId)
+  const pinnedChatsList = filteredChats.filter((chat) => chat.pinned)
+  const unfiledChats = filteredChats.filter((chat) => !chat.pinned && !chat.folderId)
 
   return (
     <aside style={{ width: onClose ? '100%' : '270px', maxWidth: '100%', flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--pragna-surface)', borderRight: '1px solid var(--pragna-border)', backdropFilter: 'blur(8px)', height: '100%' }}>
@@ -682,6 +659,67 @@ ${turns}
             </div>
           ) : (
             <>
+              {/* Pinned section */}
+              {pinnedChatsList.length > 0 && (
+                <div style={{ marginBottom: '8px' }}>
+                  <div
+                    onClick={() => toggleSection('pinned')}
+                    title={collapsedSections.has('pinned') ? 'Expand pinned' : 'Minimize pinned'}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      letterSpacing: '2px',
+                      color: 'var(--pragna-gold-soft)',
+                      padding: '4px 14px',
+                      margin: '0 0 6px 0',
+                      cursor: 'pointer',
+                      borderRadius: '6px',
+                    }}
+                    className="hover:bg-[var(--pragna-surface-2)]"
+                  >
+                    <ChevronDownIcon
+                      size={12}
+                      style={{
+                        transform: collapsedSections.has('pinned') ? 'rotate(-90deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.15s ease',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <PinIcon size={12} color="var(--pragna-gold-soft)" />
+                    <span>PINNED</span>
+                    <span style={{ color: '#8c7639', fontSize: '11px' }}>({pinnedChatsList.length})</span>
+                  </div>
+
+                  <div style={{ display: collapsedSections.has('pinned') ? 'none' : 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {pinnedChatsList.map((chat) => (
+                      <RecentItem
+                        key={`pinned-${chat.id}`}
+                        id={chat.id}
+                        title={chat.title || 'New chat'}
+                        active={chat.id === activeChatId}
+                        isPinned={true}
+                        folders={folders}
+                        currentFolderId={chat.folderId || null}
+                        onClick={() => {
+                          onSelectRecent(chat.id)
+                          handleChangeView('chats')
+                        }}
+                        onDelete={() => handleDelete(chat.id)}
+                        onRename={(titleToSet) => handleRename(chat.id, titleToSet)}
+                        onShare={() => handleShare(chat.id)}
+                        onExport={() => handleExport(chat.id)}
+                        onPdfExport={() => handlePdfExport(chat.id)}
+                        onDuplicate={() => handleDuplicate(chat.id)}
+                        onPinChat={() => handlePinChat(chat.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Folder sections */}
               {folders.map((folder) => {
                 const folderChats = filteredChats.filter((c) => c.folderId === folder.id)
@@ -808,31 +846,27 @@ ${turns}
 
                     <div style={{ display: collapsedSections.has(folder.id) ? 'none' : 'flex', flexDirection: 'column', gap: '3px' }}>
                       {folderChats.map((chat) => (
-                        renameDialogId === chat.id ? null : (
-                          <RecentItem
-                            key={chat.id}
-                            id={chat.id}
-                            title={chat.title || 'New chat'}
-                            active={chat.id === activeChatId}
-                            isPinned={pinnedChats.has(chat.id)}
-                            folders={folders}
-                            currentFolderId={chat.folderId || null}
-                            onMoveToFolder={(folderId) => moveChatToFolder(chat.id, folderId)}
-                            onClick={() => {
-                              onSelectRecent(chat.id)
-                              handleChangeView('chats')
-                            }}
-                            onDelete={() => handleDelete(chat.id)}
-                            onRename={() => handleRename(chat.id, chat.title || 'New chat')}
-                            onShare={() => handleShare(chat.id)}
-                            onExport={() => handleExport(chat.id)}
-                            onPdfExport={() => handlePdfExport(chat.id)}
-                            onDuplicate={() => handleDuplicate(chat.id)}
-                            onPinChat={() => handlePinChat(chat.id)}
-                            onArchive={() => handleArchive(chat.id)}
-                            onStartGroupChat={() => handleStartGroupChat(chat.id)}
-                          />
-                        )
+                        <RecentItem
+                          key={chat.id}
+                          id={chat.id}
+                          title={chat.title || 'New chat'}
+                          active={chat.id === activeChatId}
+                          isPinned={!!chat.pinned}
+                          folders={folders}
+                          currentFolderId={chat.folderId || null}
+                          onMoveToFolder={(folderId) => moveChatToFolder(chat.id, folderId)}
+                          onClick={() => {
+                            onSelectRecent(chat.id)
+                            handleChangeView('chats')
+                          }}
+                          onDelete={() => handleDelete(chat.id)}
+                          onRename={(titleToSet) => handleRename(chat.id, titleToSet)}
+                          onShare={() => handleShare(chat.id)}
+                          onExport={() => handleExport(chat.id)}
+                          onPdfExport={() => handlePdfExport(chat.id)}
+                          onDuplicate={() => handleDuplicate(chat.id)}
+                          onPinChat={() => handlePinChat(chat.id)}
+                        />
                       ))}
                     </div>
                   </div>
@@ -865,65 +899,29 @@ ${turns}
                   RECENTS
                 </div>
 
-                {renameDialogId ? (
-                  <div style={{ padding: '6px 14px' }}>
-                    <input
-                      autoFocus
-                      type="text"
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '6px 10px',
-                        border: '1px solid var(--pragna-border)',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        background: 'var(--pragna-surface-2)',
-                        color: 'var(--pragna-text)',
-                      }}
-                      onBlur={() => {
-                        if (newTitle) handleRenameConfirm(renameDialogId)
-                        setRenameDialogId(null)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newTitle) {
-                          handleRenameConfirm(renameDialogId)
-                          setRenameDialogId(null)
-                        } else if (e.key === 'Escape') {
-                          setRenameDialogId(null)
-                        }
-                      }}
-                    />
-                  </div>
-                ) : null}
-
                 <div style={{ display: collapsedSections.has('recents') ? 'none' : 'flex', flexDirection: 'column', gap: '3px' }}>
                   {unfiledChats.map((chat) => (
-                    renameDialogId === chat.id ? null : (
-                      <RecentItem
-                        key={chat.id}
-                        id={chat.id}
-                        title={chat.title || 'New chat'}
-                        active={chat.id === activeChatId}
-                        isPinned={pinnedChats.has(chat.id)}
-                        folders={folders}
-                        currentFolderId={null}
-                        onMoveToFolder={(folderId) => moveChatToFolder(chat.id, folderId)}
-                        onClick={() => {
-                          onSelectRecent(chat.id)
-                          handleChangeView('chats')
-                        }}
-                        onDelete={() => handleDelete(chat.id)}
-                        onRename={() => handleRename(chat.id, chat.title || 'New chat')}
-                        onShare={() => handleShare(chat.id)}
-                        onExport={() => handleExport(chat.id)}
-                        onPdfExport={() => handlePdfExport(chat.id)}
-                        onDuplicate={() => handleDuplicate(chat.id)}
-                        onPinChat={() => handlePinChat(chat.id)}
-                        onArchive={() => handleArchive(chat.id)}
-                        onStartGroupChat={() => handleStartGroupChat(chat.id)}
-                      />
-                    )
+                    <RecentItem
+                      key={chat.id}
+                      id={chat.id}
+                      title={chat.title || 'New chat'}
+                      active={chat.id === activeChatId}
+                      isPinned={!!chat.pinned}
+                      folders={folders}
+                      currentFolderId={null}
+                      onMoveToFolder={(folderId) => moveChatToFolder(chat.id, folderId)}
+                      onClick={() => {
+                        onSelectRecent(chat.id)
+                        handleChangeView('chats')
+                      }}
+                      onDelete={() => handleDelete(chat.id)}
+                      onRename={(titleToSet) => handleRename(chat.id, titleToSet)}
+                      onShare={() => handleShare(chat.id)}
+                      onExport={() => handleExport(chat.id)}
+                      onPdfExport={() => handlePdfExport(chat.id)}
+                      onDuplicate={() => handleDuplicate(chat.id)}
+                      onPinChat={() => handlePinChat(chat.id)}
+                    />
                   ))}
                 </div>
               </div>
