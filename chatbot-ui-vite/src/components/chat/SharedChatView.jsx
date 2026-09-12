@@ -60,13 +60,13 @@ export default function SharedChatView({ token, onDone }) {
         {status === "ready" && (
           <div style={{ maxWidth: "780px", margin: "0 auto", padding: "0 28px" }}>
             <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--pragna-text)", marginBottom: "24px" }}>
-              {chat.title || "Shared chat"}
+              {chat?.title || "Shared chat"}
             </h1>
-            {chat.messages.length === 0 ? (
+            {(!chat?.messages || chat.messages.length === 0) ? (
               <p style={{ fontSize: "13.5px", color: "var(--pragna-text-muted)" }}>This conversation has no messages yet.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-                {chat.messages.map((m, idx) => (
+                {(chat.messages || []).map((m, idx) => (
                   <MessageBubble key={idx} message={m} language="en" />
                 ))}
               </div>

@@ -3,7 +3,7 @@ import { normalizeLanguageCode } from "../utils/language";
 import { listPersonas, sendOrchestratedMessageStream } from "../api/api";
 import ChatManagementAPI from "../api/chatManagement";
 
-export const ChatContext = createContext();
+export const ChatContext = createContext({});
 
 // Chat data used to live under these global localStorage keys, shared by
 // every account that ever logged in on the same browser - log out, log into

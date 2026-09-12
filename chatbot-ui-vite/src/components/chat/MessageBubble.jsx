@@ -753,7 +753,7 @@ const ThinkingAccordion = ({ thinking, isStreaming }) => {
 };
 
 export default function MessageBubble({ message, language = "en", onRetry, onEdit, isLoading, onToggleBookmark, onSendPrompt }) {
-  const { openArtifact } = useContext(ChatContext);
+  const { openArtifact } = useContext(ChatContext) || {};
   const [liked, setLiked] = useState(false);
 
   const [disliked, setDisliked] = useState(false);

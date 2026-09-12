@@ -151,7 +151,11 @@ export default function App() {
   }
 
   if (shareToken) {
-    return <SharedChatView token={shareToken} onDone={goHome} />;
+    return (
+      <ChatProvider>
+        <SharedChatView token={shareToken} onDone={goHome} />
+      </ChatProvider>
+    );
   }
 
   // Reuse the branded splash as the loading state too - the old placeholder
