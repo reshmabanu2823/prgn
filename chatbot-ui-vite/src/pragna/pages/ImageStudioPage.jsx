@@ -195,11 +195,24 @@ const ImageStudioPage = ({
     }
   }
 
-  // Filter history by search query
+  const [styleFilter, setStyleFilter] = useState('all')
+
+  const PROMPT_SUGGESTIONS = [
+    'A cyberpunk samurai in a rain-slicked neon Tokyo street, 8k cinematic reflections',
+    'Ethereal floating islands in a pastel sunset sky with cascading waterfalls',
+    'Hyperrealistic golden hour studio portrait of an astronaut with glowing helmet visor',
+    'Majestic ancient dragon wrapped around a crystal mountain peak, volumetric fog',
+  ]
+
+  // Filter history by search query and style filter
   const filteredHistory = useMemo(() => {
+    let list = history
+    if (styleFilter !== 'all') {
+      list = list.filter((item) => item.style && item.style.toLowerCase() === styleFilter.toLowerCase())
+    }
     const q = historySearch.trim().toLowerCase()
-    if (!q) return history
-    return history.filter(
+    if (!q) return list
+    return list.filter(
       (item) =>
         (item.prompt && item.prompt.toLowerCase().includes(q)) ||
         (item.effective_prompt && item.effective_prompt.toLowerCase().includes(q)) ||
@@ -207,14 +220,14 @@ const ImageStudioPage = ({
         (item.provider && item.provider.toLowerCase().includes(q)) ||
         (item.model && item.model.toLowerCase().includes(q))
     )
-  }, [history, historySearch])
+  }, [history, historySearch, styleFilter])
 
   return (
     <div
       style={{
         flex: 1,
         overflowY: 'auto',
-        padding: isMobile ? '16px 12px 32px 12px' : '32px 40px 48px 40px',
+        padding: isMobile ? '16px 12px 32px 12px' : '24px 32px 48px 32px',
         animation: 'fadeUp 0.35s ease',
         height: '100%',
         position: 'relative',
@@ -226,34 +239,36 @@ const ImageStudioPage = ({
       <div
         style={{
           position: 'absolute',
-          top: '-80px',
-          right: '-80px',
-          width: '550px',
-          height: '550px',
+          top: '-100px',
+          right: '-100px',
+          width: '650px',
+          height: '650px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.09) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(212, 175, 55, 0.07) 0%, transparent 70%)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
       />
 
-      {/* Top Header tracking phrase */}
+      {/* Top Header */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '20px',
+          marginBottom: '24px',
           zIndex: 2,
           position: 'relative',
+          flexWrap: 'wrap',
+          gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '9px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
               background: 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.05))',
               border: '1px solid rgba(212,175,55,0.35)',
               display: 'flex',
@@ -262,224 +277,285 @@ const ImageStudioPage = ({
               color: 'var(--pragna-gold-soft)',
             }}
           >
-            <ImagesIcon size={18} />
+            <ImagesIcon size={20} />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: isMobile ? '22px' : '26px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '-0.02em' }}>
-              Image Studio & Gallery
+            <h1 style={{ margin: 0, fontSize: isMobile ? '20px' : '24px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '-0.02em' }}>
+              AI Image Studio
             </h1>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--pragna-text-muted)', letterSpacing: '0.2px' }}>
+              Generate, iterate, and curate studio-grade visual artwork
+            </p>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {rateLimit && (
+            <span
+              style={{
+                fontSize: '11.5px',
+                fontWeight: 600,
+                color: 'var(--pragna-gold-soft)',
+                background: 'rgba(212, 175, 55, 0.08)',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                border: '1px solid rgba(212, 175, 55, 0.22)',
+              }}
+            >
+              Quota: {rateLimit}/acct
+            </span>
+          )}
+          <span
+            style={{
+              fontSize: '11.5px',
+              fontWeight: 600,
+              color: 'var(--pragna-text-muted)',
+              background: 'rgba(255, 255, 255, 0.04)',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+            }}
+          >
+            {history.length} {history.length === 1 ? 'Creation' : 'Creations'}
+          </span>
         </div>
       </div>
 
-      {/* 2-Column Responsive Layout */}
+      {/* 2-Column Professional Studio Workspace */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isTabletOrMobile ? '1fr' : 'minmax(420px, 490px) minmax(460px, 1fr)',
-          gap: '28px',
+          gridTemplateColumns: isTabletOrMobile ? '1fr' : '380px minmax(0, 1fr)',
+          gap: '24px',
           alignItems: 'start',
           position: 'relative',
           zIndex: 1,
         }}
       >
-        {/* LEFT COLUMN: Generation Studio */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* LEFT COLUMN: Studio Dock Panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div
             style={{
-              padding: isMobile ? '20px 16px' : '26px',
+              padding: isMobile ? '18px 16px' : '22px',
               borderRadius: '20px',
-              background: 'linear-gradient(180deg, rgba(28, 25, 20, 0.75) 0%, rgba(18, 16, 13, 0.9) 100%)',
+              background: 'linear-gradient(180deg, rgba(26, 23, 19, 0.85) 0%, rgba(16, 14, 11, 0.95) 100%)',
               border: '1px solid rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 20px 45px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '8px',
-                    background: 'rgba(212, 175, 55, 0.12)',
-                    border: '1px solid rgba(212, 175, 55, 0.25)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--pragna-gold-soft)',
-                  }}
-                >
-                  <SparklesIcon size={15} />
-                </div>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '0.01em' }}>
-                  Create New Artwork
+            {/* Panel Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <SparklesIcon size={15} color="var(--pragna-gold-soft)" />
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '0.01em' }}>
+                  Creation Studio
                 </span>
               </div>
-              {rateLimit && (
-                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--pragna-gold-soft)', background: 'rgba(212, 175, 55, 0.08)', padding: '3px 9px', borderRadius: '20px', border: '1px solid rgba(212, 175, 55, 0.2)' }}>
-                  Limit: {rateLimit}/acct
-                </span>
+              {imagePrompt && (
+                <button
+                  onClick={() => setImagePrompt('')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--pragna-text-muted)',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    padding: '2px 6px',
+                  }}
+                  className="hover:text-[var(--pragna-gold-soft)]"
+                >
+                  Clear Prompt
+                </button>
               )}
             </div>
 
-            {/* Prompt textarea */}
-            <div style={{ position: 'relative', marginBottom: '16px' }}>
+            {/* Prompt Textarea */}
+            <div style={{ position: 'relative', marginBottom: '10px' }}>
               <textarea
                 value={imagePrompt}
                 onChange={(e) => setImagePrompt(e.target.value)}
-                placeholder="Describe your vision in detail. Example: A futuristic cyberpunk samurai standing on a neon-lit rain-slicked Tokyo street, hyper-detailed reflections, cinematic 8k lighting..."
+                placeholder="Describe your vision in detail... e.g. A cybernetic owl perched on a neon branch in a futuristic misty rainforest, volumetric lighting, 8k resolution"
                 rows="4"
                 style={{
                   width: '100%',
                   resize: 'vertical',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  background: 'rgba(0, 0, 0, 0.3)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.09)',
+                  background: 'rgba(0, 0, 0, 0.35)',
                   color: 'var(--pragna-text)',
                   fontFamily: 'inherit',
-                  fontSize: isMobile ? '15px' : '13.5px',
-                  lineHeight: 1.55,
-                  padding: '14px 16px',
+                  fontSize: isMobile ? '14px' : '13px',
+                  lineHeight: 1.5,
+                  padding: '12px 14px',
                   boxSizing: 'border-box',
                   outline: 'none',
-                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                  transition: 'all 0.2s ease',
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)'
                   e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.1)'
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)'
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.09)'
                   e.target.style.boxShadow = 'none'
                 }}
               />
             </div>
 
-            {/* Controls Selects */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '6px', letterSpacing: '0.3px' }}>
-                  Style
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={imageStyle}
-                    onChange={(e) => setImageStyle(e.target.value)}
+            {/* Prompt Idea Chips */}
+            <div style={{ marginBottom: '18px' }}>
+              <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--pragna-text-muted)', marginBottom: '6px', fontWeight: 500 }}>
+                💡 Quick Inspiration Prompts:
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {PROMPT_SUGGESTIONS.map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setImagePrompt(suggestion)}
                     style={{
-                      width: '100%',
-                      padding: '10px 30px 10px 12px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      color: 'var(--pragna-text)',
-                      fontFamily: 'inherit',
-                      fontSize: '12.5px',
+                      textAlign: 'left',
+                      padding: '5px 8px',
+                      borderRadius: '6px',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      color: 'var(--pragna-text-muted)',
+                      fontSize: '11px',
+                      lineHeight: 1.3,
                       cursor: 'pointer',
-                      outline: 'none',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      transition: 'all 0.15s ease',
                     }}
+                    className="hover:text-[var(--pragna-gold-soft)] hover:bg-[rgba(212,175,55,0.06)] hover:border-[rgba(212,175,55,0.2)]"
+                    title={suggestion}
                   >
-                    {STYLE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value} style={{ background: '#181613', color: '#fff' }}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--pragna-text-muted)', display: 'flex' }}>
-                    <ChevronDownIcon size={14} />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '6px', letterSpacing: '0.3px' }}>
-                  Quality
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={imageQuality}
-                    onChange={(e) => setImageQuality(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 30px 10px 12px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      color: 'var(--pragna-text)',
-                      fontFamily: 'inherit',
-                      fontSize: '12.5px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                    }}
-                  >
-                    {QUALITY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value} style={{ background: '#181613', color: '#fff' }}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--pragna-text-muted)', display: 'flex' }}>
-                    <ChevronDownIcon size={14} />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '6px', letterSpacing: '0.3px' }}>
-                  Aspect Ratio
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={imageSize}
-                    onChange={(e) => setImageSize(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 30px 10px 12px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      color: 'var(--pragna-text)',
-                      fontFamily: 'inherit',
-                      fontSize: '12.5px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                    }}
-                  >
-                    {SIZE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value} style={{ background: '#181613', color: '#fff' }}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--pragna-text-muted)', display: 'flex' }}>
-                    <ChevronDownIcon size={14} />
-                  </div>
-                </div>
+                    • {suggestion}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px' }}>
+            {/* Visual Style Selector Chips */}
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '8px', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                Artistic Style
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                {STYLE_OPTIONS.map((opt) => {
+                  const isSelected = imageStyle === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setImageStyle(opt.value)}
+                      style={{
+                        padding: '7px 10px',
+                        borderRadius: '8px',
+                        border: isSelected ? '1px solid rgba(212, 175, 55, 0.55)' : '1px solid rgba(255, 255, 255, 0.06)',
+                        background: isSelected ? 'rgba(212, 175, 55, 0.12)' : 'rgba(255, 255, 255, 0.025)',
+                        color: isSelected ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                        fontSize: '12px',
+                        fontWeight: isSelected ? 600 : 500,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease',
+                      }}
+                      className={isSelected ? '' : 'hover:text-[var(--pragna-text)] hover:bg-[rgba(255,255,255,0.05)]'}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Aspect Ratio Segmented Control */}
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '8px', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                Aspect Ratio
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                {SIZE_OPTIONS.map((opt) => {
+                  const isSelected = imageSize === opt.value
+                  const shortLabel = opt.value === '1024x1024' ? '1:1 Square' : opt.value === '1024x1536' ? '9:16 Portrait' : '16:9 Landscape'
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setImageSize(opt.value)}
+                      style={{
+                        padding: '7px 6px',
+                        borderRadius: '8px',
+                        border: isSelected ? '1px solid rgba(212, 175, 55, 0.55)' : '1px solid rgba(255, 255, 255, 0.06)',
+                        background: isSelected ? 'rgba(212, 175, 55, 0.12)' : 'rgba(255, 255, 255, 0.025)',
+                        color: isSelected ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                        fontSize: '11.5px',
+                        fontWeight: isSelected ? 600 : 500,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease',
+                      }}
+                      className={isSelected ? '' : 'hover:text-[var(--pragna-text)] hover:bg-[rgba(255,255,255,0.05)]'}
+                    >
+                      {shortLabel}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Quality Segmented Control */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--pragna-text-muted)', marginBottom: '8px', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                Render Quality
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                {QUALITY_OPTIONS.map((opt) => {
+                  const isSelected = imageQuality === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setImageQuality(opt.value)}
+                      style={{
+                        padding: '7px 6px',
+                        borderRadius: '8px',
+                        border: isSelected ? '1px solid rgba(212, 175, 55, 0.55)' : '1px solid rgba(255, 255, 255, 0.06)',
+                        background: isSelected ? 'rgba(212, 175, 55, 0.12)' : 'rgba(255, 255, 255, 0.025)',
+                        color: isSelected ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                        fontSize: '11.5px',
+                        fontWeight: isSelected ? 600 : 500,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease',
+                      }}
+                      className={isSelected ? '' : 'hover:text-[var(--pragna-text)] hover:bg-[rgba(255,255,255,0.05)]'}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Primary Action Button */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
                 onClick={onGenerate}
                 disabled={isGeneratingImage || !imagePrompt.trim()}
                 style={{
-                  flex: 1,
+                  width: '100%',
                   padding: '12px 20px',
-                  borderRadius: '12px',
+                  borderRadius: '11px',
                   border: 'none',
-                  background: 'linear-gradient(135deg, #dfc066 0%, #c49a37 100%)',
+                  background: 'linear-gradient(135deg, #e5c56d 0%, #c49a37 100%)',
                   color: '#12100C',
                   fontSize: '13.5px',
                   fontWeight: 700,
                   cursor: (isGeneratingImage || !imagePrompt.trim()) ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.3), 0 0 16px rgba(212,175,55,0.2)',
+                  boxShadow: '0 8px 24px -4px rgba(212, 175, 55, 0.35)',
                   transition: 'all 0.2s ease',
                   opacity: (isGeneratingImage || !imagePrompt.trim()) ? 0.45 : 1,
                   display: 'flex',
@@ -513,20 +589,21 @@ const ImageStudioPage = ({
               <button
                 onClick={onSendToChat}
                 style={{
-                  padding: '12px 18px',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  background: 'rgba(255, 255, 255, 0.04)',
+                  width: '100%',
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(255, 255, 255, 0.025)',
                   color: 'var(--pragna-text-muted)',
-                  fontSize: '13px',
-                  fontWeight: 600,
+                  fontSize: '12.5px',
+                  fontWeight: 500,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap',
+                  textAlign: 'center',
                 }}
                 className="hover:text-[var(--pragna-gold-soft)] hover:border-accent-500/40"
               >
-                Send to Chat
+                Send Prompt to Chat
               </button>
             </div>
 
@@ -534,13 +611,13 @@ const ImageStudioPage = ({
             {imageError && (
               <div
                 style={{
-                  marginTop: '16px',
-                  padding: '12px 14px',
-                  borderRadius: '10px',
+                  marginTop: '14px',
+                  padding: '10px 12px',
+                  borderRadius: '9px',
                   background: 'rgba(180,60,60,0.12)',
                   border: '1px solid rgba(220,110,100,0.3)',
                   color: '#e8a598',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   lineHeight: 1.4,
                 }}
               >
@@ -549,26 +626,26 @@ const ImageStudioPage = ({
             )}
           </div>
 
-          {/* Active / Latest Generated Preview */}
+          {/* Active / Latest Generated Result Hero */}
           {generatedImage?.image && (
             <div
               style={{
-                padding: '20px',
+                padding: '16px',
                 borderRadius: '18px',
-                background: 'linear-gradient(180deg, rgba(28, 25, 20, 0.75) 0%, rgba(18, 16, 13, 0.9) 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'linear-gradient(180deg, rgba(26, 23, 19, 0.85) 0%, rgba(16, 14, 11, 0.95) 100%)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
                 backdropFilter: 'blur(20px)',
-                boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+                boxShadow: '0 16px 36px -10px rgba(0, 0, 0, 0.7)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '14px',
+                gap: '12px',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--pragna-gold-soft)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                  Latest Result
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--pragna-gold-soft)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                  Latest Creation
                 </span>
-                <span style={{ fontSize: '11.5px', color: 'var(--pragna-text-muted)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--pragna-text-muted)' }}>
                   {generatedImage.model || 'DALL-E 3'}
                 </span>
               </div>
@@ -576,7 +653,7 @@ const ImageStudioPage = ({
               <div
                 style={{
                   position: 'relative',
-                  borderRadius: '12px',
+                  borderRadius: '10px',
                   overflow: 'hidden',
                   border: '1px solid rgba(255, 255, 255, 0.08)',
                   cursor: 'pointer',
@@ -592,293 +669,279 @@ const ImageStudioPage = ({
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'rgba(0,0,0,0.3)',
+                    background: 'rgba(0,0,0,0.35)',
                     opacity: 0,
                     transition: 'opacity 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#fff',
-                    fontSize: '13px',
+                    fontSize: '12.5px',
                     fontWeight: 600,
                     gap: '6px',
                   }}
                   className="hover:opacity-100"
                 >
-                  <SearchIcon size={16} /> Click to Expand
+                  <SearchIcon size={15} /> Click to Expand
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                 <a
                   href={generatedImage.image}
                   download={`pragna-art-${Date.now()}.png`}
                   style={{
+                    flex: 1,
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '6px',
-                    padding: '8px 14px',
-                    borderRadius: '9px',
+                    padding: '7px 10px',
+                    borderRadius: '8px',
                     border: '1px solid rgba(212,175,55,0.3)',
                     background: 'rgba(212,175,55,0.08)',
                     textDecoration: 'none',
                     color: 'var(--pragna-gold-soft)',
-                    fontSize: '12px',
+                    fontSize: '11.5px',
                     fontWeight: 600,
                   }}
                 >
-                  <DownloadIcon size={14} /> Download High-Res
+                  <DownloadIcon size={13} /> Download
                 </a>
 
                 <button
                   onClick={() => handleCopyPrompt('latest', generatedImage.effective_prompt || imagePrompt)}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    borderRadius: '9px',
+                    padding: '7px 10px',
+                    borderRadius: '8px',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     background: 'rgba(255, 255, 255, 0.03)',
                     color: 'var(--pragna-text-muted)',
-                    fontSize: '12px',
+                    fontSize: '11.5px',
                     fontWeight: 500,
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
                   }}
                 >
-                  {copiedId === 'latest' ? <CheckIcon size={13} color="var(--pragna-gold-soft)" /> : <CopyIcon size={13} />}
-                  <span>{copiedId === 'latest' ? 'Copied' : 'Copy Prompt'}</span>
+                  {copiedId === 'latest' ? <CheckIcon size={12} color="var(--pragna-gold-soft)" /> : <CopyIcon size={12} />}
+                  <span>{copiedId === 'latest' ? 'Copied' : 'Prompt'}</span>
                 </button>
               </div>
-
-              {generatedImage?.effective_prompt && (
-                <div
-                  style={{
-                    marginTop: '2px',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    background: 'var(--pragna-surface-2, rgba(255,255,255,0.03))',
-                    border: '1px solid var(--pragna-border)',
-                    fontSize: '12px',
-                  }}
-                >
-                  <details style={{ cursor: 'pointer' }}>
-                    <summary style={{ fontWeight: 600, color: 'var(--pragna-gold-soft)', userSelect: 'none', outline: 'none' }}>
-                      Prompt used {generatedImage.effective_prompt !== imagePrompt ? '(LLM Enhanced)' : ''}
-                    </summary>
-                    <p style={{ marginTop: '6px', marginBottom: 0, lineHeight: 1.5, color: 'var(--pragna-text)', whiteSpace: 'pre-wrap', fontSize: '12px', opacity: 0.9 }}>
-                      {generatedImage.effective_prompt}
-                    </p>
-                  </details>
-                </div>
-              )}
             </div>
           )}
         </div>
 
-        {/* RIGHT COLUMN: User History Activity Section */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '18px',
-            background: 'linear-gradient(180deg, rgba(28, 25, 20, 0.75) 0%, rgba(18, 16, 13, 0.9) 100%)',
-            borderRadius: '20px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(20px)',
-            padding: isMobile ? '20px 16px' : '26px',
-            boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-            minHeight: '480px',
-          }}
-        >
-          {/* History Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--pragna-text)', letterSpacing: '-0.01em' }}>
-                Generation History
-              </span>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: 'var(--pragna-gold-soft)',
-                  background: 'rgba(212,175,55,0.08)',
-                  border: '1px solid rgba(212,175,55,0.2)',
-                  padding: '2px 8px',
-                  borderRadius: '20px',
-                }}
-              >
-                {history.length} {history.length === 1 ? 'artwork' : 'artworks'}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                onClick={fetchHistory}
-                disabled={historyLoading}
-                title="Refresh history"
-                style={{
-                  padding: '6px 11px',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  color: 'var(--pragna-text-muted)',
-                  cursor: historyLoading ? 'wait' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  transition: 'all 0.15s ease',
-                }}
-                className="hover:text-[var(--pragna-gold-soft)] hover:border-accent-500/40"
-              >
-                <div style={{ animation: historyLoading ? 'spin 1s linear infinite' : 'none', display: 'flex' }}>
-                  <RetryIcon size={13} />
-                </div>
-                <span>Refresh</span>
-              </button>
-
-              {history.length > 0 && (
-                <div style={{ position: 'relative' }}>
+        {/* RIGHT COLUMN: Expansive Gallery & Portfolio */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
+          {/* Gallery Toolbar: Filters, Search, Actions */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              padding: isMobile ? '14px' : '16px 20px',
+              borderRadius: '16px',
+              background: 'linear-gradient(180deg, rgba(26, 23, 19, 0.75) 0%, rgba(16, 14, 11, 0.85) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(20px)',
+            }}
+          >
+            {/* Top Row: Search + Action Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                <SearchIcon
+                  size={14}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--pragna-text-muted)',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Search prompts, styles, or models..."
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 34px',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(0, 0, 0, 0.35)',
+                    color: 'var(--pragna-text)',
+                    fontSize: '12.5px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    transition: 'border-color 0.2s ease',
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)')}
+                  onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)')}
+                />
+                {historySearch && (
                   <button
-                    onClick={() => setShowClearConfirm((v) => !v)}
-                    disabled={isClearing}
-                    title="Clear history"
+                    onClick={() => setHistorySearch('')}
                     style={{
-                      padding: '6px 11px',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(220,110,100,0.25)',
-                      background: 'rgba(180,60,60,0.08)',
-                      color: '#e8a598',
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--pragna-text-muted)',
                       cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      transition: 'all 0.15s ease',
+                      padding: '2px',
                     }}
                   >
-                    <TrashIcon size={13} />
-                    <span>Clear All</span>
+                    <CloseIcon size={12} />
                   </button>
+                )}
+              </div>
 
-                  {showClearConfirm && (
-                    <div
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={fetchHistory}
+                  disabled={historyLoading}
+                  title="Refresh creations"
+                  style={{
+                    padding: '7px 11px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    color: 'var(--pragna-text-muted)',
+                    cursor: historyLoading ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                  }}
+                  className="hover:text-[var(--pragna-gold-soft)] hover:border-accent-500/40"
+                >
+                  <div style={{ animation: historyLoading ? 'spin 1s linear infinite' : 'none', display: 'flex' }}>
+                    <RetryIcon size={13} />
+                  </div>
+                  <span>Refresh</span>
+                </button>
+
+                {history.length > 0 && (
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowClearConfirm((v) => !v)}
+                      disabled={isClearing}
+                      title="Clear gallery"
                       style={{
-                        position: 'absolute',
-                        top: 'calc(100% + 8px)',
-                        right: 0,
-                        width: '230px',
-                        padding: '14px',
-                        borderRadius: '12px',
-                        background: '#1A1815',
-                        border: '1px solid rgba(220,110,100,0.35)',
-                        boxShadow: '0 12px 30px rgba(0,0,0,0.8)',
-                        zIndex: 20,
+                        padding: '7px 11px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(220,110,100,0.25)',
+                        background: 'rgba(180,60,60,0.08)',
+                        color: '#e8a598',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
                         fontSize: '12px',
+                        fontWeight: 500,
                       }}
                     >
-                      <p style={{ margin: '0 0 10px 0', color: '#e8a598', fontWeight: 500, lineHeight: 1.4 }}>
-                        Clear all your image history? This action cannot be undone.
-                      </p>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button
-                          onClick={() => setShowClearConfirm(false)}
-                          style={{
-                            padding: '5px 9px',
-                            borderRadius: '6px',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            background: 'transparent',
-                            color: 'var(--pragna-text-muted)',
-                            cursor: 'pointer',
-                            fontSize: '11.5px',
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleClearAll}
-                          disabled={isClearing}
-                          style={{
-                            padding: '5px 11px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            background: '#c24136',
-                            color: '#fff',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            fontSize: '11.5px',
-                          }}
-                        >
-                          {isClearing ? 'Clearing...' : 'Yes, Clear'}
-                        </button>
+                      <TrashIcon size={13} />
+                      <span>Clear All</span>
+                    </button>
+
+                    {showClearConfirm && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          right: 0,
+                          width: '230px',
+                          padding: '14px',
+                          borderRadius: '12px',
+                          background: '#1A1815',
+                          border: '1px solid rgba(220,110,100,0.35)',
+                          boxShadow: '0 12px 30px rgba(0,0,0,0.8)',
+                          zIndex: 20,
+                          fontSize: '12px',
+                        }}
+                      >
+                        <p style={{ margin: '0 0 10px 0', color: '#e8a598', fontWeight: 500, lineHeight: 1.4 }}>
+                          Clear your entire creations gallery? This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => setShowClearConfirm(false)}
+                            style={{
+                              padding: '5px 9px',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              background: 'transparent',
+                              color: 'var(--pragna-text-muted)',
+                              cursor: 'pointer',
+                              fontSize: '11.5px',
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleClearAll}
+                            disabled={isClearing}
+                            style={{
+                              padding: '5px 11px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              background: '#c24136',
+                              color: '#fff',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              fontSize: '11.5px',
+                            }}
+                          >
+                            {isClearing ? 'Clearing...' : 'Yes, Clear'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom Row: Style Filter Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }} className="custom-scrollbar">
+              {['all', 'cinematic', 'photo', 'illustration', 'concept_art', 'anime', 'digital_art', 'fantasy'].map((st) => {
+                const label = st === 'all' ? 'All Styles' : st === 'photo' ? 'Photoreal' : st === 'concept_art' ? 'Concept Art' : st === 'digital_art' ? 'Digital' : st.charAt(0).toUpperCase() + st.slice(1)
+                const isSelected = styleFilter === st
+                return (
+                  <button
+                    key={st}
+                    onClick={() => setStyleFilter(st)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '16px',
+                      border: isSelected ? '1px solid rgba(212, 175, 55, 0.5)' : '1px solid rgba(255, 255, 255, 0.06)',
+                      background: isSelected ? 'rgba(212, 175, 55, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                      color: isSelected ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                      fontSize: '11.5px',
+                      fontWeight: isSelected ? 600 : 400,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s ease',
+                    }}
+                    className={isSelected ? '' : 'hover:text-[var(--pragna-text)] hover:bg-[rgba(255,255,255,0.05)]'}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          {/* Search bar */}
-          {history.length > 0 && (
-            <div style={{ position: 'relative' }}>
-              <SearchIcon
-                size={14}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--pragna-text-muted)',
-                }}
-              />
-              <input
-                type="text"
-                value={historySearch}
-                onChange={(e) => setHistorySearch(e.target.value)}
-                placeholder="Search past prompts, styles, or models..."
-                style={{
-                  width: '100%',
-                  padding: '10px 14px 10px 36px',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  color: 'var(--pragna-text)',
-                  fontSize: isMobile ? '15px' : '13px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s ease',
-                }}
-                onFocus={(e) => (e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255, 255, 255, 0.08)')}
-              />
-              {historySearch && (
-                <button
-                  onClick={() => setHistorySearch('')}
-                  style={{
-                    position: 'absolute',
-                    right: '10px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--pragna-text-muted)',
-                    cursor: 'pointer',
-                    padding: '2px',
-                  }}
-                >
-                  <CloseIcon size={12} />
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* History Gallery Body */}
+          {/* History Gallery Grid */}
           {historyLoading && history.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '260px', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '12px' }}>
               <div
                 style={{
                   width: '28px',
@@ -890,7 +953,7 @@ const ImageStudioPage = ({
                 }}
               />
               <span style={{ fontSize: '13px', color: 'var(--pragna-text-muted)' }}>
-                Loading your creations...
+                Loading your visual creations...
               </span>
             </div>
           ) : filteredHistory.length === 0 ? (
@@ -900,19 +963,19 @@ const ImageStudioPage = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '48px 20px',
+                padding: '64px 20px',
                 textAlign: 'center',
-                gap: '12px',
-                borderRadius: '14px',
+                gap: '14px',
+                borderRadius: '18px',
                 border: '1px dashed rgba(255, 255, 255, 0.1)',
-                background: 'rgba(255,255,255,0.015)',
+                background: 'rgba(255, 255, 255, 0.015)',
               }}
             >
               <div
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '14px',
                   background: 'rgba(212,175,55,0.08)',
                   display: 'flex',
                   alignItems: 'center',
@@ -921,16 +984,16 @@ const ImageStudioPage = ({
                   opacity: 0.85,
                 }}
               >
-                <ImagesIcon size={24} />
+                <ImagesIcon size={26} />
               </div>
-              <div style={{ maxWidth: '320px' }}>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: 600, color: 'var(--pragna-text)' }}>
-                  {historySearch ? 'No matching images found' : 'No image history yet'}
+              <div style={{ maxWidth: '360px' }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '15px', fontWeight: 600, color: 'var(--pragna-text)' }}>
+                  {historySearch || styleFilter !== 'all' ? 'No matching artworks found' : 'No creations in gallery yet'}
                 </h4>
-                <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--pragna-text-muted)', lineHeight: 1.5 }}>
-                  {historySearch
-                    ? 'Try adjusting your search keywords to find other generated artworks.'
-                    : 'Artworks you generate will appear here automatically. You can remix prompts, preview in HD, or download anytime.'}
+                <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--pragna-text-muted)', lineHeight: 1.55 }}>
+                  {historySearch || styleFilter !== 'all'
+                    ? 'Try clearing your search query or selecting "All Styles" to view all generated images.'
+                    : 'Describe your vision in the Studio dock on the left and click "Generate Artwork" to start crafting your gallery.'}
                 </p>
               </div>
             </div>
@@ -938,13 +1001,9 @@ const ImageStudioPage = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(210px, 1fr))',
-                gap: '14px',
-                maxHeight: '680px',
-                overflowY: 'auto',
-                paddingRight: '4px',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: '16px',
               }}
-              className="custom-scrollbar"
             >
               {filteredHistory.map((item) => {
                 const imgSource = item.image_url || item.image
@@ -955,8 +1014,8 @@ const ImageStudioPage = ({
                   <div
                     key={item.id || item.created_at}
                     style={{
-                      borderRadius: '14px',
-                      background: 'linear-gradient(180deg, rgba(32, 29, 24, 0.6) 0%, rgba(20, 18, 14, 0.85) 100%)',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(180deg, rgba(26, 23, 19, 0.75) 0%, rgba(16, 14, 11, 0.95) 100%)',
                       border: '1px solid rgba(255, 255, 255, 0.07)',
                       overflow: 'hidden',
                       display: 'flex',
@@ -964,14 +1023,14 @@ const ImageStudioPage = ({
                       transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                       position: 'relative',
                     }}
-                    className="hover:border-[var(--pragna-gold-soft)] hover:shadow-[0_12px_28px_rgba(0,0,0,0.5),0_0_16px_rgba(212,175,55,0.12)] group"
+                    className="hover:border-[var(--pragna-gold-soft)] hover:shadow-[0_16px_36px_rgba(0,0,0,0.6),0_0_18px_rgba(212,175,55,0.12)] group"
                   >
                     {/* Thumbnail Image Container */}
                     <div
                       style={{
                         position: 'relative',
                         width: '100%',
-                        paddingTop: '68%',
+                        paddingTop: '72%',
                         background: '#0a0908',
                         cursor: 'pointer',
                         overflow: 'hidden',
@@ -989,7 +1048,7 @@ const ImageStudioPage = ({
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
-                          transition: 'transform 0.3s ease',
+                          transition: 'transform 0.35s ease',
                         }}
                         className="group-hover:scale-105"
                       />
@@ -1108,7 +1167,7 @@ const ImageStudioPage = ({
                     </div>
 
                     {/* Card Meta Content */}
-                    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'space-between' }}>
+                    <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'space-between' }}>
                       <p
                         style={{
                           margin: 0,
