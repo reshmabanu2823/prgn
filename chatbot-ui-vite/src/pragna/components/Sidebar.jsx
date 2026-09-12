@@ -521,7 +521,7 @@ ${turns}
               placeholder="Search chats..."
               style={{
                 width: '100%',
-                padding: searchQuery ? '7px 54px 7px 34px' : '7px 42px 7px 34px',
+                padding: '7px 42px 7px 34px',
                 borderRadius: '8px',
                 border: '1px solid var(--pragna-border)',
                 background: 'var(--pragna-surface-2)',
@@ -531,28 +531,6 @@ ${turns}
               }}
               className="focus-ring"
             />
-            {searchQuery ? (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                title="Clear search"
-                style={{
-                  position: 'absolute',
-                  right: '44px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--pragna-text-muted)',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  padding: '2px 4px',
-                  lineHeight: 1,
-                }}
-              >
-                ×
-              </button>
-            ) : null}
             <span
               title="Open command palette (jump to any chat or run an action)"
               style={{
