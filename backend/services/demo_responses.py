@@ -191,17 +191,7 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
     
     message_lower = user_message.lower()
 
-    # 1. Autopilot Intent Check (Creates real actionable structured visualizations)
-    from services import autopilot_service
-    is_ap, vtype, is_followup = autopilot_service.detect_autopilot_intent(user_message)
-    if is_ap:
-        logger.info(f"✦ Autopilot intent identified in demo handler: vtype={vtype}")
-        payload = autopilot_service.generate_structured_autopilot_payload(
-            user_message, vtype=vtype or "tree", is_followup=is_followup, language=language
-        )
-        return autopilot_service.format_autopilot_response(payload)
-    
-    # 2. Check for greetings
+    # 1. Check for greetings
     greetings = ["hello", "hi", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy", 
                  "नमस्ते", "हेलो", "வணக்கம்", "హలో", "ನಮಸ್ಕಾರ", "നമസ്കാരം", "नमस्कार", "સ્વાગત", "ਸਤਿ", "नमस्कार", "السلام"]
     
