@@ -6,7 +6,6 @@ import {
   DownloadIcon,
   CopyIcon,
   CheckIcon,
-  CloseIcon,
   MaximizeIcon,
   MinimizeIcon,
   PdfIcon,
@@ -815,27 +814,6 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                   className="hover:text-white hover:bg-[rgba(255,255,255,0.08)]"
                 >
                   {isFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
-                </button>
-
-                {/* Close Button */}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  title="Close artifact panel (Esc)"
-                  style={{
-                    padding: '7px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--pragna-text-muted, #8e8e98)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  className="hover:bg-[rgba(255,255,255,0.08)] hover:text-white"
-                >
-                  <CloseIcon />
                 </button>
               </div>
             </div>
