@@ -17,9 +17,12 @@ import {
 export interface ArtifactData {
   id?: string;
   title?: string;
-  type?: string; // 'html' | 'svg' | 'markdown' | 'json' | 'code' | string
+  type?: string; // 'html' | 'svg' | 'markdown' | 'json' | 'code' | 'pdf' | 'document' | 'canvas' | string
   language?: string;
+  format?: string;
+  downloadUrl?: string;
   content?: string;
+  canvasData?: any;
   metadata?: Record<string, any>;
 }
 
@@ -44,7 +47,24 @@ export function detectArtifactFileInfo(title = '', content = '', explicitType = 
   const t = (explicitType || '').toLowerCase();
   const trimmed = (content || '').trim();
 
-  // Explicit type matching
+  // Document and Canvas explicit types
+  if (t === 'pdf' || t === 'application/pdf') {
+    return { extension: 'pdf', mimeType: 'application/pdf', typeName: 'PDF Document', language: 'pdf', badgeColor: '#ef4444' };
+  }
+  if (t === 'docx' || t === 'doc' || t === 'word') {
+    return { extension: 'docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', typeName: 'Word Document', language: 'docx', badgeColor: '#3b82f6' };
+  }
+  if (t === 'xlsx' || t === 'xls' || t === 'excel' || t === 'spreadsheet') {
+    return { extension: 'xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', typeName: 'Excel Spreadsheet', language: 'xlsx', badgeColor: '#10b981' };
+  }
+  if (t === 'pptx' || t === 'ppt' || t === 'powerpoint' || t === 'presentation') {
+    return { extension: 'pptx', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', typeName: 'PowerPoint Deck', language: 'pptx', badgeColor: '#f97316' };
+  }
+  if (t === 'canvas' || t === 'diagram' || t === 'tree' || t === 'flowchart' || t === 'timeline' || t === 'mindmap') {
+    return { extension: 'json', mimeType: 'application/json;charset=utf-8', typeName: 'Interactive Canvas', language: 'json', badgeColor: '#d4af37' };
+  }
+
+  // Explicit code / markup type matching
   if (t === 'svg' || t === 'image/svg+xml') {
     return { extension: 'svg', mimeType: 'image/svg+xml;charset=utf-8', typeName: 'Vector SVG', language: 'xml', badgeColor: '#f59e0b' };
   }
@@ -265,6 +285,7 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
   const [viewportMode, setViewportMode] = useState<'responsive' | 'mobile' | 'tablet'>('responsive');
   const [copied, setCopied] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const [docViewMode, setDocViewMode] = useState<'reader' | 'pdf'>('reader');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Esc key listener to exit fullscreen or close panel
@@ -291,12 +312,24 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
     return detectArtifactFileInfo(title, rawContent, artifact.type || artifact.language || '');
   }, [title, rawContent, artifact.type, artifact.language]);
 
+  const isDocType = fileInfo.extension === 'pdf' || ['docx', 'xlsx', 'pptx'].includes(fileInfo.extension) || artifact.format === 'pdf' || artifact.type === 'document';
+
   const previewDoc = useMemo(() => {
     return buildPreviewDocument(rawContent, fileInfo, title);
   }, [rawContent, fileInfo, title]);
 
   // Handle Direct Download with automatic file extension
   const handleDownload = () => {
+    if (artifact.downloadUrl) {
+      const a = document.createElement('a');
+      a.href = artifact.downloadUrl;
+      const safeTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'document';
+      a.download = `${safeTitle}.${fileInfo.extension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
     if (!rawContent) return;
     const blob = new Blob([rawContent], { type: fileInfo.mimeType });
     const url = URL.createObjectURL(blob);
@@ -680,19 +713,322 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                     overflow: 'hidden',
                   }}
                 >
-                  <iframe
-                    key={refreshKey}
-                    ref={iframeRef}
-                    srcDoc={previewDoc}
-                    sandbox="allow-scripts allow-modals"
-                    title={title}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                      background: fileInfo.extension === 'svg' ? 'transparent' : '#ffffff',
-                    }}
-                  />
+                  {isDocType ? (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#0e0f14' }}>
+                      {/* Document Toolbar Header */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 14px',
+                          background: 'rgba(20, 20, 26, 0.96)',
+                          borderBottom: '1px solid rgba(255,255,255,0.08)',
+                          fontSize: '12px',
+                          color: 'var(--pragna-text-muted)',
+                          gap: '10px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                          <span
+                            style={{
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              background: fileInfo.extension === 'pdf' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(212, 175, 55, 0.2)',
+                              color: fileInfo.badgeColor,
+                              fontWeight: 700,
+                              fontSize: '10px',
+                              letterSpacing: '0.4px',
+                            }}
+                          >
+                            {fileInfo.typeName.toUpperCase()}
+                          </span>
+                          <span
+                            style={{
+                              color: 'var(--pragna-text)',
+                              fontWeight: 650,
+                              maxWidth: '200px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                            title={title}
+                          >
+                            {title}
+                          </span>
+                        </div>
+
+                        {/* View Mode Toggle (Reader vs PDF Embed) */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {artifact.downloadUrl && (fileInfo.extension === 'pdf' || artifact.format === 'pdf' || artifact.type === 'pdf') && (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                background: 'rgba(0,0,0,0.4)',
+                                padding: '2px',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setDocViewMode('reader')}
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '5px',
+                                  border: 'none',
+                                  fontSize: '11px',
+                                  fontWeight: docViewMode === 'reader' ? 700 : 500,
+                                  background: docViewMode === 'reader' ? 'rgba(212,175,55,0.22)' : 'transparent',
+                                  color: docViewMode === 'reader' ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Reader
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDocViewMode('pdf')}
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '5px',
+                                  border: 'none',
+                                  fontSize: '11px',
+                                  fontWeight: docViewMode === 'pdf' ? 700 : 500,
+                                  background: docViewMode === 'pdf' ? 'rgba(212,175,55,0.22)' : 'transparent',
+                                  color: docViewMode === 'pdf' ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                PDF Embed
+                              </button>
+                            </div>
+                          )}
+
+                          {artifact.downloadUrl && (
+                            <a
+                              href={artifact.downloadUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 9px',
+                                borderRadius: '6px',
+                                background: 'rgba(255,255,255,0.06)',
+                                color: 'var(--pragna-text)',
+                                textDecoration: 'none',
+                                fontSize: '11.5px',
+                                fontWeight: 500,
+                                transition: 'all 0.12s ease',
+                              }}
+                              className="hover:bg-[rgba(255,255,255,0.12)]"
+                            >
+                              <ExternalLinkIcon size={12} />
+                              <span className="hidden sm:inline">Open Tab</span>
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={handleDownload}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              background: 'var(--pragna-gold-soft)',
+                              color: 'var(--pragna-on-gold)',
+                              border: 'none',
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              transition: 'all 0.12s ease',
+                            }}
+                            className="hover:scale-105"
+                          >
+                            <DownloadIcon size={12} />
+                            <span>Download</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Content Area */}
+                      {docViewMode === 'pdf' && artifact.downloadUrl && (fileInfo.extension === 'pdf' || artifact.format === 'pdf' || artifact.type === 'pdf') ? (
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                          <iframe
+                            key={refreshKey}
+                            ref={iframeRef}
+                            src={artifact.downloadUrl}
+                            title={title}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              flex: 1,
+                              border: 'none',
+                              background: '#ffffff',
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        /* Rich Interactive Document Reader View */
+                        <div
+                          style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '24px 28px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            background: 'radial-gradient(ellipse at top, #14141d 0%, #0a0a0f 100%)',
+                          }}
+                          className="custom-scrollbar"
+                        >
+                          <div
+                            style={{
+                              width: '100%',
+                              maxWidth: '720px',
+                              background: 'rgba(20, 20, 26, 0.85)',
+                              border: '1px solid rgba(212, 175, 55, 0.25)',
+                              borderRadius: '16px',
+                              padding: '28px 32px',
+                              boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                              backdropFilter: 'blur(12px)',
+                            }}
+                          >
+                            {/* Document Cover Header */}
+                            <div style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.2)', paddingBottom: '18px', marginBottom: '22px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                                <span
+                                  style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    padding: '3px 8px',
+                                    borderRadius: '6px',
+                                    background: 'rgba(212, 175, 55, 0.15)',
+                                    color: 'var(--pragna-gold-soft)',
+                                    border: '1px solid rgba(212, 175, 55, 0.3)',
+                                  }}
+                                >
+                                  {fileInfo.typeName}
+                                </span>
+                                {artifact.metadata?.page_count && (
+                                  <span style={{ fontSize: '12px', color: 'var(--pragna-text-muted)' }}>
+                                    • {artifact.metadata.page_count} Pages
+                                  </span>
+                                )}
+                              </div>
+                              <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fffdf7', margin: 0, lineHeight: 1.3 }}>
+                                {title}
+                              </h1>
+                            </div>
+
+                            {/* Formatted Document Body */}
+                            <div
+                              style={{
+                                color: '#d8cbb0',
+                                fontSize: '14.5px',
+                                lineHeight: '1.75',
+                              }}
+                            >
+                              {rawContent ? (
+                                rawContent.split('\n').map((line, idx) => {
+                                  const trimmed = line.trim();
+                                  if (!trimmed) return <div key={idx} style={{ height: '10px' }} />;
+                                  if (trimmed.startsWith('### ')) {
+                                    return (
+                                      <h3 key={idx} style={{ fontSize: '16px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '18px 0 8px 0' }}>
+                                        {trimmed.replace(/^###\s+/, '')}
+                                      </h3>
+                                    );
+                                  }
+                                  if (trimmed.startsWith('## ')) {
+                                    return (
+                                      <h2 key={idx} style={{ fontSize: '18px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '22px 0 10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
+                                        {trimmed.replace(/^##\s+/, '')}
+                                      </h2>
+                                    );
+                                  }
+                                  if (trimmed.startsWith('# ')) {
+                                    return (
+                                      <h1 key={idx} style={{ fontSize: '20px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '24px 0 12px 0', borderBottom: '1px solid rgba(212,175,55,0.3)', paddingBottom: '8px' }}>
+                                        {trimmed.replace(/^#\s+/, '')}
+                                      </h1>
+                                    );
+                                  }
+                                  if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+                                    return (
+                                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '4px 0', paddingLeft: '8px' }}>
+                                        <span style={{ color: 'var(--pragna-gold-soft)', fontWeight: 700 }}>•</span>
+                                        <span style={{ color: '#e6edf3' }}>{trimmed.replace(/^[-*•]\s+/, '')}</span>
+                                      </div>
+                                    );
+                                  }
+                                  if (trimmed.startsWith('> ')) {
+                                    return (
+                                      <div key={idx} style={{ borderLeft: '3px solid #d4af37', padding: '6px 14px', background: 'rgba(212,175,55,0.06)', borderRadius: '0 8px 8px 0', margin: '12px 0', fontStyle: 'italic', color: '#f3c96a' }}>
+                                        {trimmed.replace(/^>\s+/, '')}
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <p key={idx} style={{ margin: '0 0 10px 0', color: '#e6edf3' }}>
+                                      {trimmed}
+                                    </p>
+                                  );
+                                })
+                              ) : (
+                                <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                                  <p style={{ color: 'var(--pragna-text-muted)', marginBottom: '16px' }}>
+                                    Document successfully generated and ready for use.
+                                  </p>
+                                  {artifact.downloadUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={handleDownload}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '8px 16px',
+                                        borderRadius: '8px',
+                                        background: 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))',
+                                        border: '1px solid rgba(212,175,55,0.4)',
+                                        color: 'var(--pragna-gold-soft)',
+                                        fontWeight: 650,
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      <DownloadIcon size={14} />
+                                      <span>Download {fileInfo.extension.toUpperCase()}</span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <iframe
+                      key={refreshKey}
+                      ref={iframeRef}
+                      srcDoc={previewDoc}
+                      sandbox="allow-scripts allow-modals"
+                      title={title}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        border: 'none',
+                        background: fileInfo.extension === 'svg' ? 'transparent' : '#ffffff',
+                      }}
+                    />
+                  )}
                 </div>
               ) : (
                 /* Syntax-Highlighted Code View */

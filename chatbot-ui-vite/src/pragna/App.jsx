@@ -77,6 +77,7 @@ function App({ onLogout, userProfile }) {
     activePersonaId,
     activeArtifact,
     isArtifactOpen,
+    openArtifact,
     closeArtifact,
     isVoiceAssistantOpen,
     setIsVoiceAssistantOpen,
@@ -131,6 +132,14 @@ function App({ onLogout, userProfile }) {
         })
 
         setIsLoading(false)
+        openArtifact?.({
+          id: `doc-${Date.now()}`,
+          title: docResult.filename || `${docRequest.subject}.${docRequest.format}`,
+          type: docRequest.format === 'pdf' ? 'pdf' : 'document',
+          format: docRequest.format,
+          downloadUrl: docResult.download_url,
+          content: `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.\n- Format: ${docRequest.format?.toUpperCase()}\n- File: ${docResult.filename}\n- Status: Ready`,
+        })
         setChats((prev) =>
           prev.map((c) =>
             c.id === targetChatId

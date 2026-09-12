@@ -21,7 +21,7 @@ const MainLayout = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isDesktop = useMediaQuery('(min-width: 1024px)')
-  const { sidebarOpen, toggleSidebar } = useContext(ChatContext)
+  const { sidebarOpen, toggleSidebar, isArtifactOpen } = useContext(ChatContext)
 
   return (
     <div className="pragna-shell flex h-screen h-[100dvh] overflow-hidden bg-transparent">
@@ -80,7 +80,13 @@ const MainLayout = ({
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="relative flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div
+        className="relative flex-1 flex flex-col min-w-0 overflow-hidden"
+        style={{
+          marginRight: isDesktop && isArtifactOpen ? 'min(780px, 50vw)' : 0,
+          transition: 'margin-right 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
         {/* Reopen sidebar button (desktop only, shown when sidebar is closed) */}
         {isDesktop && !sidebarOpen && (
           <button

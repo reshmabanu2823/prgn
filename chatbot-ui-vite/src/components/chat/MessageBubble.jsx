@@ -6,6 +6,7 @@ import pragnaShield from "../../assets/pragna-shield-icon.png";
 import { ChatContext } from "../../context/ChatContext";
 import {
   CodeIcon,
+  EyeIcon,
   CopyIcon,
   ThumbsUpIcon,
   ThumbsDownIcon,
@@ -489,14 +490,17 @@ const renderMarkdownContent = (rawText, isStreaming, isLast) => {
   );
 };
 
-// Parse code blocks from message text
+// Parse artifacts (<antArtifact> or <artifact> tags), canvas, and code blocks from message text
 const parseMessageContent = (text) => {
-  const codeBlockRegex = /```([\w:-]+)?\n([\s\S]*?)```/g;
+  if (!text) return [{ type: "text", content: "" }];
+
+  const blockRegex = /<(?:antArtifact|artifact)\s+([^>]*?)>([\s\S]*?)<\/(?:antArtifact|artifact)>|```([\w:-]+)?\n([\s\S]*?)```/gi;
   const parts = [];
   let lastIndex = 0;
+  let match;
 
-  text.replace(codeBlockRegex, (match, language, code, index) => {
-    // Add text before code block
+  while ((match = blockRegex.exec(text)) !== null) {
+    const index = match.index;
     if (index > lastIndex) {
       parts.push({
         type: "text",
@@ -504,64 +508,87 @@ const parseMessageContent = (text) => {
       });
     }
 
-    const lang = (language || "").toLowerCase().trim();
-    const isCanvasLang =
-      lang === "canvas" ||
-      lang === "pragna-canvas" ||
-      lang === "json:canvas" ||
-      lang === "artifact:canvas";
+    const [fullMatch, artifactAttrs, artifactContent, codeLang, codeContent] = match;
 
-    let parsedCanvas = null;
-    if (isCanvasLang) {
-      try {
-        parsedCanvas = JSON.parse(code.trim());
-      } catch {
-        parsedCanvas = null;
-      }
-    } else if (lang === "json" || !lang) {
-      try {
-        const obj = JSON.parse(code.trim());
-        if (
-          obj &&
-          obj.type &&
-          [
-            "table",
-            "tree",
-            "flowchart",
-            "mindmap",
-            "timeline",
-            "chart",
-            "graph",
-            "kanban",
-            "er_diagram",
-            "er",
-            "system_architecture",
-            "architecture",
-            "roadmap",
-          ].includes(obj.type.toLowerCase())
-        ) {
-          parsedCanvas = obj;
-        }
-      } catch {}
-    }
+    if (artifactAttrs !== undefined && artifactContent !== undefined) {
+      const titleMatch = artifactAttrs.match(/title=["']([^"']+)["']/i);
+      const typeMatch = artifactAttrs.match(/type=["']([^"']+)["']/i);
+      const langMatch = artifactAttrs.match(/language=["']([^"']+)["']/i) || artifactAttrs.match(/identifier=["']([^"']+)["']/i);
 
-    if (parsedCanvas) {
+      const title = titleMatch ? titleMatch[1] : "Interactive Artifact";
+      const language = langMatch ? langMatch[1] : (typeMatch ? typeMatch[1] : "html");
+      const type = typeMatch ? typeMatch[1] : language;
+
       parts.push({
-        type: "canvas",
-        content: parsedCanvas,
+        type: "artifact",
+        artifact: {
+          title,
+          type,
+          language,
+          content: artifactContent.trim(),
+        },
       });
     } else {
-      parts.push({
-        type: "code",
-        language: language || "plaintext",
-        content: code.trim(),
-      });
+      const language = codeLang;
+      const code = codeContent;
+      const lang = (language || "").toLowerCase().trim();
+      const isCanvasLang =
+        lang === "canvas" ||
+        lang === "pragna-canvas" ||
+        lang === "json:canvas" ||
+        lang === "artifact:canvas";
+
+      let parsedCanvas = null;
+      if (isCanvasLang) {
+        try {
+          parsedCanvas = JSON.parse(code.trim());
+        } catch {
+          parsedCanvas = null;
+        }
+      } else if (lang === "json" || !lang) {
+        try {
+          const obj = JSON.parse(code.trim());
+          if (
+            obj &&
+            obj.type &&
+            [
+              "table",
+              "tree",
+              "flowchart",
+              "mindmap",
+              "timeline",
+              "chart",
+              "graph",
+              "kanban",
+              "er_diagram",
+              "er",
+              "system_architecture",
+              "architecture",
+              "roadmap",
+            ].includes(obj.type.toLowerCase())
+          ) {
+            parsedCanvas = obj;
+          }
+        } catch {}
+      }
+
+      if (parsedCanvas) {
+        parts.push({
+          type: "canvas",
+          content: parsedCanvas,
+        });
+      } else {
+        parts.push({
+          type: "code",
+          language: language || "plaintext",
+          content: code.trim(),
+        });
+      }
     }
 
-    lastIndex = index + match.length;
-  });
+    lastIndex = index + fullMatch.length;
+  }
 
-  // Add remaining text
   if (lastIndex < text.length) {
     parts.push({
       type: "text",
@@ -574,9 +601,86 @@ const parseMessageContent = (text) => {
 
 // Render parsed message content as a stack of blocks: text segments become
 // individual "glass card" bubbles, canvas segments render as PragnaCanvas, code segments as CodeBlocks
-const renderContentBlocks = (text, isStreaming, onSendPrompt) => {
+const renderContentBlocks = (text, isStreaming, onSendPrompt, openArtifact) => {
   const parts = parseMessageContent(text);
   return parts.map((part, idx) => {
+    if (part.type === "artifact") {
+      return (
+        <div
+          key={idx}
+          onClick={() => openArtifact?.(part.artifact)}
+          style={{
+            margin: "12px 0",
+            padding: "13px 18px",
+            borderRadius: "14px",
+            background: "linear-gradient(135deg, rgba(212,175,55,0.16), rgba(18,17,22,0.95))",
+            border: "1px solid rgba(212,175,55,0.35)",
+            boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "14px",
+            cursor: "pointer",
+            transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+          className="hover:scale-[1.01] hover:border-[var(--pragna-gold-soft)] hover:shadow-premium-md group"
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                background: "rgba(212,175,55,0.22)",
+                border: "1px solid rgba(212,175,55,0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--pragna-gold-soft)",
+                flexShrink: 0,
+              }}
+            >
+              <CodeIcon />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--pragna-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {part.artifact.title || "Interactive Artifact"}
+                </span>
+                <span style={{ fontSize: "10.5px", fontWeight: 700, padding: "2px 6px", borderRadius: "5px", background: "rgba(212,175,55,0.18)", color: "var(--pragna-gold-soft)", textTransform: "uppercase" }}>
+                  {part.artifact.language || part.artifact.type || "HTML"}
+                </span>
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--pragna-text-muted)", marginTop: "2px" }}>
+                Click to open live preview & code in side panel
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            style={{
+              padding: "7px 13px",
+              borderRadius: "8px",
+              border: "1px solid rgba(212,175,55,0.4)",
+              background: "linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))",
+              color: "var(--pragna-gold-soft)",
+              fontSize: "12px",
+              fontWeight: 650,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              flexShrink: 0,
+              transition: "all 0.15s ease",
+            }}
+            className="group-hover:bg-[var(--pragna-gold-soft)] group-hover:text-[var(--pragna-on-gold)]"
+          >
+            <EyeIcon />
+            <span>View Artifact</span>
+          </button>
+        </div>
+      );
+    }
     if (part.type === "canvas") {
       return <PragnaCanvas key={idx} canvasData={part.content} onSendPrompt={onSendPrompt} />;
     }
@@ -600,7 +704,7 @@ const renderContentBlocks = (text, isStreaming, onSendPrompt) => {
 const actionBtnBase =
   "w-[30px] h-[30px] rounded-lg bg-transparent flex items-center justify-center transition-colors duration-150 [&>svg]:w-[18px] [&>svg]:h-[18px] hover:bg-surface-subtle hover:text-accent-400";
 
-const renderAttachments = (attachments) => (
+const renderAttachments = (attachments, openArtifact) => (
   <div className="flex flex-wrap gap-2 mb-1.5">
     {attachments.map((att, i) => {
       if (att.type === "image" && att.previewUrl) {
@@ -609,7 +713,7 @@ const renderAttachments = (attachments) => (
             key={i}
             src={att.previewUrl}
             alt={att.name}
-            className="msg-attachment-img"
+            className="msg-attachment-img cursor-pointer"
             onClick={() => window.open(att.previewUrl, "_blank")}
           />
         );
@@ -625,12 +729,20 @@ const renderAttachments = (attachments) => (
         );
       } else if (att.type === "document") {
         return (
-          <a
+          <div
             key={i}
-            href={att.downloadUrl}
-            download={att.name}
-            className="msg-attachment-file"
-            style={{ textDecoration: "none" }}
+            onClick={() => {
+              openArtifact?.({
+                id: `doc-${i}-${Date.now()}`,
+                title: att.name,
+                type: att.format === 'pdf' ? 'pdf' : 'document',
+                format: att.format || 'pdf',
+                downloadUrl: att.downloadUrl,
+                content: `# ${att.name}\n\nDocument ready for preview and download.\n- Format: ${(att.format || 'pdf').toUpperCase()}\n- File: ${att.name}`,
+              });
+            }}
+            className="msg-attachment-file group cursor-pointer hover:border-[var(--pragna-gold-soft)] hover:shadow-md transition-all flex items-center gap-2"
+            title="Click to open preview in split-screen side panel"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -638,11 +750,26 @@ const renderAttachments = (attachments) => (
               <line x1="9" y1="13" x2="15" y2="13"/>
               <line x1="9" y1="17" x2="13" y2="17"/>
             </svg>
-            <span>{att.name}</span>
-            <span style={{ fontSize: "10px", opacity: 0.7, marginLeft: "4px" }}>
+            <span className="group-hover:text-[var(--pragna-gold-soft)] transition-colors">{att.name}</span>
+            <span style={{ fontSize: "10px", opacity: 0.7, marginLeft: "2px" }} className="px-1.5 py-0.5 rounded bg-[rgba(212,175,55,0.15)] text-[var(--pragna-gold-soft)] font-bold">
               {(att.format || "doc").toUpperCase()}
             </span>
-          </a>
+            {att.downloadUrl && (
+              <a
+                href={att.downloadUrl}
+                download={att.name}
+                onClick={(e) => e.stopPropagation()}
+                title="Download directly"
+                className="ml-1 p-1 rounded hover:bg-[rgba(255,255,255,0.1)] text-[var(--pragna-text-muted)] hover:text-white transition-colors"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </a>
+            )}
+          </div>
         );
       } else {
         return (
@@ -1006,7 +1133,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
                 fontWeight: 550,
               }}
             >
-              {hasAttachments && renderAttachments(message.attachments)}
+              {hasAttachments && renderAttachments(message.attachments, openArtifact)}
               {message.text}
             </div>
             <div className="flex items-center gap-1.5">
@@ -1070,7 +1197,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
         )}
 
         <div className="flex flex-col gap-2.5 min-w-0 flex-1">
-          {hasAttachments && renderAttachments(message.attachments)}
+          {hasAttachments && renderAttachments(message.attachments, openArtifact)}
 
           {showTypingDots ? (
             <div className="glass-card w-fit flex items-center gap-[5px] rounded-[4px_18px_18px_18px] px-[18px] py-3.5">
@@ -1113,7 +1240,7 @@ export default function MessageBubble({ message, language = "en", onRetry, onEdi
               {extractedThinking && (
                 <ThinkingAccordion thinking={extractedThinking} isStreaming={isStreaming} />
               )}
-              {renderContentBlocks(effectiveText, isStreaming, onSendPrompt)}
+              {renderContentBlocks(effectiveText, isStreaming, onSendPrompt, openArtifact)}
               {message.canvas && (
                 <PragnaCanvas canvasData={message.canvas} onSendPrompt={onSendPrompt} />
               )}

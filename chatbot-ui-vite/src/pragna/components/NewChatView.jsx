@@ -140,6 +140,7 @@ export default function NewChatView({ onNavigateToImages }) {
     activePersonaId,
     extendedThinking,
     toggleExtendedThinking,
+    openArtifact,
   } = useContext(ChatContext)
 
   const [inputVal, setInputVal] = useState('')
@@ -310,6 +311,14 @@ export default function NewChatView({ onNavigateToImages }) {
           })
 
           setIsLoading(false)
+          openArtifact?.({
+            id: `doc-${Date.now()}`,
+            title: docResult.filename || `${docRequest.subject}.${docRequest.format}`,
+            type: docRequest.format === 'pdf' ? 'pdf' : 'document',
+            format: docRequest.format,
+            downloadUrl: docResult.download_url,
+            content: `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.\n- Format: ${docRequest.format?.toUpperCase()}\n- File: ${docResult.filename}\n- Status: Ready`,
+          })
           setChats((prev) =>
             prev.map((c) =>
               c.id === targetChatId
@@ -470,8 +479,24 @@ export default function NewChatView({ onNavigateToImages }) {
               )
             } else if (chunk.type === 'sources') {
               streamSources = chunk.sources || []
+            } else if (chunk.type === 'artifact') {
+              openArtifact?.(chunk.artifact || chunk)
             } else if (chunk.type === 'done') {
               setIsLoading(false)
+
+              // Auto-detect artifacts if present in markdown output
+              const antMatch = accumulatedText.match(/<(?:antArtifact|artifact)\s+([^>]*?)>([\s\S]*?)<\/(?:antArtifact|artifact)>/i)
+              if (antMatch) {
+                const attrs = antMatch[1]
+                const content = antMatch[2]
+                const titleMatch = attrs.match(/title=["']([^"']+)["']/i)
+                const typeMatch = attrs.match(/type=["']([^"']+)["']/i)
+                const langMatch = attrs.match(/language=["']([^"']+)["']/i)
+                const title = titleMatch ? titleMatch[1] : 'Interactive Artifact'
+                const type = typeMatch ? typeMatch[1] : (langMatch ? langMatch[1] : 'html')
+                openArtifact?.({ title, type, content: content.trim() })
+              }
+
               setChats((prev) =>
                 prev.map((c) =>
                   c.id === targetChatId

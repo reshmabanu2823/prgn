@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useContext } from 'react'
+import { ChatContext } from '../../context/ChatContext'
 import {
   Sparkles,
   Maximize2,
@@ -38,6 +39,7 @@ import PragnaCanvasModal from './PragnaCanvasModal'
 import AutopilotProgressCard from './AutopilotProgressCard'
 
 export default function PragnaCanvas({ canvasData, onSendPrompt }) {
+  const { openArtifact } = useContext(ChatContext) || {}
   const [zoom, setZoom] = useState(1)
   const [copied, setCopied] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -174,9 +176,18 @@ export default function PragnaCanvas({ canvasData, onSendPrompt }) {
         <div className="flex items-center gap-1.5 ml-auto">
           {/* MAKE IT REAL Action */}
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              openArtifact?.({
+                id: `canvas-${Date.now()}`,
+                title: title || 'Interactive Canvas',
+                type: 'canvas',
+                content: JSON.stringify(canvasData, null, 2),
+                canvasData: canvasData,
+              })
+              setIsModalOpen(true)
+            }}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/35 hover:border-[#d4af37]/50 text-xs font-semibold text-[#f0e6d3] transition-all duration-150"
-            title="Open Interactive Canvas Studio"
+            title="Open Interactive Canvas in Side Split Panel & Studio"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#e5c76b]" />
             <span>✦ MAKE IT REAL</span>

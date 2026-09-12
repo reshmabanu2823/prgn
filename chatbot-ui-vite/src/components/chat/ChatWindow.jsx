@@ -56,6 +56,7 @@ export default function ChatWindow() {
     highlightedMessageId,
     extendedThinking,
     abortControllerRef,
+    openArtifact,
   } = useContext(ChatContext);
 
   // The floating "reopen sidebar" button this padding makes room for is
@@ -209,6 +210,14 @@ export default function ChatWindow() {
         });
 
         setIsLoading(false);
+        openArtifact?.({
+          id: `doc-${Date.now()}`,
+          title: docResult.filename || `${docRequest.subject}.${docRequest.format}`,
+          type: docRequest.format === 'pdf' ? 'pdf' : 'document',
+          format: docRequest.format,
+          downloadUrl: docResult.download_url,
+          content: `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.\n- Format: ${docRequest.format?.toUpperCase()}\n- File: ${docResult.filename}\n- Status: Ready`,
+        });
         setChats((prev) =>
           prev.map((c) =>
             c.id === targetChatId

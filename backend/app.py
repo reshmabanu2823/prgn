@@ -3240,7 +3240,8 @@ def generate_document():
 
         structure = generate_document_structure(prompt, language=language)
         if not structure or not structure.get('sections'):
-            return jsonify({'error': 'Failed to generate document content'}), 500
+            from services.document_generator import _generate_fallback_structure
+            structure = _generate_fallback_structure(prompt, language=language)
 
         os.makedirs(GENERATED_DOCS_DIR, exist_ok=True)
         _cleanup_old_generated_docs()
@@ -3264,7 +3265,7 @@ def generate_document():
 
 @app.route('/api/documents/download/<path:filename>', methods=['GET'])
 def download_document(filename):
-    """Serve a previously generated document by filename."""
+    """Serve a previously generated document by filename for inline preview and download."""
     safe_name = os.path.basename(filename)
     if safe_name != filename or safe_name in ('', '.', '..'):
         return jsonify({'error': 'Invalid filename'}), 400
@@ -3273,7 +3274,28 @@ def download_document(filename):
     if not os.path.isfile(filepath):
         return jsonify({'error': 'File not found'}), 404
 
-    return send_from_directory(GENERATED_DOCS_DIR, safe_name, as_attachment=True, download_name=safe_name)
+    as_attachment = request.args.get('download', '0').lower() in ('1', 'true', 'yes')
+    ext = os.path.splitext(safe_name)[1].lower()
+    mimetypes_map = {
+        '.pdf': 'application/pdf',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    }
+    mimetype = mimetypes_map.get(ext)
+
+    response = send_from_directory(
+        GENERATED_DOCS_DIR,
+        safe_name,
+        as_attachment=as_attachment,
+        download_name=safe_name,
+        mimetype=mimetype,
+    )
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    if not as_attachment and ext == '.pdf':
+        response.headers['Content-Disposition'] = f'inline; filename="{safe_name}"'
+    return response
 
 
 # Register blueprints
