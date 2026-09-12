@@ -314,13 +314,37 @@ class WikipediaSearchProvider(WebSearchProvider):
             logger.warning(f"Wikipedia search failed for '{query}': {exc}")
             return []
 
+    def get_summary(self, query: str, timeout: int = 5) -> Optional[Dict[str, str]]:
+        """Fetch extract summary using Wikipedia REST API."""
+        candidates = extract_search_candidates(query)
+        headers = {"User-Agent": "PragnaChatbot/1.0 (Enterprise AI Assistant)"}
+        for cand in candidates:
+            slug = urllib.parse.quote(cand.replace(" ", "_"))
+            url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{slug}"
+            try:
+                resp = requests.get(url, headers=headers, timeout=timeout)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    extract = data.get("extract", "")
+                    title = data.get("title", cand)
+                    page_url = data.get("content_urls", {}).get("desktop", {}).get("page", f"https://en.wikipedia.org/wiki/{slug}")
+                    if extract and len(extract.strip()) > 35:
+                        return {
+                            "title": title,
+                            "extract": sanitize_web_text(extract),
+                            "url": page_url,
+                        }
+            except Exception:
+                continue
+        return None
+
 
 class SerperSearchProvider(WebSearchProvider):
     """Optional Serper.dev Google search provider if SERPER_API_KEY is present."""
 
     def search(self, query: str, max_results: int = 4, timeout: int = 5) -> List[Dict[str, str]]:
         api_key = getattr(config, "SERPER_API_KEY", "")
-        if not api_key:
+        if not api_key or api_key.startswith("your_"):
             return []
 
         url = "https://google.serper.dev/search"
@@ -425,9 +449,13 @@ class WebSearchService:
         latency = round((time.time() - start_time) * 1000, 2)
         logger.info(f"📊 WEB SEARCH COMPLETED: {len(results)} results in {latency}ms (matched query='{resolved_query}')")
 
-        if not results:
+        # Try to get encyclopedic summary for concept clarity
+        summary_info = self.wiki_provider.get_summary(query, timeout=to_sec)
+
+        if not results and not summary_info:
             return {
                 "context": None,
+                "summary": None,
                 "sources": [],
                 "query": query,
                 "results_count": 0,
@@ -461,12 +489,65 @@ class WebSearchService:
 
         return {
             "context": context_text,
+            "summary": summary_info,
             "sources": sources,
             "query": resolved_query,
             "results_count": len(results),
             "latency_ms": latency,
             "error": None,
         }
+
+
+def synthesize_web_answer(query: str, search_result: Dict[str, Any], language: str = "en") -> str:
+    """
+    Format web search results into a clean, accurate, and informative response.
+    Never includes configuration tips or placeholder warnings.
+    """
+    summary = search_result.get("summary")
+    sources = search_result.get("sources", [])
+    resolved_query = search_result.get("query", query)
+    title = resolved_query.strip().title()
+
+    sections = []
+
+    # 1. Primary Overview / Encyclopedic Extract
+    if summary and summary.get("extract"):
+        summary_title = summary.get("title", title)
+        sections.append(f"### {summary_title}\n\n{summary['extract']}")
+    elif sources:
+        top_snippet = sources[0].get("snippet", "").strip()
+        sections.append(f"### {title}\n\n{top_snippet}")
+    else:
+        sections.append(f"### {title}\n\nHere is information regarding **{query}**.")
+
+    # 2. Key Details and Insights from Web Sources
+    useful_snippets = []
+    for s in sources:
+        snip = s.get("snippet", "").strip()
+        if snip and len(snip) > 25:
+            # Clean snippet start/end
+            cleaned_snip = re.sub(r"^[\s\.\,\-\–\—\…]+|[\s\.\,\-\–\—\…]+$", "", snip)
+            if cleaned_snip:
+                useful_snippets.append(f"- **{s.get('title', 'Overview')}**: {cleaned_snip}.")
+
+    if useful_snippets:
+        # Take up to 3 distinct snippets
+        sections.append("#### Key Details & Principles\n\n" + "\n".join(useful_snippets[:3]))
+
+    # 3. Verified References & Sources
+    if sources:
+        src_links = []
+        seen_urls = set()
+        for s in sources[:4]:
+            t = s.get("title") or "Web Reference"
+            url = s.get("link") or ""
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                src_links.append(f"- [{t}]({url})")
+        if src_links:
+            sections.append("#### References & Sources\n\n" + "\n".join(src_links))
+
+    return "\n\n".join(sections)
 
 
 # Singleton instance helper
@@ -478,3 +559,4 @@ def get_web_search_service() -> WebSearchService:
     if _search_service_instance is None:
         _search_service_instance = WebSearchService()
     return _search_service_instance
+

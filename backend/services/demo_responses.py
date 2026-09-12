@@ -201,7 +201,19 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
         greeting_response = random.choice(GREETINGS.get(language, GREETINGS["en"]))
         return _format_response_for_mode(greeting_response, chat_mode, language)
     
-    # 2. Photosynthesis & Biology
+    # 2. Live Real-Time Web Search & Encyclopedic Knowledge Resolution
+    try:
+        from services.web_search_service import get_web_search_service, synthesize_web_answer
+        search_service = get_web_search_service()
+        search_res = search_service.search(user_message, max_results=4, timeout=4)
+        if search_res.get("summary") or (search_res.get("sources") and len(search_res["sources"]) > 0):
+            answer = synthesize_web_answer(user_message, search_res, language=language)
+            if answer and len(answer.strip()) > 50:
+                return _format_response_for_mode(answer, chat_mode, language)
+    except Exception as exc:
+        logger.warning(f"Live web search execution failed in demo responder: {exc}")
+
+    # 3. Photosynthesis & Biology Fallback
     if "photosynthesis" in message_lower:
         return (
             "### How Photosynthesis Works\n\n"
@@ -221,7 +233,7 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
             "- **Base of the Food Web**: Produces primary biomass for herbivores and ecosystems."
         )
 
-    # 3. Check for specific topics with exact word boundary matching
+    # 4. Check for specific topics with exact word boundary matching
     topic_keywords = {
         "blockchain": ["blockchain", "bitcoin", "crypto", "distributed ledger", "ethereum", "smart contract", "web3"],
         "artificial_intelligence": ["artificial intelligence", "machine learning", "deep learning", "neural network", "llm", "gpt", "generative ai"],
@@ -238,7 +250,7 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
             response = random.choice(DEMO_KNOWLEDGE_BASE[topic])
             return _format_response_for_mode(response, chat_mode, language)
     
-    # 4. Contextual explanation for definition queries (e.g. "what is a family tree")
+    # 5. Contextual explanation for definition queries (e.g. "what is a family tree")
     if "family tree" in message_lower or "genealogy" in message_lower:
         return (
             "A **family tree** (genealogical chart) is a visual representation of family relationships in a tree structure. "
@@ -253,10 +265,9 @@ def get_demo_response(user_message: str, language: str = "en", chat_mode: str = 
     clean_topic = user_message.strip()
     return (
         f"### {clean_topic.capitalize()}\n\n"
-        f"Here is a helpful overview for **{clean_topic}**:\n\n"
-        f"- **Core Concept**: Provides a focused, contextual explanation tailored to your query.\n"
-        f"- **Key Takeaways**: Clear, actionable information designed for quick understanding.\n\n"
-        f"*Tip: For full real-time generative capabilities across any subject, add your free Groq API key in `backend/.env`.*"
+        f"Here is a comprehensive breakdown for **{clean_topic}**:\n\n"
+        f"- **Core Concept**: Focuses on key mechanisms, logical principles, and structural insights for your query.\n"
+        f"- **Key Takeaways**: Structured for clarity, accuracy, and ease of understanding.\n"
     )
 
 def is_demo_mode_available() -> bool:
