@@ -450,9 +450,9 @@ def _extract_first_image_url(payload):
 
 def _apply_etherx_watermark(image_source: str) -> str:
     """
-    Overlays a sleek, premium 'EtherX Innovations' watermark badge on the bottom-right corner,
-    covering any third-party provider watermark (such as pollinations.ai) with official
-    EtherX Innovations branding.
+    Seamlessly cleans any underlying third-party watermarks in the corner (such as pollinations.ai)
+    using contextual edge healing, and blends an elegant, cinematic 'EtherX Innovations'
+    studio typographic watermark with soft ambient depth and a warm gold accent.
 
     Accepts:
       - HTTP / HTTPS URL
@@ -465,7 +465,7 @@ def _apply_etherx_watermark(image_source: str) -> str:
         return image_source
 
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw, ImageFont, ImageFilter
         import io
         import base64
         import requests
@@ -497,12 +497,28 @@ def _apply_etherx_watermark(image_source: str) -> str:
         img = Image.open(io.BytesIO(img_bytes)).convert('RGBA')
         W, H = img.size
 
-        overlay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(overlay)
+        # 1. Seamlessly heal the bottom-right corner to completely erase third-party watermark
+        target_w = int(max(160, W * 0.32))
+        target_h = int(max(40, H * 0.08))
+        x_start = W - target_w
+        y_start = H - target_h
 
-        text = "EtherX Innovations"
-        font_size = max(13, int(min(W, H) * 0.024))
+        source_y0 = max(0, y_start - target_h)
+        source_patch = img.crop((x_start, source_y0, W, y_start))
+        if source_patch.size != (target_w, target_h):
+            source_patch = source_patch.resize((target_w, target_h))
 
+        mask = Image.new('L', (target_w, target_h), 255)
+        for y in range(target_h):
+            for x in range(target_w):
+                fy = min(1.0, y / (target_h * 0.28))
+                fx = min(1.0, x / (target_w * 0.28))
+                mask.putpixel((x, y), int(255 * fy * fx))
+
+        img.paste(source_patch, (x_start, y_start), mask)
+
+        # 2. Render sleek, cinematic EtherX Innovations watermark
+        font_size = max(13, int(min(W, H) * 0.021))
         font = None
         for font_path in (
             'C:/Windows/Fonts/segoeuib.ttf',
@@ -521,51 +537,52 @@ def _apply_etherx_watermark(image_source: str) -> str:
         if font is None:
             font = ImageFont.load_default()
 
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
+        text = "EtherX Innovations"
+        draw_temp = ImageDraw.Draw(img)
+        bbox = draw_temp.textbbox((0, 0), text, font=font)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
 
-        pad_x = max(12, int(font_size * 0.85))
-        pad_y = max(6, int(font_size * 0.45))
-        dot_r = max(3, int(font_size * 0.22))
-        gap = max(6, int(font_size * 0.35))
+        dot_r = max(2, int(font_size * 0.22))
+        gap = max(6, int(font_size * 0.4))
+        total_w = dot_r * 2 + gap + tw
 
-        pill_w = pad_x * 2 + dot_r * 2 + gap + text_w
-        pill_h = text_h + pad_y * 2
+        margin_x = max(20, int(W * 0.03))
+        margin_y = max(18, int(H * 0.028))
 
-        margin_x = max(14, int(W * 0.022))
-        margin_y = max(14, int(H * 0.022))
+        start_x = W - total_w - margin_x
+        start_y = H - th - margin_y
 
-        x1 = W - pill_w - margin_x
-        y1 = H - pill_h - margin_y
-        x2 = W - margin_x
-        y2 = H - margin_y
+        dot_cx = start_x + dot_r
+        dot_cy = start_y + th // 2
 
-        radius = pill_h // 2
+        # Soft ambient diffused drop shadow for high contrast & seamless blending on any background
+        shadow_layer = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        s_draw = ImageDraw.Draw(shadow_layer)
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (0, 2), (1, 2), (-1, 2), (0, 3)]:
+            s_draw.ellipse(
+                [dot_cx + dx - dot_r, dot_cy + dy - dot_r, dot_cx + dx + dot_r, dot_cy + dy + dot_r],
+                fill=(0, 0, 0, 170),
+            )
+            s_draw.text((start_x + dot_r * 2 + gap + dx, start_y + dy - bbox[1]), text, font=font, fill=(0, 0, 0, 170))
+        shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=2))
 
-        # Draw semi-opaque dark obsidian pill with warm gold outline
-        draw.rounded_rectangle(
-            [x1, y1, x2, y2],
-            radius=radius,
-            fill=(12, 12, 16, 235),
-            outline=(212, 175, 55, 180),
-            width=1,
-        )
+        # Main watermark overlay
+        overlay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        o_draw = ImageDraw.Draw(overlay)
 
-        # Draw gold accent dot
-        dot_cx = x1 + pad_x + dot_r
-        dot_cy = y1 + pill_h // 2
-        draw.ellipse(
+        # Warm gold accent dot
+        o_draw.ellipse(
             [dot_cx - dot_r, dot_cy - dot_r, dot_cx + dot_r, dot_cy + dot_r],
-            fill=(229, 192, 123, 255),
+            fill=(229, 192, 123, 240),
         )
+        # Text in crisp off-white with smooth translucency
+        o_draw.text((start_x + dot_r * 2 + gap, start_y - bbox[1]), text, font=font, fill=(245, 245, 248, 230))
 
-        # Draw 'EtherX Innovations' text
-        text_x = dot_cx + dot_r + gap
-        text_y = y1 + (pill_h - text_h) // 2 - bbox[1]
-        draw.text((text_x, text_y), text, font=font, fill=(245, 245, 247, 245))
+        comp = Image.alpha_composite(img, shadow_layer)
+        comp = Image.alpha_composite(comp, overlay)
 
-        final_img = Image.alpha_composite(img, overlay).convert('RGB')
+        final_img = comp.convert('RGB')
         buf = io.BytesIO()
         final_img.save(buf, format='JPEG', quality=95, optimize=True)
         b64_str = base64.b64encode(buf.getvalue()).decode('utf-8')
