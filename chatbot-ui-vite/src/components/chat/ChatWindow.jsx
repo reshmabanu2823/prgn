@@ -212,11 +212,11 @@ export default function ChatWindow() {
         setIsLoading(false);
         openArtifact?.({
           id: `doc-${Date.now()}`,
-          title: docResult.filename || `${docRequest.subject}.${docRequest.format}`,
+          title: docResult.title || docResult.filename || `${docRequest.subject}.${docRequest.format}`,
           type: docRequest.format === 'pdf' ? 'pdf' : 'document',
           format: docRequest.format,
           downloadUrl: docResult.download_url,
-          content: `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.\n- Format: ${docRequest.format?.toUpperCase()}\n- File: ${docResult.filename}\n- Status: Ready`,
+          content: docResult.content || `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.`,
         });
         setChats((prev) =>
           prev.map((c) =>
@@ -235,6 +235,8 @@ export default function ChatWindow() {
                               type: "document",
                               downloadUrl: docResult.download_url,
                               format: docRequest.format,
+                              content: docResult.content,
+                              title: docResult.title,
                             },
                           ],
                         }

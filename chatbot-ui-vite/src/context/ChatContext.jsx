@@ -129,6 +129,10 @@ export function ChatProvider({ children }) {
     return saved === null ? true : JSON.parse(saved);
   });
 
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
   const [user, setUser] = useState(null);
 
   const [chatMode, setChatMode] = useState(() => {
@@ -301,10 +305,6 @@ export function ChatProvider({ children }) {
     };
     setChats((prev) => [chat, ...prev]);
     setActiveChatId(chat.id);
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen((prev) => !prev);
   };
 
   const login = (name, email) => {

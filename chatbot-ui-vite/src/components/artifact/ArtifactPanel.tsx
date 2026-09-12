@@ -279,13 +279,159 @@ function buildPreviewDocument(content = '', fileInfo: DetectedFileInfo, title = 
 </html>`;
 }
 
+/**
+ * Formats markdown text with headings, bullet points, and tables for rich document preview
+ */
+function renderMarkdownDocument(rawText: string) {
+  if (!rawText) return null;
+  const lines = rawText.split('\n');
+  const elements: React.ReactNode[] = [];
+  let tableRows: string[][] = [];
+  let inTable = false;
+
+  const flushTable = (key: number | string) => {
+    if (tableRows.length > 0) {
+      const header = tableRows[0];
+      const body = tableRows.slice(1);
+      elements.push(
+        <div key={`table-${key}`} style={{ overflowX: 'auto', margin: '18px 0', width: '100%' }}>
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '13.5px',
+              textAlign: 'left',
+              border: '1px solid rgba(212,175,55,0.25)',
+              borderRadius: '8px',
+              overflow: 'hidden',
+            }}
+          >
+            <thead>
+              <tr style={{ background: 'rgba(212,175,55,0.18)', borderBottom: '1px solid rgba(212,175,55,0.3)' }}>
+                {header.map((col, cIdx) => (
+                  <th key={cIdx} style={{ padding: '10px 14px', color: 'var(--pragna-gold-soft)', fontWeight: 700 }}>
+                    {col.trim()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {body.map((row, rIdx) => (
+                <tr
+                  key={rIdx}
+                  style={{
+                    background: rIdx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx} style={{ padding: '9px 14px', color: '#e6edf3' }}>
+                      {cell.trim()}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      tableRows = [];
+      inTable = false;
+    }
+  };
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      if (trimmed.includes('---')) {
+        return;
+      }
+      const cells = trimmed
+        .slice(1, -1)
+        .split('|')
+        .map((c) => c.trim());
+      tableRows.push(cells);
+      inTable = true;
+      return;
+    }
+
+    if (inTable) {
+      flushTable(idx);
+    }
+
+    if (!trimmed) {
+      elements.push(<div key={idx} style={{ height: '8px' }} />);
+      return;
+    }
+
+    if (trimmed.startsWith('### ')) {
+      elements.push(
+        <h3 key={idx} style={{ fontSize: '16px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '20px 0 8px 0' }}>
+          {trimmed.replace(/^###\s+/, '')}
+        </h3>
+      );
+      return;
+    }
+
+    if (trimmed.startsWith('## ')) {
+      elements.push(
+        <h2 key={idx} style={{ fontSize: '18px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '24px 0 10px 0', borderBottom: '1px solid rgba(212,175,55,0.25)', paddingBottom: '6px' }}>
+          {trimmed.replace(/^##\s+/, '')}
+        </h2>
+      );
+      return;
+    }
+
+    if (trimmed.startsWith('# ')) {
+      elements.push(
+        <h1 key={idx} style={{ fontSize: '21px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '26px 0 12px 0', borderBottom: '1px solid rgba(212,175,55,0.35)', paddingBottom: '8px' }}>
+          {trimmed.replace(/^#\s+/, '')}
+        </h1>
+      );
+      return;
+    }
+
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
+      const text = trimmed.replace(/^[-*•]\s+/, '');
+      elements.push(
+        <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '9px', margin: '5px 0', paddingLeft: '6px' }}>
+          <span style={{ color: 'var(--pragna-gold-soft)', fontWeight: 700, marginTop: '1px' }}>•</span>
+          <span style={{ color: '#e6edf3', lineHeight: '1.65' }}>{text}</span>
+        </div>
+      );
+      return;
+    }
+
+    if (trimmed.startsWith('> ')) {
+      elements.push(
+        <div key={idx} style={{ borderLeft: '3px solid #d4af37', padding: '8px 16px', background: 'rgba(212,175,55,0.08)', borderRadius: '0 8px 8px 0', margin: '14px 0', fontStyle: 'italic', color: '#f3c96a' }}>
+          {trimmed.replace(/^>\s+/, '')}
+        </div>
+      );
+      return;
+    }
+
+    elements.push(
+      <p key={idx} style={{ margin: '0 0 10px 0', color: '#d8cbb0', lineHeight: '1.7' }}>
+        {trimmed}
+      </p>
+    );
+  });
+
+  if (inTable) {
+    flushTable('end');
+  }
+
+  return elements;
+}
+
 export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPanelProps) {
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [viewportMode, setViewportMode] = useState<'responsive' | 'mobile' | 'tablet'>('responsive');
   const [copied, setCopied] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
-  const [docViewMode, setDocViewMode] = useState<'reader' | 'pdf'>('reader');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Esc key listener to exit fullscreen or close panel
@@ -720,7 +866,7 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          padding: '8px 14px',
+                          padding: '9px 16px',
                           background: 'rgba(20, 20, 26, 0.96)',
                           borderBottom: '1px solid rgba(255,255,255,0.08)',
                           fontSize: '12px',
@@ -747,7 +893,7 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                             style={{
                               color: 'var(--pragna-text)',
                               fontWeight: 650,
-                              maxWidth: '200px',
+                              maxWidth: '260px',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
@@ -758,54 +904,8 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                           </span>
                         </div>
 
-                        {/* View Mode Toggle (Reader vs PDF Embed) */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {artifact.downloadUrl && (fileInfo.extension === 'pdf' || artifact.format === 'pdf' || artifact.type === 'pdf') && (
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                background: 'rgba(0,0,0,0.4)',
-                                padding: '2px',
-                                borderRadius: '6px',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                              }}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => setDocViewMode('reader')}
-                                style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '5px',
-                                  border: 'none',
-                                  fontSize: '11px',
-                                  fontWeight: docViewMode === 'reader' ? 700 : 500,
-                                  background: docViewMode === 'reader' ? 'rgba(212,175,55,0.22)' : 'transparent',
-                                  color: docViewMode === 'reader' ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                Reader
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDocViewMode('pdf')}
-                                style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '5px',
-                                  border: 'none',
-                                  fontSize: '11px',
-                                  fontWeight: docViewMode === 'pdf' ? 700 : 500,
-                                  background: docViewMode === 'pdf' ? 'rgba(212,175,55,0.22)' : 'transparent',
-                                  color: docViewMode === 'pdf' ? 'var(--pragna-gold-soft)' : 'var(--pragna-text-muted)',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                PDF Embed
-                              </button>
-                            </div>
-                          )}
-
+                        {/* Right Actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {artifact.downloadUrl && (
                             <a
                               href={artifact.downloadUrl}
@@ -815,7 +915,7 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '4px',
-                                padding: '4px 9px',
+                                padding: '4px 10px',
                                 borderRadius: '6px',
                                 background: 'rgba(255,255,255,0.06)',
                                 color: 'var(--pragna-text)',
@@ -827,7 +927,7 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                               className="hover:bg-[rgba(255,255,255,0.12)]"
                             >
                               <ExternalLinkIcon size={12} />
-                              <span className="hidden sm:inline">Open Tab</span>
+                              <span>Open Tab</span>
                             </a>
                           )}
 
@@ -838,7 +938,7 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                               display: 'flex',
                               alignItems: 'center',
                               gap: '4px',
-                              padding: '4px 10px',
+                              padding: '4px 12px',
                               borderRadius: '6px',
                               background: 'var(--pragna-gold-soft)',
                               color: 'var(--pragna-on-gold)',
@@ -851,167 +951,104 @@ export default function ArtifactPanel({ artifact, isOpen, onClose }: ArtifactPan
                             className="hover:scale-105"
                           >
                             <DownloadIcon size={12} />
-                            <span>Download</span>
+                            <span>Download {fileInfo.extension.toUpperCase()}</span>
                           </button>
                         </div>
                       </div>
 
-                      {/* Content Area */}
-                      {docViewMode === 'pdf' && artifact.downloadUrl && (fileInfo.extension === 'pdf' || artifact.format === 'pdf' || artifact.type === 'pdf') ? (
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                          <iframe
-                            key={refreshKey}
-                            ref={iframeRef}
-                            src={artifact.downloadUrl}
-                            title={title}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              flex: 1,
-                              border: 'none',
-                              background: '#ffffff',
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        /* Rich Interactive Document Reader View */
+                      {/* Rich Document Content Viewport */}
+                      <div
+                        style={{
+                          flex: 1,
+                          overflowY: 'auto',
+                          padding: '24px 28px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          background: 'radial-gradient(ellipse at top, #14141d 0%, #0a0a0f 100%)',
+                        }}
+                        className="custom-scrollbar"
+                      >
                         <div
                           style={{
-                            flex: 1,
-                            overflowY: 'auto',
-                            padding: '24px 28px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            background: 'radial-gradient(ellipse at top, #14141d 0%, #0a0a0f 100%)',
+                            width: '100%',
+                            maxWidth: '740px',
+                            background: 'rgba(20, 20, 26, 0.88)',
+                            border: '1px solid rgba(212, 175, 55, 0.25)',
+                            borderRadius: '16px',
+                            padding: '28px 34px',
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+                            backdropFilter: 'blur(12px)',
                           }}
-                          className="custom-scrollbar"
                         >
-                          <div
-                            style={{
-                              width: '100%',
-                              maxWidth: '720px',
-                              background: 'rgba(20, 20, 26, 0.85)',
-                              border: '1px solid rgba(212, 175, 55, 0.25)',
-                              borderRadius: '16px',
-                              padding: '28px 32px',
-                              boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-                              backdropFilter: 'blur(12px)',
-                            }}
-                          >
-                            {/* Document Cover Header */}
-                            <div style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.2)', paddingBottom: '18px', marginBottom: '22px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                                <span
-                                  style={{
-                                    fontSize: '11px',
-                                    fontWeight: 700,
-                                    padding: '3px 8px',
-                                    borderRadius: '6px',
-                                    background: 'rgba(212, 175, 55, 0.15)',
-                                    color: 'var(--pragna-gold-soft)',
-                                    border: '1px solid rgba(212, 175, 55, 0.3)',
-                                  }}
-                                >
-                                  {fileInfo.typeName}
+                          {/* Document Cover Header */}
+                          <div style={{ borderBottom: '1px solid rgba(212, 175, 55, 0.2)', paddingBottom: '18px', marginBottom: '22px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  background: 'rgba(212, 175, 55, 0.15)',
+                                  color: 'var(--pragna-gold-soft)',
+                                  border: '1px solid rgba(212, 175, 55, 0.3)',
+                                }}
+                              >
+                                {fileInfo.typeName}
+                              </span>
+                              {artifact.metadata?.page_count && (
+                                <span style={{ fontSize: '12px', color: 'var(--pragna-text-muted)' }}>
+                                  • {artifact.metadata.page_count} Pages
                                 </span>
-                                {artifact.metadata?.page_count && (
-                                  <span style={{ fontSize: '12px', color: 'var(--pragna-text-muted)' }}>
-                                    • {artifact.metadata.page_count} Pages
-                                  </span>
-                                )}
-                              </div>
-                              <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fffdf7', margin: 0, lineHeight: 1.3 }}>
-                                {title}
-                              </h1>
-                            </div>
-
-                            {/* Formatted Document Body */}
-                            <div
-                              style={{
-                                color: '#d8cbb0',
-                                fontSize: '14.5px',
-                                lineHeight: '1.75',
-                              }}
-                            >
-                              {rawContent ? (
-                                rawContent.split('\n').map((line, idx) => {
-                                  const trimmed = line.trim();
-                                  if (!trimmed) return <div key={idx} style={{ height: '10px' }} />;
-                                  if (trimmed.startsWith('### ')) {
-                                    return (
-                                      <h3 key={idx} style={{ fontSize: '16px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '18px 0 8px 0' }}>
-                                        {trimmed.replace(/^###\s+/, '')}
-                                      </h3>
-                                    );
-                                  }
-                                  if (trimmed.startsWith('## ')) {
-                                    return (
-                                      <h2 key={idx} style={{ fontSize: '18px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '22px 0 10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
-                                        {trimmed.replace(/^##\s+/, '')}
-                                      </h2>
-                                    );
-                                  }
-                                  if (trimmed.startsWith('# ')) {
-                                    return (
-                                      <h1 key={idx} style={{ fontSize: '20px', fontWeight: 700, color: 'var(--pragna-gold-soft)', margin: '24px 0 12px 0', borderBottom: '1px solid rgba(212,175,55,0.3)', paddingBottom: '8px' }}>
-                                        {trimmed.replace(/^#\s+/, '')}
-                                      </h1>
-                                    );
-                                  }
-                                  if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ')) {
-                                    return (
-                                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '4px 0', paddingLeft: '8px' }}>
-                                        <span style={{ color: 'var(--pragna-gold-soft)', fontWeight: 700 }}>•</span>
-                                        <span style={{ color: '#e6edf3' }}>{trimmed.replace(/^[-*•]\s+/, '')}</span>
-                                      </div>
-                                    );
-                                  }
-                                  if (trimmed.startsWith('> ')) {
-                                    return (
-                                      <div key={idx} style={{ borderLeft: '3px solid #d4af37', padding: '6px 14px', background: 'rgba(212,175,55,0.06)', borderRadius: '0 8px 8px 0', margin: '12px 0', fontStyle: 'italic', color: '#f3c96a' }}>
-                                        {trimmed.replace(/^>\s+/, '')}
-                                      </div>
-                                    );
-                                  }
-                                  return (
-                                    <p key={idx} style={{ margin: '0 0 10px 0', color: '#e6edf3' }}>
-                                      {trimmed}
-                                    </p>
-                                  );
-                                })
-                              ) : (
-                                <div style={{ textAlign: 'center', padding: '30px 0' }}>
-                                  <p style={{ color: 'var(--pragna-text-muted)', marginBottom: '16px' }}>
-                                    Document successfully generated and ready for use.
-                                  </p>
-                                  {artifact.downloadUrl && (
-                                    <button
-                                      type="button"
-                                      onClick={handleDownload}
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '8px 16px',
-                                        borderRadius: '8px',
-                                        background: 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))',
-                                        border: '1px solid rgba(212,175,55,0.4)',
-                                        color: 'var(--pragna-gold-soft)',
-                                        fontWeight: 650,
-                                        cursor: 'pointer',
-                                      }}
-                                    >
-                                      <DownloadIcon size={14} />
-                                      <span>Download {fileInfo.extension.toUpperCase()}</span>
-                                    </button>
-                                  )}
-                                </div>
                               )}
                             </div>
+                            <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#fffdf7', margin: 0, lineHeight: 1.3 }}>
+                              {title}
+                            </h1>
+                          </div>
+
+                          {/* Formatted Document Body */}
+                          <div
+                            style={{
+                              color: '#d8cbb0',
+                              fontSize: '14.5px',
+                              lineHeight: '1.75',
+                            }}
+                          >
+                            {rawContent ? (
+                              renderMarkdownDocument(rawContent)
+                            ) : (
+                              <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                                <p style={{ color: 'var(--pragna-text-muted)', marginBottom: '16px' }}>
+                                  Document successfully generated and ready for use.
+                                </p>
+                                {artifact.downloadUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={handleDownload}
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: '8px 16px',
+                                      borderRadius: '8px',
+                                      background: 'linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0.1))',
+                                      border: '1px solid rgba(212,175,55,0.4)',
+                                      color: 'var(--pragna-gold-soft)',
+                                      fontWeight: 650,
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    <DownloadIcon size={14} />
+                                    <span>Download {fileInfo.extension.toUpperCase()}</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
-                      )}
+                      </div>
                     </div>
                   ) : (
                     <iframe

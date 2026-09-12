@@ -3253,9 +3253,32 @@ def generate_document():
         builders[fmt](structure, filepath)
 
         display_name = f"{structure.get('title') or prompt}.{fmt}"
+
+        # Generate full markdown content for rich preview
+        md_lines = [f"# {structure.get('title') or prompt}\n"]
+        for sec in structure.get('sections', []):
+            if sec.get('heading'):
+                md_lines.append(f"\n## {sec['heading']}\n")
+            for b in sec.get('bullets', []):
+                md_lines.append(f"- {b}")
+            tbl = sec.get('table')
+            if tbl and isinstance(tbl, list) and len(tbl) > 0:
+                header = tbl[0]
+                md_lines.append("\n| " + " | ".join(str(c) for c in header) + " |")
+                md_lines.append("| " + " | ".join(["---"] * len(header)) + " |")
+                for row in tbl[1:]:
+                    md_lines.append("| " + " | ".join(str(c) for c in row) + " |")
+                md_lines.append("")
+
+        content_markdown = "\n".join(md_lines).strip()
+
         return jsonify({
             'download_url': f'/api/documents/download/{filename}',
             'filename': display_name,
+            'title': structure.get('title') or prompt,
+            'format': fmt,
+            'content': content_markdown,
+            'structure': structure,
         }), 200
 
     except Exception as e:

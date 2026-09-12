@@ -734,11 +734,11 @@ const renderAttachments = (attachments, openArtifact) => (
             onClick={() => {
               openArtifact?.({
                 id: `doc-${i}-${Date.now()}`,
-                title: att.name,
+                title: att.title || att.name,
                 type: att.format === 'pdf' ? 'pdf' : 'document',
                 format: att.format || 'pdf',
                 downloadUrl: att.downloadUrl,
-                content: `# ${att.name}\n\nDocument ready for preview and download.\n- Format: ${(att.format || 'pdf').toUpperCase()}\n- File: ${att.name}`,
+                content: att.content || `# ${att.title || att.name}\n\nDocument ready for preview and download.\n- Format: ${(att.format || 'pdf').toUpperCase()}\n- File: ${att.name}`,
               });
             }}
             className="msg-attachment-file group cursor-pointer hover:border-[var(--pragna-gold-soft)] hover:shadow-md transition-all flex items-center gap-2"

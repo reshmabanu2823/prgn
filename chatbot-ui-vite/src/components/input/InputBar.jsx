@@ -375,11 +375,11 @@ export default function InputBar() {
         const docResult = await generateDocument({ format, prompt, language: normalizeLanguageCode(language) });
         openArtifact?.({
           id: `doc-${Date.now()}`,
-          title: docResult.filename || `${prompt}.${format}`,
+          title: docResult.title || docResult.filename || `${prompt}.${format}`,
           type: format === 'pdf' ? 'pdf' : 'document',
           format,
           downloadUrl: docResult.download_url,
-          content: `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.\n- Format: ${format.toUpperCase()}\n- File: ${docResult.filename}\n- Status: Ready`,
+          content: docResult.content || `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.`,
         });
         setChats((prev) =>
           prev.map((c) =>
@@ -392,7 +392,7 @@ export default function InputBar() {
                     {
                       sender: "bot",
                       text: "Generated document ready.",
-                      attachments: [{ name: docResult.filename, type: "document", downloadUrl: docResult.download_url, format }],
+                      attachments: [{ name: docResult.filename, type: "document", downloadUrl: docResult.download_url, format, content: docResult.content, title: docResult.title }],
                     },
                   ],
                 }
@@ -492,11 +492,11 @@ export default function InputBar() {
         setIsLoading(false);
         openArtifact?.({
           id: `doc-${Date.now()}`,
-          title: docResult.filename || `${docRequest.subject}.${docRequest.format}`,
+          title: docResult.title || docResult.filename || `${docRequest.subject}.${docRequest.format}`,
           type: docRequest.format === 'pdf' ? 'pdf' : 'document',
           format: docRequest.format,
           downloadUrl: docResult.download_url,
-          content: `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.\n- Format: ${docRequest.format?.toUpperCase()}\n- File: ${docResult.filename}\n- Status: Ready`,
+          content: docResult.content || `# ${docResult.filename || 'Generated Document'}\n\nDocument ready for preview and download.`,
         });
         setChats((prev) =>
           prev.map((c) =>
@@ -515,6 +515,8 @@ export default function InputBar() {
                               type: "document",
                               downloadUrl: docResult.download_url,
                               format: docRequest.format,
+                              content: docResult.content,
+                              title: docResult.title,
                             },
                           ],
                         }
