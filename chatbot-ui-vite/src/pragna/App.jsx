@@ -357,6 +357,7 @@ function App({ onLogout, userProfile }) {
           setImageSize={setImageSize}
           isGeneratingImage={isGeneratingImage}
           generatedImage={generatedImage}
+          setGeneratedImage={setGeneratedImage}
           imageError={imageError}
           onGenerate={handleGenerateImage}
           onSendToChat={() =>

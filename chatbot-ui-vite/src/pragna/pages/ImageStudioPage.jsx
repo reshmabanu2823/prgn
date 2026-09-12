@@ -75,6 +75,7 @@ const ImageStudioPage = ({
   setImageSize,
   isGeneratingImage,
   generatedImage,
+  setGeneratedImage,
   imageError,
   onGenerate,
   onSendToChat,
@@ -175,6 +176,26 @@ const ImageStudioPage = ({
       // ignore
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  // Delete currently displayed generated image
+  const handleDeleteCurrent = async () => {
+    if (!generatedImage) return
+    const currentId = generatedImage.id
+    if (currentId) {
+      try {
+        await deleteImageHistoryItem(currentId)
+        setHistory((prev) => prev.filter((item) => item.id !== currentId))
+      } catch {
+        // ignore
+      }
+    }
+    if (selectedImage?.id === currentId || selectedImage?.image === generatedImage.image) {
+      setSelectedImage(null)
+    }
+    if (typeof setGeneratedImage === 'function') {
+      setGeneratedImage(null)
     }
   }
 
@@ -642,9 +663,30 @@ const ImageStudioPage = ({
               <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--pragna-gold-soft)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 Generated Result
               </span>
-              <span style={{ fontSize: '11px', color: 'var(--pragna-text-muted)' }}>
-                {generatedImage.model || 'DALL-E 3'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--pragna-text-muted)' }}>
+                  {generatedImage.model || 'Flux'}
+                </span>
+                <button
+                  onClick={handleDeleteCurrent}
+                  title="Delete image"
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    borderRadius: '6px',
+                    color: '#f87171',
+                    padding: '3px 6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                  className="hover:bg-[rgba(239,68,68,0.2)] hover:border-red-500/50 hover:text-red-300"
+                >
+                  <TrashIcon size={12} />
+                </button>
+              </div>
             </div>
 
             <div
@@ -729,6 +771,29 @@ const ImageStudioPage = ({
               >
                 {copiedId === 'latest' ? <CheckIcon size={12} color="var(--pragna-gold-soft)" /> : <CopyIcon size={12} />}
                 <span>{copiedId === 'latest' ? 'Copied' : 'Copy'}</span>
+              </button>
+
+              <button
+                onClick={handleDeleteCurrent}
+                title="Delete this artwork"
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  color: '#f87171',
+                  fontSize: '11.5px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease',
+                }}
+                className="hover:bg-[rgba(239,68,68,0.2)] hover:border-red-500/50 hover:text-red-300"
+              >
+                <TrashIcon size={12} />
+                <span>Delete</span>
               </button>
             </div>
           </div>
